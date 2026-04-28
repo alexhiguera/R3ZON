@@ -9,6 +9,7 @@ import {
   Kanban,
   Wallet,
   ShieldCheck,
+  Lock,
   Settings,
   ScanLine,
   type LucideIcon,
@@ -25,6 +26,7 @@ const NAV: NavItem[] = [
   { href: "/finanzas",  label: "Finanzas",      Icon: Wallet },
   { href: "/ocr",       label: "Escanear",      Icon: ScanLine },
   { href: "/rgpd",      label: "RGPD",          Icon: ShieldCheck },
+  { href: "/2fa/configurar", label: "Seguridad 2FA", Icon: Lock },
   { href: "/ajustes",   label: "Ajustes",       Icon: Settings },
 ];
 

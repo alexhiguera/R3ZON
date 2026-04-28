@@ -3,12 +3,14 @@
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
 import { Sidebar } from "./Sidebar";
+import { DeviceTracker } from "@/components/auth/DeviceTracker";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
 
   return (
     <div className="min-h-[100dvh] lg:grid lg:grid-cols-[280px_1fr]">
+      <DeviceTracker />
       {/* Sidebar desktop */}
       <aside className="sticky top-0 hidden h-[100dvh] border-r border-indigo-400/10 bg-bg/60 backdrop-blur-glass lg:block">
         <Sidebar />
