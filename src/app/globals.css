@@ -1,0 +1,83 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #080714;
+  --indigo-900: #1e1b4b;
+  --indigo-800: #312e81;
+  --indigo-700: #3730a3;
+  --indigo-600: #4f46e5;
+  --indigo-400: #818cf8;
+  --indigo-300: #a5b4fc;
+  --cyan: #22d3ee;
+  --fuchsia: #e879f9;
+  --green: #34d399;
+  --orange: #fb923c;
+  --red: #f87171;
+  --text-hi: #f0f4ff;
+  --text-mid: #c7d2fe;
+  --text-lo: rgba(165, 180, 252, 0.5);
+  --text-ghost: rgba(165, 180, 252, 0.42);
+}
+
+html, body {
+  background: var(--bg);
+  color: var(--text-hi);
+  font-family: "DM Sans", system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  background-image:
+    radial-gradient(ellipse 80% 50% at 15% 5%,  rgba(99,102,241,0.22) 0%, transparent 60%),
+    radial-gradient(ellipse 55% 45% at 85% 85%, rgba(232,121,249,0.13) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 60% at 55% 55%, rgba(34,211,238,0.06)  0%, transparent 65%);
+  background-attachment: fixed;
+  min-height: 100vh;
+}
+
+/* Glass card base */
+@layer components {
+  .card-glass {
+    background: linear-gradient(135deg, rgba(49,46,129,0.38), rgba(30,27,75,0.65));
+    border: 1px solid rgba(129,140,248,0.18);
+    border-radius: 18px;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .card-glass:hover {
+    border-color: rgba(129,140,248,0.36);
+    box-shadow: 0 22px 60px rgba(99,102,241,0.20);
+  }
+  .rainbow-bar {
+    height: 3px;
+    background: linear-gradient(90deg, #6366f1, #22d3ee, #e879f9, #6366f1);
+  }
+  .accent-bar {
+    height: 3px;
+    width: 84px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, #22d3ee, #e879f9);
+  }
+  .section-label {
+    font-size: 0.6rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: rgba(165,180,252,0.45);
+  }
+  .btn-big {
+    @apply flex items-center gap-3 rounded-2xl px-4 py-3 text-base font-medium transition-all;
+    min-height: 56px; /* botones grandes para tactil */
+  }
+}
+
+/* Scrollbar fina y oscura */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb {
+  background: rgba(129,140,248,0.25);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover { background: rgba(129,140,248,0.45); }
