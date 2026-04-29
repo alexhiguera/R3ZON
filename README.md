@@ -132,9 +132,9 @@ npx cap sync
 | Páginas legales | ✅ Plantillas | Privacidad, cookies, términos, aviso |
 | Finanzas — dashboard | ✅ Completo | Recharts + KPIs simples |
 | OCR de tickets | ✅ Completo | Tesseract.js client-side |
-| Clientes (CRM) | 🟡 Placeholder | Tabla creada, falta UI |
+| Clientes (CRM) | ✅ Completo | Listado, ficha, tabs, webhook n8n |
 | Citas / Agenda | 🟡 Placeholder | Tabla creada, falta calendario |
-| Tareas Kanban | 🟡 Placeholder | Tabla creada, falta tablero |
+| Tareas Kanban | ✅ Completo | dnd-kit, columnas personalizadas, modales |
 | Ajustes / API keys | 🟡 Placeholder | RPCs cifradas listas, falta UI |
 
 ---
@@ -168,6 +168,33 @@ npx cap sync
 - **Dashboard `/finanzas`** con Recharts: 4 KPIs grandes en lenguaje claro ("Lo que has ganado", "Lo que has gastado", "Te queda", "Apartar para Hacienda"), barras mensuales, previsión de impuestos (IVA repercutido − soportado, IRPF retenido) y lista de últimos movimientos.
 - **`/finanzas/nuevo`** con toggle "He cobrado / He gastado" y cálculo en vivo del total.
 - Dependencias añadidas: `tesseract.js`, `recharts`.
+
+### Iteración 7 — *2026-04-28* — Botón de acceso rápido en dev
+- `DevLoginButton` (`src/components/auth/DevLoginButton.tsx`) — se renderiza **solo cuando `NODE_ENV === 'development'`**; en producción Next.js lo elimina del bundle. Lee `NEXT_PUBLIC_DEV_EMAIL` / `NEXT_PUBLIC_DEV_PASSWORD` desde `.env.local` y llama a `signInWithPassword` directamente, por lo que RLS sigue funcionando con normalidad. Si el usuario no existe todavía muestra el mensaje `"Ejecuta: npm run seed:admin"`. Visual: badge naranja `DEV MODE` + botón con icono ⚡.
+- Añadidas las variables `NEXT_PUBLIC_DEV_EMAIL` y `NEXT_PUBLIC_DEV_PASSWORD` a `.env.local` (gitignored).
+
+### Iteración 6 — *2026-04-28* — CRM completo + Kanban con Drag & Drop
+
+**SQL:** nueva migración `supabase/crm_kanban_ext.sql` con tablas `comunicaciones`, `kanban_columnas` y columnas `webhook_url/webhook_activo` en `clientes`. RLS aplicado. Trigger `seed_kanban` que inicializa 4 columnas por defecto al crear un negocio.
+
+**CRM — Clientes:**
+- `/clientes` — listado en grid con búsqueda en tiempo real (debounce 300ms), botones rápidos de WhatsApp/Email/teléfono y etiquetas de color.
+- `/clientes/nuevo` — formulario con etiquetas personalizadas + sugeridas, `Help` tooltips en cada campo.
+- `/clientes/[id]` — ficha con 4 pestañas:
+  - **Información** — edición inline con toggle editar/guardar.
+  - **Historial** — citas vinculadas al cliente ordenadas por fecha.
+  - **Mensajes** — log de comunicaciones (WhatsApp click, email click, notas manuales). Los clicks se registran automáticamente en `comunicaciones`.
+  - **Automático** — panel de webhook n8n/Make: URL, toggle activo/inactivo, botón "Probar webhook" (dispara POST con payload del cliente y registra resultado en `comunicaciones`), guía de 5 pasos.
+
+**Kanban:**
+- `@dnd-kit/core` + `@dnd-kit/sortable` — drag & drop táctil y de ratón. `PointerSensor` (distancia 8px) + `TouchSensor` (delay 200ms) para evitar activaciones accidentales en móvil.
+- `DragOverlay` con rotación sutil durante el arrastre. Placeholder punteado en la posición de origen.
+- Reordenación dentro de columna (arrayMove) y cambio de columna — persistencia optimista, sincroniza con Supabase en `onDragEnd`.
+- `ColumnManager` — diálogo modal para crear, renombrar (doble clic), cambiar color y eliminar columnas. El slug se genera automáticamente desde el nombre (slugify con normalización NFD).
+- `TaskModal` — creación y edición de tareas: título, descripción, columna, prioridad (baja/normal/alta/urgente), fecha límite, checkbox "completada". Las tareas vencidas muestran borde rojo.
+- `Tooltip` component genérico + `Help` (icono ?) para todos los campos — lenguaje no técnico en todos los textos.
+
+**Dependencias añadidas:** `@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities`.
 
 ### Iteración 5 — *2026-04-28* — Bitácora en README
 - Reescrito `README.md` con el estado real del proyecto, estructura de carpetas y tabla de módulos.

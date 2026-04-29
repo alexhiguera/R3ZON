@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Mail, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { OAuthButtons } from "@/components/auth/OAuthButtons";
+import { DevLoginButton } from "@/components/auth/DevLoginButton";
 
 export default function LoginPage() {
   const supabase = createClient();
@@ -78,6 +79,8 @@ export default function LoginPage() {
           Regístrate
         </Link>
       </div>
+
+      <DevLoginButton redirectTo={redirect} />
     </div>
   );
 }
