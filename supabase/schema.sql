@@ -1,11 +1,18 @@
 -- =============================================================================
--- R3ZON Business OS — Esquema Multi-Tenant (Supabase / Postgres)
+-- R3ZON Business OS — Esquema base (modelo B2B puro)
 -- =============================================================================
--- Modelo de tenancy:
+-- Tenancy:
 --   · auth.users (Supabase Auth) → 1 fila en perfiles_negocio (el "tenant")
 --   · Todas las tablas de dominio referencian negocio_id (FK a perfiles_negocio)
 --   · RLS aísla cada tenant: solo el dueño puede ver/editar sus filas.
---   · config_keys guarda credenciales cifradas (Stripe, Twilio…) con pgcrypto.
+--
+-- Modelo de dominio:
+--   · clientes           = cuentas B2B (empresas / entidades jurídicas).
+--   · contactos_cliente  = personas dentro de un cliente, con jerarquía
+--                          (reports_to autorreferencial → organigrama).
+--   · citas / tareas_kanban / finanzas → vinculadas opcionalmente a un cliente.
+--   · consentimientos_rgpd → consentimientos del titular del negocio o de un
+--                            cliente (cliente_id NULLABLE).
 -- =============================================================================
 
 create extension if not exists "pgcrypto";
@@ -40,29 +47,100 @@ returns uuid language sql stable security definer set search_path = public as $$
 $$;
 
 -- =============================================================================
--- 2. CLIENTES
+-- 2. CLIENTES  (cuentas B2B — empresas / entidades jurídicas)
 -- =============================================================================
 create table if not exists public.clientes (
+  id                uuid primary key default uuid_generate_v4(),
+  negocio_id        uuid not null references public.perfiles_negocio(id) on delete cascade,
+
+  -- Identidad jurídica
+  nombre            text not null,            -- razón social / nombre comercial
+  cif               text,                     -- CIF / NIF empresarial
+  sector            text,
+  sitio_web         text,
+
+  -- Contacto principal
+  email             text,
+  telefono          text,
+  direccion         text,
+  ciudad            text,
+  pais              text default 'España',
+  codigo_postal     text,
+
+  -- Datos B2B
+  num_empleados     integer,
+  facturacion_anual numeric(14,2),
+  estado            text not null default 'prospecto',   -- activa | prospecto | inactiva
+  notas             text,
+  etiquetas         text[] default '{}',
+  logo_url          text,
+
+  -- Automatización (n8n / Make)
+  webhook_url       text,
+  webhook_activo    boolean not null default false,
+
+  created_at        timestamptz not null default now(),
+  updated_at        timestamptz not null default now(),
+
+  check (estado in ('activa','prospecto','inactiva'))
+);
+create index if not exists idx_clientes_negocio on public.clientes(negocio_id);
+create index if not exists idx_clientes_nombre  on public.clientes(negocio_id, nombre);
+create index if not exists idx_clientes_email   on public.clientes(negocio_id, email);
+
+-- =============================================================================
+-- 3. CONTACTOS_CLIENTE  (personas dentro de cada cliente, organigrama)
+-- =============================================================================
+create table if not exists public.contactos_cliente (
   id            uuid primary key default uuid_generate_v4(),
   negocio_id    uuid not null references public.perfiles_negocio(id) on delete cascade,
+  cliente_id    uuid not null references public.clientes(id)         on delete cascade,
+
+  -- Jerarquía: a quién reporta (mismo cliente_id).
+  reports_to    uuid references public.contactos_cliente(id) on delete set null,
+
   nombre        text not null,
   apellidos     text,
   email         text,
   telefono      text,
-  nif           text,
-  direccion     text,
+  puesto        text,
+  departamento text,
+  es_decisor    boolean not null default false,
   notas         text,
-  etiquetas     text[] default '{}',
-  fecha_alta    timestamptz not null default now(),
-  ultima_visita timestamptz,
+
   created_at    timestamptz not null default now(),
   updated_at    timestamptz not null default now()
 );
-create index if not exists idx_clientes_negocio on public.clientes(negocio_id);
-create index if not exists idx_clientes_email   on public.clientes(negocio_id, email);
+create index if not exists idx_contactos_cliente on public.contactos_cliente(cliente_id);
+create index if not exists idx_contactos_negocio on public.contactos_cliente(negocio_id);
+create index if not exists idx_contactos_reports on public.contactos_cliente(reports_to);
+
+alter table public.contactos_cliente
+  drop constraint if exists contactos_no_self_report;
+alter table public.contactos_cliente
+  add constraint contactos_no_self_report check (reports_to is null or reports_to <> id);
+
+-- Trigger: reports_to debe pertenecer al MISMO cliente.
+create or replace function public.tg_check_reports_to_same_cliente()
+returns trigger language plpgsql as $$
+declare v_cliente uuid;
+begin
+  if new.reports_to is null then return new; end if;
+  select cliente_id into v_cliente
+    from public.contactos_cliente where id = new.reports_to;
+  if v_cliente is null or v_cliente <> new.cliente_id then
+    raise exception 'reports_to debe pertenecer al mismo cliente';
+  end if;
+  return new;
+end $$;
+
+drop trigger if exists check_reports_to_same_cliente on public.contactos_cliente;
+create trigger check_reports_to_same_cliente
+  before insert or update on public.contactos_cliente
+  for each row execute function public.tg_check_reports_to_same_cliente();
 
 -- =============================================================================
--- 3. CITAS (calendario / agenda)
+-- 4. CITAS (calendario / agenda básico)  → ver también agenda_ext.sql
 -- =============================================================================
 create table if not exists public.citas (
   id             uuid primary key default uuid_generate_v4(),
@@ -74,7 +152,7 @@ create table if not exists public.citas (
   fin            timestamptz not null,
   estado         text not null default 'pendiente',  -- pendiente|confirmada|cancelada|completada
   ubicacion      text,
-  color          text,                                -- hex para UI
+  color          text,
   precio         numeric(10,2),
   recordatorio_min int default 60,
   created_at     timestamptz not null default now(),
@@ -85,7 +163,7 @@ create index if not exists idx_citas_negocio_inicio on public.citas(negocio_id, 
 create index if not exists idx_citas_cliente on public.citas(cliente_id);
 
 -- =============================================================================
--- 4. TAREAS_KANBAN
+-- 5. TAREAS_KANBAN
 -- =============================================================================
 create table if not exists public.tareas_kanban (
   id           uuid primary key default uuid_generate_v4(),
@@ -93,8 +171,8 @@ create table if not exists public.tareas_kanban (
   cliente_id   uuid references public.clientes(id) on delete set null,
   titulo       text not null,
   descripcion  text,
-  columna      text not null default 'pendiente',   -- pendiente|en_curso|revision|hecho
-  prioridad    text not null default 'normal',      -- baja|normal|alta|urgente
+  columna      text not null default 'pendiente',
+  prioridad    text not null default 'normal',
   posicion     integer not null default 0,
   fecha_limite timestamptz,
   etiquetas    text[] default '{}',
@@ -105,23 +183,22 @@ create table if not exists public.tareas_kanban (
 create index if not exists idx_kanban_negocio_columna on public.tareas_kanban(negocio_id, columna, posicion);
 
 -- =============================================================================
--- 5. FINANZAS (ingresos/gastos con IVA + IRPF para España)
+-- 6. FINANZAS
 -- =============================================================================
 create table if not exists public.finanzas (
   id              uuid primary key default uuid_generate_v4(),
   negocio_id      uuid not null references public.perfiles_negocio(id) on delete cascade,
   cliente_id      uuid references public.clientes(id) on delete set null,
 
-  tipo            text not null,                  -- ingreso | gasto
+  tipo            text not null,
   concepto        text not null,
-  categoria       text,                           -- ej: 'suministros','servicios','ventas'
+  categoria       text,
   fecha           date not null default current_date,
 
-  -- Importes (en moneda del negocio)
-  base_imponible  numeric(12,2) not null,         -- importe sin impuestos
-  iva_porcentaje  numeric(5,2)  not null default 21.00,  -- 0, 4, 10, 21
+  base_imponible  numeric(12,2) not null,
+  iva_porcentaje  numeric(5,2)  not null default 21.00,
   iva_importe     numeric(12,2) generated always as (round(base_imponible * iva_porcentaje / 100, 2)) stored,
-  irpf_porcentaje numeric(5,2)  not null default 0.00,   -- 0, 7, 15, 19…
+  irpf_porcentaje numeric(5,2)  not null default 0.00,
   irpf_importe    numeric(12,2) generated always as (round(base_imponible * irpf_porcentaje / 100, 2)) stored,
   total           numeric(12,2) generated always as (
                     round(base_imponible
@@ -129,12 +206,11 @@ create table if not exists public.finanzas (
                           - (base_imponible * irpf_porcentaje / 100), 2)
                   ) stored,
 
-  -- Documentación
   numero_factura  text,
-  metodo_pago     text,                           -- efectivo|tarjeta|transferencia|bizum
-  estado_pago     text not null default 'pagado', -- pendiente|pagado|vencido
-  archivo_url     text,                           -- ticket/factura subida (Supabase Storage)
-  ocr_extraido    jsonb,                          -- payload del OCR client-side
+  metodo_pago     text,
+  estado_pago     text not null default 'pagado',
+  archivo_url     text,
+  ocr_extraido    jsonb,
 
   notas           text,
   created_at      timestamptz not null default now(),
@@ -147,19 +223,21 @@ create index if not exists idx_finanzas_negocio_fecha on public.finanzas(negocio
 create index if not exists idx_finanzas_tipo on public.finanzas(negocio_id, tipo);
 
 -- =============================================================================
--- 6. CONSENTIMIENTOS_RGPD (registro de consentimientos LOPD/GDPR)
+-- 7. CONSENTIMIENTOS_RGPD
+--    cliente_id NULLABLE — los consentimientos del propio titular del negocio
+--    (onboarding) se guardan con cliente_id = NULL.
 -- =============================================================================
 create table if not exists public.consentimientos_rgpd (
   id            uuid primary key default uuid_generate_v4(),
   negocio_id    uuid not null references public.perfiles_negocio(id) on delete cascade,
-  cliente_id    uuid not null references public.clientes(id) on delete cascade,
-  tipo          text not null,                    -- marketing|tratamiento_datos|imagen|cookies
-  texto_version text not null,                    -- versión legal aceptada
+  cliente_id    uuid references public.clientes(id) on delete cascade,
+  tipo          text not null,
+  texto_version text not null,
   aceptado      boolean not null,
   fecha         timestamptz not null default now(),
   ip            inet,
   user_agent    text,
-  firma_url     text,                             -- imagen de firma manuscrita opcional
+  firma_url     text,
   revocado_en   timestamptz,
   created_at    timestamptz not null default now()
 );
@@ -167,25 +245,21 @@ create index if not exists idx_rgpd_cliente on public.consentimientos_rgpd(clien
 create index if not exists idx_rgpd_negocio on public.consentimientos_rgpd(negocio_id);
 
 -- =============================================================================
--- 7. CONFIG_KEYS (API keys cifradas con pgcrypto)
--- =============================================================================
--- IMPORTANTE: la clave maestra vive como "GUC" (app.config_master_key) configurada
--- en el proyecto Supabase como un Secret. Nunca se almacena en la BD.
+-- 8. CONFIG_KEYS (API keys cifradas con pgcrypto)
 -- =============================================================================
 create table if not exists public.config_keys (
   id           uuid primary key default uuid_generate_v4(),
   negocio_id   uuid not null references public.perfiles_negocio(id) on delete cascade,
-  servicio     text not null,                    -- 'stripe'|'twilio'|'openai'|...
-  alias        text,                             -- nombre amigable
-  valor_cifrado bytea not null,                  -- pgp_sym_encrypt output
-  metadata     jsonb default '{}'::jsonb,        -- info no sensible
+  servicio     text not null,
+  alias        text,
+  valor_cifrado bytea not null,
+  metadata     jsonb default '{}'::jsonb,
   created_at   timestamptz not null default now(),
   updated_at   timestamptz not null default now(),
   unique (negocio_id, servicio, alias)
 );
 create index if not exists idx_config_negocio on public.config_keys(negocio_id);
 
--- Funciones para guardar/leer claves cifradas (usan GUC 'app.config_master_key').
 create or replace function public.set_config_key(
   p_servicio text, p_alias text, p_valor text, p_metadata jsonb default '{}'::jsonb
 ) returns uuid language plpgsql security definer set search_path = public as $$
@@ -225,7 +299,7 @@ begin
 end $$;
 
 -- =============================================================================
--- 8. TRIGGER updated_at en todas las tablas
+-- 9. TRIGGER updated_at
 -- =============================================================================
 create or replace function public.tg_set_updated_at()
 returns trigger language plpgsql as $$
@@ -235,7 +309,8 @@ do $$
 declare t text;
 begin
   foreach t in array array[
-    'perfiles_negocio','clientes','citas','tareas_kanban','finanzas','config_keys'
+    'perfiles_negocio','clientes','contactos_cliente',
+    'citas','tareas_kanban','finanzas','config_keys'
   ] loop
     execute format(
       'drop trigger if exists set_updated_at on public.%I;
@@ -245,27 +320,27 @@ begin
 end $$;
 
 -- =============================================================================
--- 9. ROW LEVEL SECURITY (multi-tenant)
+-- 10. ROW LEVEL SECURITY
 -- =============================================================================
 alter table public.perfiles_negocio     enable row level security;
 alter table public.clientes             enable row level security;
+alter table public.contactos_cliente    enable row level security;
 alter table public.citas                enable row level security;
 alter table public.tareas_kanban        enable row level security;
 alter table public.finanzas             enable row level security;
 alter table public.consentimientos_rgpd enable row level security;
 alter table public.config_keys          enable row level security;
 
--- Perfiles: solo el dueño
 drop policy if exists perfiles_owner on public.perfiles_negocio;
 create policy perfiles_owner on public.perfiles_negocio
   for all using (user_id = auth.uid()) with check (user_id = auth.uid());
 
--- Resto de tablas: filtran por negocio_id == current_negocio_id()
 do $$
 declare t text;
 begin
   foreach t in array array[
-    'clientes','citas','tareas_kanban','finanzas','consentimientos_rgpd','config_keys'
+    'clientes','contactos_cliente','citas','tareas_kanban',
+    'finanzas','consentimientos_rgpd','config_keys'
   ] loop
     execute format('drop policy if exists tenant_isolation on public.%I;', t);
     execute format(
@@ -277,7 +352,7 @@ begin
 end $$;
 
 -- =============================================================================
--- 10. BOOTSTRAP: crear perfil_negocio al registrarse
+-- 11. BOOTSTRAP: crear perfil_negocio al registrarse
 -- =============================================================================
 create or replace function public.tg_create_perfil_on_signup()
 returns trigger language plpgsql security definer set search_path = public as $$

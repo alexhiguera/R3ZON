@@ -3,9 +3,9 @@
 import { useState } from "react";
 import { Edit3, Save, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import type { Empresa } from "./types";
+import type { Cliente } from "./types";
 
-const FIELDS: { key: keyof Empresa; label: string; type?: string }[] = [
+const FIELDS: { key: keyof Cliente; label: string; type?: string }[] = [
   { key: "nombre",            label: "Nombre" },
   { key: "cif",               label: "CIF / NIF" },
   { key: "sector",            label: "Sector" },
@@ -21,20 +21,20 @@ const FIELDS: { key: keyof Empresa; label: string; type?: string }[] = [
 ];
 
 export function InfoTab({
-  empresa,
+  cliente,
   onUpdate,
 }: {
-  empresa: Empresa;
-  onUpdate: (e: Empresa) => void;
+  cliente: Cliente;
+  onUpdate: (e: Cliente) => void;
 }) {
   const [editando, setEditando] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState<Empresa>(empresa);
+  const [form, setForm] = useState<Cliente>(cliente);
 
   const guardar = async () => {
     setSaving(true);
     const supabase = createClient();
-    const payload: Partial<Empresa> = {
+    const payload: Partial<Cliente> = {
       nombre: form.nombre,
       cif: form.cif,
       sector: form.sector,
@@ -51,14 +51,14 @@ export function InfoTab({
       notas: form.notas,
     };
     const { data, error } = await supabase
-      .from("empresas")
+      .from("clientes")
       .update(payload)
-      .eq("id", empresa.id)
+      .eq("id", cliente.id)
       .select("*")
       .single();
     setSaving(false);
     if (!error && data) {
-      onUpdate(data as Empresa);
+      onUpdate(data as Cliente);
       setEditando(false);
     }
   };
@@ -77,7 +77,7 @@ export function InfoTab({
         ) : (
           <div className="flex gap-2">
             <button
-              onClick={() => { setForm(empresa); setEditando(false); }}
+              onClick={() => { setForm(cliente); setEditando(false); }}
               className="rounded-xl border border-indigo-400/25 bg-indigo-900/40 px-3 py-2 text-xs text-text-mid"
             >
               Cancelar

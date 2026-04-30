@@ -57,30 +57,17 @@ create or replace function public.registrar_onboarding(
 language plpgsql security definer set search_path = public as $$
 declare
   v_negocio uuid := public.current_negocio_id();
-  v_cliente uuid;
   v_doc     jsonb;
 begin
   if v_negocio is null then raise exception 'No tenant'; end if;
 
-  -- En onboarding inicial, el "cliente" es el propio negocio (representante legal).
-  -- Creamos una fila cliente self-reference si no existe.
-  select id into v_cliente from public.clientes
-   where negocio_id = v_negocio and email = (select email from auth.users where id = auth.uid())
-   limit 1;
-
-  if v_cliente is null then
-    insert into public.clientes (negocio_id, nombre, email, notas)
-    values (v_negocio, 'Titular del negocio',
-            (select email from auth.users where id = auth.uid()),
-            'Auto-generado durante onboarding')
-    returning id into v_cliente;
-  end if;
-
+  -- Modelo B2B: el consentimiento del propio titular del negocio se guarda
+  -- con cliente_id = NULL (la columna es nullable en consentimientos_rgpd).
   for v_doc in select * from jsonb_array_elements(p_consentimientos) loop
     insert into public.consentimientos_rgpd (
       negocio_id, cliente_id, tipo, texto_version, aceptado, ip, user_agent
     ) values (
-      v_negocio, v_cliente,
+      v_negocio, null,
       v_doc->>'tipo',
       v_doc->>'version',
       coalesce((v_doc->>'aceptado')::boolean, false),

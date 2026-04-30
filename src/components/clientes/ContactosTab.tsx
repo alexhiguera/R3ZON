@@ -26,12 +26,12 @@ const EMPTY: ContactoForm = {
 };
 
 export function ContactosTab({
-  empresaId,
+  clienteId,
   negocioId,
   contactos,
   onChange,
 }: {
-  empresaId: string;
+  clienteId: string;
   negocioId: string;
   contactos: Contacto[];
   onChange: (c: Contacto[]) => void;
@@ -58,7 +58,7 @@ export function ContactosTab({
     setSaving(true);
     const supabase = createClient();
     const payload = {
-      empresa_id: empresaId,
+      cliente_id: clienteId,
       negocio_id: negocioId,
       nombre: editing.nombre.trim(),
       apellidos: editing.apellidos.trim() || null,
@@ -72,7 +72,7 @@ export function ContactosTab({
 
     if (editing.id) {
       const { data } = await supabase
-        .from("contactos_empresa")
+        .from("contactos_cliente")
         .update(payload)
         .eq("id", editing.id)
         .select("*")
@@ -82,7 +82,7 @@ export function ContactosTab({
       }
     } else {
       const { data } = await supabase
-        .from("contactos_empresa")
+        .from("contactos_cliente")
         .insert(payload)
         .select("*")
         .single();
@@ -95,7 +95,7 @@ export function ContactosTab({
   const eliminar = async (c: Contacto) => {
     if (!confirm(`¿Eliminar a ${c.nombre}? Los que reportaban a esta persona quedarán sin superior.`)) return;
     const supabase = createClient();
-    await supabase.from("contactos_empresa").delete().eq("id", c.id);
+    await supabase.from("contactos_cliente").delete().eq("id", c.id);
     onChange(
       contactos
         .filter((x) => x.id !== c.id)
@@ -109,7 +109,7 @@ export function ContactosTab({
         <div>
           <div className="section-label mb-1">Personas</div>
           <p className="text-sm text-text-mid">
-            Trabajadores de la empresa con los que tienes relación.
+            Personas dentro de la organización del cliente con las que tienes relación.
           </p>
         </div>
         <button

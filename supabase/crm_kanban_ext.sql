@@ -24,12 +24,8 @@ create policy tenant_isolation on public.comunicaciones
   for all using      (negocio_id = public.current_negocio_id())
   with check         (negocio_id = public.current_negocio_id());
 
--- 2. WEBHOOKS DE CLIENTE (url de n8n / Make por cliente)
-alter table public.clientes
-  add column if not exists webhook_url    text,
-  add column if not exists webhook_activo boolean not null default false;
-
--- 3. KANBAN_COLUMNAS (columnas personalizadas por negocio)
+-- 2. KANBAN_COLUMNAS (columnas personalizadas por negocio)
+-- (Las columnas webhook_url / webhook_activo de clientes ya están en schema.sql)
 create table if not exists public.kanban_columnas (
   id         uuid primary key default uuid_generate_v4(),
   negocio_id uuid not null references public.perfiles_negocio(id) on delete cascade,

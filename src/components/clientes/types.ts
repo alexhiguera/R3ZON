@@ -1,7 +1,12 @@
-export type Empresa = {
+/**
+ * Tipos del módulo Clientes (modelo B2B puro).
+ * Un Cliente = empresa/entidad jurídica con datos fiscales y N contactos.
+ */
+
+export type Cliente = {
   id: string;
   negocio_id: string;
-  nombre: string;
+  nombre: string;            // razón social / nombre comercial
   cif: string | null;
   sector: string | null;
   sitio_web: string | null;
@@ -24,7 +29,7 @@ export type Empresa = {
 export type Contacto = {
   id: string;
   negocio_id: string;
-  empresa_id: string;
+  cliente_id: string;
   reports_to: string | null;
   nombre: string;
   apellidos: string | null;
