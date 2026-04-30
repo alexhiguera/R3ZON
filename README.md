@@ -196,6 +196,25 @@ npx cap sync
 
 **Dependencias añadidas:** `@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities`.
 
+### Iteración 8 — *2026-04-30* — Auth Next.js 15 + Módulo B2B Empresas
+
+**Auth fix Next.js 15:**
+- `src/lib/supabase/server.ts` ahora es `async` y hace `await cookies()` para corregir el `TypeError: store.getAll is not a function` introducido por Next.js 15.
+- `src/app/auth/callback/route.ts` y `src/app/(app)/layout.tsx` actualizados con `await createClient()`.
+- Login limpio: eliminados los botones de Apple/Facebook y la sección DEV MODE. `OAuthButtons` solo Google con spinner que persiste durante el redirect.
+- Mensajes de error traducidos al español con icono `AlertCircle` (`Invalid login credentials` → "Email o contraseña incorrectos…").
+
+**Módulo Empresas (CRM B2B):**
+- **SQL** (`supabase/empresas_ext.sql`): tablas `empresas` (CIF, sector, sitio_web, estado, facturación, etc.) y `contactos_empresa` con FK autorreferencial `reports_to`. Trigger que valida que `reports_to` apunte siempre a un contacto de la misma empresa. RLS multi-tenant.
+- **Rutas**: `/empresas` (lista con búsqueda + filtros por estado + skeletons), `/empresas/nuevo` (alta), `/empresas/[id]` (perfil con 3 pestañas).
+- **Tabs**:
+  - *Información* — edición inline, todos los campos fiscales/comerciales.
+  - *Contactos* — CRUD modal con campos de puesto, departamento, decisor (`Crown`) y selector "¿A quién reporta?" que excluye descendientes para evitar ciclos.
+  - *Estructura jerárquica* — `HierarchyChart` con `@xyflow/react`: layout de árbol automático calculado por anchura de subárbol, nodos custom estilo glass-card, conexiones `smoothstep`, drag/zoom y `Background` con la rejilla del design system.
+- **UX para no técnicos**: empty state con CTA "Añadir CEO/Director" en la pestaña jerarquía, contador de contactos en el tab, helpers explicativos en el selector de superior directo.
+- **Sidebar**: nueva entrada "Empresas" con icono `Building2` entre Clientes y Agenda.
+- **Dependencia añadida**: `@xyflow/react`.
+
 ### Iteración 5 — *2026-04-28* — Bitácora en README
 - Reescrito `README.md` con el estado real del proyecto, estructura de carpetas y tabla de módulos.
 - Añadida la sección **Bitácora de iteraciones** que se actualizará en cada turno futuro.

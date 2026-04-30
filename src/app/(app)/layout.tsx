@@ -8,13 +8,13 @@ export default async function AppLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const pathname = headers().get("x-invoke-path") ?? "";
+  const pathname = (await headers()).get("x-invoke-path") ?? "";
 
   // Si el onboarding no está completado y no estamos ya en él → redirigir
   const { data: perfil } = await supabase

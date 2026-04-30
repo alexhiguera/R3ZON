@@ -181,7 +181,7 @@ export default function FichaClientePage() {
           form={form}
           editando={editando}
           saving={saving}
-          onChange={(k, v) => setForm((f: any) => ({ ...f, [k]: v }))}
+          onChange={(k: string, v: string) => setForm((f: any) => ({ ...f, [k]: v }))}
           onEdit={() => setEditando(true)}
           onSave={guardar}
           onCancel={() => { setForm(cliente); setEditando(false); }}

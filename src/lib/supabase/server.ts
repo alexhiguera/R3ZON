@@ -1,24 +1,26 @@
-import { createServerClient } from "@supabase/ssr";
+import { createServerClient, type CookieMethodsServer } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
-export const createClient = () => {
-  const store = cookies();
+export async function createClient() {
+  const cookieStore = await cookies();
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
     {
       cookies: {
-        getAll: () => store.getAll(),
-        setAll: (list) => {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet: Parameters<NonNullable<CookieMethodsServer["setAll"]>>[0]) {
           try {
-            list.forEach(({ name, value, options }) =>
-              store.set(name, value, options)
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
             );
           } catch {
-            /* RSC: ignorable */
+            /* ignorable en Server Components */
           }
         },
       },
     }
   );
-};
+}

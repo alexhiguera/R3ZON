@@ -7,11 +7,9 @@ export async function GET(request: NextRequest) {
   const next = searchParams.get("next") ?? "/dashboard";
 
   if (code) {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      // Redirige al cliente: el componente DeviceTracker (en AppShell) detecta
-      // dispositivo y lanza notificación si es nuevo.
       return NextResponse.redirect(`${origin}${next}`);
     }
   }

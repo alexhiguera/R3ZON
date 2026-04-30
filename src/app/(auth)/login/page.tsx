@@ -3,21 +3,39 @@
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Mail, Loader2 } from "lucide-react";
+import { Mail, Loader2, AlertCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { OAuthButtons } from "@/components/auth/OAuthButtons";
-import { DevLoginButton } from "@/components/auth/DevLoginButton";
+
+function translateError(msg: string): string {
+  if (msg.includes("Invalid login credentials")) {
+    return "Email o contraseña incorrectos. Comprueba tus datos e inténtalo de nuevo.";
+  }
+  if (msg.includes("Email not confirmed")) {
+    return "Debes confirmar tu email. Revisa tu bandeja de entrada.";
+  }
+  if (msg.includes("Too many requests")) {
+    return "Demasiados intentos. Espera unos minutos antes de volver a intentarlo.";
+  }
+  if (msg.includes("User not found")) {
+    return "No existe una cuenta con ese email.";
+  }
+  return "Algo salió mal. Inténtalo de nuevo.";
+}
 
 export default function LoginPage() {
   const supabase = createClient();
   const router = useRouter();
   const params = useSearchParams();
   const redirect = params.get("redirect") || "/dashboard";
+  const oauthError = params.get("error") === "oauth";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(
+    oauthError ? "No se pudo iniciar sesión con Google. Inténtalo de nuevo." : null
+  );
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,7 +43,10 @@ export default function LoginPage() {
     setError(null);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
-    if (error) return setError(error.message);
+    if (error) {
+      setError(translateError(error.message));
+      return;
+    }
     router.push(redirect);
     router.refresh();
   };
@@ -58,8 +79,9 @@ export default function LoginPage() {
         />
 
         {error && (
-          <div className="rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-xs text-danger">
-            {error}
+          <div className="flex items-start gap-2.5 rounded-xl border border-danger/30 bg-danger/10 px-3 py-2.5 text-xs text-danger">
+            <AlertCircle size={14} className="mt-0.5 shrink-0" />
+            <span>{error}</span>
           </div>
         )}
 
@@ -68,7 +90,11 @@ export default function LoginPage() {
           disabled={loading}
           className="mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan to-fuchsia text-sm font-bold text-bg transition-all hover:opacity-95 active:scale-[0.99] disabled:opacity-50"
         >
-          {loading ? <Loader2 className="animate-spin" size={16} /> : <Mail size={16} />}
+          {loading ? (
+            <Loader2 className="animate-spin" size={16} />
+          ) : (
+            <Mail size={16} />
+          )}
           Iniciar sesión
         </button>
       </form>
@@ -79,8 +105,6 @@ export default function LoginPage() {
           Regístrate
         </Link>
       </div>
-
-      <DevLoginButton redirectTo={redirect} />
     </div>
   );
 }
