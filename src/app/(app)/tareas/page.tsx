@@ -8,6 +8,7 @@ import {
   TouchSensor,
   useSensor,
   useSensors,
+  useDroppable,
   closestCorners,
   type DragStartEvent,
   type DragOverEvent,
@@ -16,9 +17,12 @@ import {
 import {
   SortableContext,
   arrayMove,
+  useSortable,
   verticalListSortingStrategy,
+  horizontalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { Plus, Settings2, Loader2, Kanban } from "lucide-react";
+import { CSS } from "@dnd-kit/utilities";
+import { Plus, Settings2, Loader2, Kanban, GripHorizontal } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Tooltip } from "@/components/ui/Tooltip";
@@ -28,10 +32,12 @@ import { InlineTaskAdder } from "@/components/kanban/InlineTaskAdder";
 import { ColumnManager } from "@/components/kanban/ColumnManager";
 import { type Columna, type Tarea } from "@/lib/kanban";
 
-// ─── Columna droppable ─────────────────────────────────────────────────────
-import { useDroppable } from "@dnd-kit/core";
+// Prefijo para distinguir el id sortable de columna del slug usado en
+// la zona droppable de tareas. Así un mismo `slug` no choca consigo mismo.
+const COL_SORT_PREFIX = "col:";
 
-function DroppableColumn({
+// ─── Columna sortable + droppable ─────────────────────────────────────────
+function SortableColumn({
   col,
   tareas,
   inlineAdding,
@@ -48,24 +54,60 @@ function DroppableColumn({
   onInlineCreated: (t: Tarea) => void;
   onTaskClick: (t: Tarea) => void;
 }) {
-  const { setNodeRef, isOver } = useDroppable({ id: col.slug, data: { type: "column" } });
+  // Sortable horizontal — la columna entera puede moverse, pero solo el
+  // header actúa como activador (grip). Así arrastrar tareas no mueve la columna.
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    setActivatorNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: COL_SORT_PREFIX + col.slug,
+    data: { type: "column", slug: col.slug },
+  });
+
+  // Droppable interno para soltar tareas dentro de la columna.
+  const { setNodeRef: setDropRef, isOver } = useDroppable({
+    id: col.slug,
+    data: { type: "column-body", slug: col.slug },
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
 
   return (
     <div
+      ref={setNodeRef}
+      style={style}
       className={`flex w-72 shrink-0 flex-col gap-2 rounded-2xl border p-3 transition-colors lg:w-80
         ${isOver
-          ? "border-cyan/50 bg-cyan/5"
+          ? "border-cyan/50 bg-cyan/5 shadow-lg shadow-cyan/10"
           : "border-indigo-400/15 bg-indigo-900/20"
         }`}
     >
-      {/* Header de columna */}
+      {/* Header — activador del drag horizontal de la columna */}
       <div className="flex items-center justify-between px-1 pb-1">
-        <div className="flex items-center gap-2">
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          <button
+            ref={setActivatorNodeRef}
+            {...attributes}
+            {...listeners}
+            aria-label={`Reordenar columna ${col.nombre}`}
+            className="flex h-6 w-6 shrink-0 cursor-grab items-center justify-center rounded-md text-text-lo hover:bg-indigo-900/40 hover:text-text-hi active:cursor-grabbing"
+          >
+            <GripHorizontal size={12} />
+          </button>
           <span
-            className="h-2.5 w-2.5 rounded-full"
+            className="h-2.5 w-2.5 shrink-0 rounded-full"
             style={{ backgroundColor: col.color }}
           />
-          <span className="font-display text-sm font-bold text-text-hi">
+          <span className="truncate font-display text-sm font-bold text-text-hi">
             {col.nombre}
           </span>
           <span className="rounded-full border border-indigo-400/20 bg-indigo-900/40 px-1.5 py-0.5 text-[0.6rem] font-semibold text-text-lo">
@@ -75,16 +117,17 @@ function DroppableColumn({
         <Tooltip text={`Añadir tarea rápida en "${col.nombre}"`} side="left">
           <button
             onClick={onStartInlineAdd}
-            className="flex h-7 w-7 items-center justify-center rounded-lg border border-indigo-400/20 text-indigo-300 hover:border-cyan/40 hover:text-cyan"
+            aria-label="Añadir tarea"
+            className="flex h-8 w-8 items-center justify-center rounded-xl border border-indigo-400/20 text-indigo-300 transition-colors hover:border-cyan/40 hover:bg-cyan/5 hover:text-cyan"
           >
-            <Plus size={13} />
+            <Plus size={14} />
           </button>
         </Tooltip>
       </div>
 
-      {/* Zona de drop */}
+      {/* Zona de drop para tareas */}
       <div
-        ref={setNodeRef}
+        ref={setDropRef}
         className="flex min-h-[80px] flex-col gap-2"
       >
         <SortableContext
@@ -92,11 +135,7 @@ function DroppableColumn({
           strategy={verticalListSortingStrategy}
         >
           {tareas.map((t) => (
-            <TaskCard
-              key={t.id}
-              tarea={t}
-              onClick={() => onTaskClick(t)}
-            />
+            <TaskCard key={t.id} tarea={t} onClick={() => onTaskClick(t)} />
           ))}
         </SortableContext>
 
@@ -125,19 +164,20 @@ function DroppableColumn({
 export default function TareasPage() {
   const supabase = createClient();
 
-  const [columnas, setColumnas]   = useState<Columna[]>([]);
-  const [tareas, setTareas]       = useState<Tarea[]>([]);
-  const [cargando, setCargando]   = useState(true);
-  const [activeTarea, setActiveTarea] = useState<Tarea | null>(null);    // en arrastre
-  const [modalTarea, setModalTarea]   = useState<Partial<Tarea> | null | undefined>(undefined); // undefined=cerrado
+  const [columnas, setColumnas] = useState<Columna[]>([]);
+  const [tareas, setTareas] = useState<Tarea[]>([]);
+  const [cargando, setCargando] = useState(true);
+  const [activeTarea, setActiveTarea] = useState<Tarea | null>(null);
+  const [activeCol, setActiveCol] = useState<Columna | null>(null);
+  const [modalTarea, setModalTarea] = useState<Partial<Tarea> | null | undefined>(undefined);
   const [columnaModal, setColumnaModal] = useState("");
-  const [showColMgr, setShowColMgr]   = useState(false);
-  // Slug de la columna donde se está añadiendo una tarea inline (sólo título).
-  const [inlineCol, setInlineCol]     = useState<string | null>(null);
+  const [showColMgr, setShowColMgr] = useState(false);
+  const [inlineCol, setInlineCol] = useState<string | null>(null);
 
-  // Referencia para detectar columna origen durante drag
   const tareasRef = useRef<Tarea[]>([]);
   tareasRef.current = tareas;
+  const columnasRef = useRef<Columna[]>([]);
+  columnasRef.current = columnas;
 
   const cargar = useCallback(async () => {
     const [{ data: cols }, { data: tk }] = await Promise.all([
@@ -154,67 +194,133 @@ export default function TareasPage() {
 
   useEffect(() => { cargar(); }, [cargar]);
 
-  // Tareas agrupadas por columna
   const tareasPorColumna = useMemo(() => {
     const map: Record<string, Tarea[]> = {};
     columnas.forEach((c) => { map[c.slug] = []; });
     tareas.forEach((t) => {
       if (map[t.columna]) map[t.columna].push(t);
-      else {
-        // Columna eliminada: asignar a la primera
-        if (columnas.length > 0) map[columnas[0].slug].push({ ...t, columna: columnas[0].slug });
+      else if (columnas.length > 0) {
+        map[columnas[0].slug].push({ ...t, columna: columnas[0].slug });
       }
     });
     return map;
   }, [tareas, columnas]);
 
-  // ── DnD sensors ──────────────────────────────────────────────────────────
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } })
   );
 
+  // Encuentra el slug de columna que contiene una tarjeta o equivale a un id de columna.
   function findContainer(id: string): string | null {
-    // id puede ser slug (columna) o uuid (tarea)
-    if (tareasPorColumna[id]) return id;                       // es una columna
-    const t = tareasRef.current.find((t) => t.id === id);
+    if (id.startsWith(COL_SORT_PREFIX)) return id.slice(COL_SORT_PREFIX.length);
+    if (tareasPorColumna[id]) return id;
+    const t = tareasRef.current.find((x) => x.id === id);
     return t?.columna ?? null;
   }
 
   function onDragStart({ active }: DragStartEvent) {
-    const tarea = tareasRef.current.find((t) => t.id === active.id);
-    if (tarea) setActiveTarea(tarea);
+    const type = active.data.current?.type;
+    if (type === "column") {
+      const slug = (active.data.current as { slug: string }).slug;
+      const c = columnasRef.current.find((x) => x.slug === slug) ?? null;
+      setActiveCol(c);
+    } else {
+      const tarea = tareasRef.current.find((t) => t.id === active.id);
+      if (tarea) setActiveTarea(tarea);
+    }
   }
 
   function onDragOver({ active, over }: DragOverEvent) {
     if (!over || active.id === over.id) return;
+    if (active.data.current?.type === "column") return; // las columnas no se reordenan en over
 
     const srcCol = findContainer(active.id as string);
     const dstCol = findContainer(over.id as string);
     if (!srcCol || !dstCol || srcCol === dstCol) return;
 
-    // Mover tarea entre columnas en el estado local (optimista)
     setTareas((prev) =>
-      prev.map((t) =>
-        t.id === active.id ? { ...t, columna: dstCol } : t
-      )
+      prev.map((t) => (t.id === active.id ? { ...t, columna: dstCol } : t))
     );
   }
 
+  async function persistTareasBatch(
+    afectadas: { id: string; columna: string; posicion: number }[]
+  ) {
+    if (afectadas.length === 0) return;
+    const { error } = await supabase.rpc("reordenar_tareas_batch", {
+      p_updates: afectadas,
+    });
+    if (error) {
+      // Fallback: actualizaciones paralelas si la RPC no existe aún en BD.
+      console.warn("RPC batch tareas no disponible, fallback paralelo:", error.message);
+      await Promise.all(
+        afectadas.map((u) =>
+          supabase
+            .from("tareas_kanban")
+            .update({ columna: u.columna, posicion: u.posicion, updated_at: new Date().toISOString() })
+            .eq("id", u.id)
+        )
+      );
+    }
+  }
+
+  async function persistColumnasBatch(updates: { id: string; posicion: number }[]) {
+    if (updates.length === 0) return;
+    const { error } = await supabase.rpc("reordenar_columnas_batch", {
+      p_updates: updates,
+    });
+    if (error) {
+      console.warn("RPC batch columnas no disponible, fallback paralelo:", error.message);
+      await Promise.all(
+        updates.map((u) =>
+          supabase.from("kanban_columnas").update({ posicion: u.posicion }).eq("id", u.id)
+        )
+      );
+    }
+  }
+
   async function onDragEnd({ active, over }: DragEndEvent) {
+    const draggedColumn = activeCol;
     setActiveTarea(null);
+    setActiveCol(null);
     if (!over) return;
 
+    // ── Reordenar columnas ─────────────────────────────────────────────────
+    if (active.data.current?.type === "column") {
+      if (!draggedColumn || active.id === over.id) return;
+      const overSlug = findContainer(over.id as string);
+      if (!overSlug || overSlug === draggedColumn.slug) return;
+      const oldIdx = columnas.findIndex((c) => c.slug === draggedColumn.slug);
+      const newIdx = columnas.findIndex((c) => c.slug === overSlug);
+      if (oldIdx < 0 || newIdx < 0) return;
+
+      const reordered = arrayMove(columnas, oldIdx, newIdx).map((c, i) => ({
+        ...c,
+        posicion: i,
+      }));
+      setColumnas(reordered);
+      try {
+        await persistColumnasBatch(
+          reordered.map((c) => ({ id: c.id, posicion: c.posicion }))
+        );
+      } catch (err) {
+        console.error("Persistir columnas:", err);
+      }
+      return;
+    }
+
+    // ── Mover/Reordenar tareas ─────────────────────────────────────────────
     const srcCol = findContainer(active.id as string);
     const dstCol = findContainer(over.id as string);
     if (!srcCol || !dstCol) return;
 
-    // Reordenar dentro de la misma columna
+    // Reorden interno
     if (srcCol === dstCol) {
       const grupo = tareasPorColumna[srcCol];
       const oldIdx = grupo.findIndex((t) => t.id === active.id);
       const newIdx = grupo.findIndex((t) => t.id === over.id);
-      if (oldIdx === newIdx) return;
+      if (oldIdx === -1 || newIdx === -1 || oldIdx === newIdx) return;
 
       const reordenadas = arrayMove(grupo, oldIdx, newIdx).map((t, i) => ({
         ...t,
@@ -224,13 +330,9 @@ export default function TareasPage() {
         const resto = prev.filter((t) => t.columna !== srcCol);
         return [...resto, ...reordenadas];
       });
-      // Persistir posiciones en paralelo (más rápido y menos chance de quedarse
-      // colgado bloqueando el cliente HTTP del navegador).
       try {
-        await Promise.all(
-          reordenadas.map((t) =>
-            supabase.from("tareas_kanban").update({ posicion: t.posicion }).eq("id", t.id)
-          )
+        await persistTareasBatch(
+          reordenadas.map((t) => ({ id: t.id, columna: t.columna, posicion: t.posicion }))
         );
       } catch (err) {
         console.error("Persistir orden tareas:", err);
@@ -238,25 +340,48 @@ export default function TareasPage() {
       return;
     }
 
-    // Cambio de columna — persistir.
+    // Cambio de columna — recalcular posiciones origen y destino.
+    const srcGrupo = tareasPorColumna[srcCol].filter((t) => t.id !== active.id);
+    const dstGrupo = [...tareasPorColumna[dstCol]];
+    const movida = tareasRef.current.find((t) => t.id === active.id);
+    if (!movida) return;
+
+    // Si el over es una tarjeta, insertar en su índice; si es la columna, al final.
+    let insertIdx = dstGrupo.length;
+    const overId = over.id as string;
+    if (!tareasPorColumna[overId]) {
+      const idx = dstGrupo.findIndex((t) => t.id === overId);
+      if (idx >= 0) insertIdx = idx;
+    }
+    dstGrupo.splice(insertIdx, 0, { ...movida, columna: dstCol });
+
+    const srcReordenado = srcGrupo.map((t, i) => ({ ...t, posicion: i }));
+    const dstReordenado = dstGrupo.map((t, i) => ({ ...t, posicion: i, columna: dstCol }));
+
+    setTareas((prev) => {
+      const resto = prev.filter((t) => t.columna !== srcCol && t.columna !== dstCol);
+      return [...resto, ...srcReordenado, ...dstReordenado];
+    });
+
     try {
-      await supabase
-        .from("tareas_kanban")
-        .update({ columna: dstCol, updated_at: new Date().toISOString() })
-        .eq("id", active.id as string);
+      await persistTareasBatch(
+        [...srcReordenado, ...dstReordenado].map((t) => ({
+          id: t.id,
+          columna: t.columna,
+          posicion: t.posicion,
+        }))
+      );
     } catch (err) {
-      console.error("Mover tarea de columna:", err);
+      console.error("Persistir cambio de columna:", err);
     }
   }
 
   // ── Modal helpers ─────────────────────────────────────────────────────────
-  // Modal completo (botón "Nueva tarea" del toolbar): pide todos los campos.
   const abrirNuevaTarea = (slug: string) => {
     setColumnaModal(slug);
-    setModalTarea(null);  // null = nueva
+    setModalTarea(null);
   };
 
-  // Adder in-line dentro de una columna: sólo título, creación rápida.
   const empezarInline = (slug: string) => {
     setInlineCol(slug);
   };
@@ -285,18 +410,18 @@ export default function TareasPage() {
       <PageHeader
         eyebrow="Gestión"
         title="Tablero de tareas"
-        description="Arrastra las tarjetas para cambiar su estado. Haz clic en una para editarla."
+        description="Arrastra las tarjetas para cambiar su estado. Las columnas también se pueden reordenar desde el icono de su cabecera."
       />
 
       {/* Barra de herramientas */}
       <div className="flex items-center gap-3">
         <Tooltip
-          text="Añade, renombra o elimina columnas para adaptarlas a tu flujo de trabajo."
+          text="Añade, renombra, reordena o elimina columnas para adaptarlas a tu flujo."
           side="bottom"
         >
           <button
             onClick={() => setShowColMgr(true)}
-            className="flex items-center gap-2 rounded-xl border border-indigo-400/20 bg-indigo-900/30 px-3 py-2.5 text-sm font-medium text-text-mid hover:border-indigo-400/40 hover:text-text-hi"
+            className="flex items-center gap-2 rounded-xl border border-indigo-400/20 bg-indigo-900/30 px-3 py-2.5 text-sm font-medium text-text-mid transition-colors hover:border-indigo-400/40 hover:text-text-hi"
           >
             <Settings2 size={15} /> Columnas
           </button>
@@ -305,7 +430,7 @@ export default function TareasPage() {
           <Tooltip text="Crea una nueva tarea en la primera columna." side="bottom">
             <button
               onClick={() => abrirNuevaTarea(columnas[0].slug)}
-              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan to-fuchsia px-4 py-2.5 text-sm font-bold text-bg"
+              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan to-fuchsia px-4 py-2.5 text-sm font-bold text-bg shadow-glow transition-shadow hover:shadow-glass"
             >
               <Plus size={15} /> Nueva tarea
             </button>
@@ -338,29 +463,43 @@ export default function TareasPage() {
           onDragOver={onDragOver}
           onDragEnd={onDragEnd}
         >
-          <div className="flex gap-4 overflow-x-auto pb-4">
-            {columnas.map((col) => (
-              <DroppableColumn
-                key={col.slug}
-                col={col}
-                tareas={tareasPorColumna[col.slug] ?? []}
-                inlineAdding={inlineCol === col.slug}
-                onStartInlineAdd={() => empezarInline(col.slug)}
-                onCancelInlineAdd={() => setInlineCol(null)}
-                onInlineCreated={(t) => onSaveTarea(t)}
-                onTaskClick={abrirEditarTarea}
-              />
-            ))}
-          </div>
+          <SortableContext
+            items={columnas.map((c) => COL_SORT_PREFIX + c.slug)}
+            strategy={horizontalListSortingStrategy}
+          >
+            <div className="flex gap-4 overflow-x-auto pb-4">
+              {columnas.map((col) => (
+                <SortableColumn
+                  key={col.id}
+                  col={col}
+                  tareas={tareasPorColumna[col.slug] ?? []}
+                  inlineAdding={inlineCol === col.slug}
+                  onStartInlineAdd={() => empezarInline(col.slug)}
+                  onCancelInlineAdd={() => setInlineCol(null)}
+                  onInlineCreated={(t) => onSaveTarea(t)}
+                  onTaskClick={abrirEditarTarea}
+                />
+              ))}
+            </div>
+          </SortableContext>
 
-          {/* Overlay visible mientras se arrastra */}
-          <DragOverlay dropAnimation={{ duration: 200, easing: "ease" }}>
+          <DragOverlay dropAnimation={{ duration: 220, easing: "cubic-bezier(0.18,0.67,0.6,1.22)" }}>
             {activeTarea ? (
-              <TaskCard
-                tarea={activeTarea}
-                onClick={() => {}}
-                isDragOverlay
-              />
+              <TaskCard tarea={activeTarea} onClick={() => {}} isDragOverlay />
+            ) : activeCol ? (
+              <div className="flex w-72 flex-col gap-2 rounded-2xl border border-cyan/40 bg-indigo-900/40 p-3 shadow-2xl shadow-cyan/20 lg:w-80">
+                <div className="flex items-center gap-2 px-1">
+                  <GripHorizontal size={12} className="text-cyan" />
+                  <span
+                    className="h-2.5 w-2.5 rounded-full"
+                    style={{ backgroundColor: activeCol.color }}
+                  />
+                  <span className="font-display text-sm font-bold text-text-hi">
+                    {activeCol.nombre}
+                  </span>
+                </div>
+                <div className="h-16 rounded-xl border border-dashed border-indigo-400/20" />
+              </div>
             ) : null}
           </DragOverlay>
         </DndContext>

@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/refresh-google-channels",
+      "schedule": "0 3 * * *"
+    }
+  ]
+}

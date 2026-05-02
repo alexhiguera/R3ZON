@@ -34,12 +34,14 @@ export function TaskCard({ tarea, onClick, isDragOverlay = false }: Props) {
 
   const meta = PRIORIDAD_META[tarea.prioridad];
 
+  // Drop indicator: cuando la tarjeta se está arrastrando, dejamos un hueco
+  // resaltado con borde cyan + glow suave que indica visualmente dónde caerá.
   if (isDragging && !isDragOverlay) {
     return (
       <div
         ref={setNodeRef}
         style={style}
-        className="h-24 w-full rounded-2xl border-2 border-dashed border-indigo-400/25 bg-indigo-900/20"
+        className="h-24 w-full animate-pulse rounded-2xl border-2 border-dashed border-cyan/50 bg-cyan/5 shadow-inner shadow-cyan/10"
       />
     );
   }

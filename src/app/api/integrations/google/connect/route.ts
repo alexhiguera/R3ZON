@@ -13,21 +13,32 @@ const SCOPES = [
   "https://www.googleapis.com/auth/drive.file",
 ].join(" ");
 
+// Sólo aceptamos rutas internas para `next` — evita open-redirect.
+function safeNext(raw: string | null): string {
+  if (!raw) return "/agenda";
+  if (!raw.startsWith("/") || raw.startsWith("//")) return "/agenda";
+  return raw;
+}
+
 export async function GET(request: NextRequest) {
-  const { origin } = new URL(request.url);
+  const { origin, searchParams } = new URL(request.url);
+  const next = safeNext(searchParams.get("next"));
 
   // Sólo usuarios autenticados pueden iniciar el OAuth.
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
-    return NextResponse.redirect(`${origin}/login?next=/ajustes`);
+    return NextResponse.redirect(`${origin}/login?next=${encodeURIComponent(next)}`);
   }
 
-  const clientId = process.env.GOOGLE_CLIENT_ID;
-  if (!clientId) {
-    return NextResponse.redirect(
-      `${origin}/ajustes?error=${encodeURIComponent("GOOGLE_CLIENT_ID no configurado")}`
-    );
+  const clientId     = process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  if (!clientId || !clientSecret) {
+    // Visible para el usuario en la UI: redirige a la página de origen
+    // con `?google_error=...` y los componentes muestran un toast.
+    const dest = new URL(next, origin);
+    dest.searchParams.set("google_error", "missing_google_credentials");
+    return NextResponse.redirect(dest.toString());
   }
 
   // CSRF: state aleatorio en cookie httpOnly, validado en el callback.
@@ -45,12 +56,14 @@ export async function GET(request: NextRequest) {
   });
 
   const res = NextResponse.redirect(`${GOOGLE_AUTH_URL}?${params.toString()}`);
-  res.cookies.set("g_oauth_state", state, {
+  const cookieOpts = {
     httpOnly: true,
     secure:   process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    sameSite: "lax" as const,
     path:     "/api/integrations/google",
     maxAge:   600, // 10 min
-  });
+  };
+  res.cookies.set("g_oauth_state", state,    cookieOpts);
+  res.cookies.set("g_oauth_next",  next,     cookieOpts);
   return res;
 }

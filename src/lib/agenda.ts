@@ -13,6 +13,7 @@
  *   4. Persistimos el nuevo `nextSyncToken` para la siguiente llamada.
  */
 
+import { randomBytes, randomUUID } from "node:crypto";
 import { createClient } from "@/lib/supabase/server";
 import {
   googleFetch,
@@ -20,6 +21,11 @@ import {
   persistSyncToken,
   type GoogleCalendarEvent,
 } from "@/lib/google";
+
+// Margen mínimo de vida útil del watch channel: si quedan <24h, lo renovamos.
+const WATCH_RENEW_THRESHOLD_MS = 24 * 60 * 60 * 1000;
+// Duración solicitada al registrar un watch (Google admite hasta ~7 días).
+const WATCH_REQUEST_TTL_MS = 6 * 24 * 60 * 60 * 1000;
 
 export type SyncResult = {
   inserted: number;
@@ -58,11 +64,11 @@ async function fetchEventsPage(params: URLSearchParams): Promise<GoogleEventsLis
   const res  = await googleFetch(path);
 
   if (res.status === 410) {
-    // Sync token caducado → full sync.
+    // Sync token caducado → full sync sin límite temporal.
     params.delete("syncToken");
-    if (!params.has("timeMin")) {
-      params.set("timeMin", new Date().toISOString());
-    }
+    params.delete("timeMin");
+    params.delete("timeMax");
+    params.set("orderBy", "updated");
     const retry = await googleFetch(
       `/calendars/${encodeURIComponent(CALENDAR_ID)}/events?${params.toString()}`,
     );
@@ -104,12 +110,11 @@ export async function syncGoogleCalendar(): Promise<SyncResult> {
   if (tokens.sync_token) {
     params.set("syncToken", tokens.sync_token);
   } else {
-    // Full sync: ventana razonable (90 días hacia delante, 30 hacia atrás).
-    const from = new Date(); from.setDate(from.getDate() - 30);
-    const to   = new Date(); to.setDate(to.getDate() + 90);
-    params.set("timeMin", from.toISOString());
-    params.set("timeMax", to.toISOString());
-    params.set("orderBy", "startTime");
+    // Full sync: SIN límite temporal — sincronizamos todas las citas del
+    // calendario. La paginación de Google se encarga del tamaño. El watch
+    // channel sigue renovándose cada <7d (eso es independiente del rango
+    // de eventos sincronizados).
+    params.set("orderBy", "updated");
   }
 
   let inserted = 0;
@@ -177,7 +182,126 @@ export async function syncGoogleCalendar(): Promise<SyncResult> {
     await persistSyncToken(nextSyncToken);
   }
 
+  // Best-effort: tras un sync exitoso, garantizamos que el canal de push esté
+  // activo y vigente. Un fallo del watch NO debe romper el sync local — sólo
+  // significa que las próximas notificaciones llegarán cuando se renueve.
+  try {
+    await ensureWatchChannel();
+  } catch (err) {
+    console.error("ensureWatchChannel failed:", err instanceof Error ? err.message : err);
+  }
+
   return { inserted, updated, cancelled, syncToken: nextSyncToken };
+}
+
+// ---------------------------------------------------------------------------
+// Watch channel — push notifications de Google Calendar.
+// ---------------------------------------------------------------------------
+
+/**
+ * Registra (o re-registra) un canal `events.watch` en Google Calendar para
+ * que envíe POSTs a nuestro webhook ante cualquier cambio. El `channel_token`
+ * se valida en el handler para evitar spoofing.
+ */
+async function registerCalendarWatch(): Promise<void> {
+  const webhookUrl = process.env.GOOGLE_WEBHOOK_URL;
+  if (!webhookUrl) {
+    throw new Error("GOOGLE_WEBHOOK_URL no configurada — define la URL HTTPS pública del webhook.");
+  }
+  if (!webhookUrl.startsWith("https://")) {
+    throw new Error("GOOGLE_WEBHOOK_URL debe ser HTTPS (Google rechaza http/localhost).");
+  }
+
+  const channelId    = randomUUID();
+  const channelToken = randomBytes(32).toString("base64url");
+  const expirationMs = Date.now() + WATCH_REQUEST_TTL_MS;
+
+  const res = await googleFetch(`/calendars/primary/events/watch`, {
+    method: "POST",
+    body: JSON.stringify({
+      id:         channelId,
+      type:       "web_hook",
+      address:    webhookUrl,
+      token:      channelToken,
+      expiration: String(expirationMs),
+    }),
+  });
+
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`Google watch register ${res.status}: ${body}`);
+  }
+
+  const data = await res.json() as {
+    id: string;
+    resourceId: string;
+    expiration?: string;
+  };
+
+  // Google a veces devuelve un expiration menor al solicitado.
+  const expiration = data.expiration
+    ? new Date(parseInt(data.expiration, 10))
+    : new Date(expirationMs);
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("set_google_watch_channel", {
+    p_channel_id:          data.id,
+    p_channel_token:       channelToken,
+    p_channel_resource_id: data.resourceId,
+    p_channel_expiration:  expiration.toISOString(),
+  });
+  if (error) throw new Error(`set_google_watch_channel: ${error.message}`);
+}
+
+/**
+ * Garantiza que el canal de push esté vivo. Si falta o expira en <24h,
+ * lo renueva. Idempotente — seguro de llamar tras cada sync.
+ */
+async function ensureWatchChannel(): Promise<void> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("google_connections")
+    .select("channel_id, channel_expiration")
+    .maybeSingle();
+  if (error) return;
+
+  const now = Date.now();
+  const exp = data?.channel_expiration ? new Date(data.channel_expiration).getTime() : 0;
+  if (data?.channel_id && exp - now > WATCH_RENEW_THRESHOLD_MS) return;
+
+  await registerCalendarWatch();
+}
+
+/**
+ * Detiene el watch channel actual (si lo hay) y limpia la BD.
+ * Llamado al desconectar Google para que Google deje de pegarle al webhook.
+ */
+export async function stopCalendarWatch(): Promise<void> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("google_connections")
+    .select("channel_id, channel_resource_id")
+    .maybeSingle();
+
+  if (data?.channel_id && data?.channel_resource_id) {
+    try {
+      const res = await googleFetch(`/channels/stop`, {
+        method: "POST",
+        body: JSON.stringify({
+          id:         data.channel_id,
+          resourceId: data.channel_resource_id,
+        }),
+      });
+      // 404 = canal ya expirado, 200/204 = ok. Cualquier otro error → log y seguir.
+      if (!res.ok && res.status !== 404) {
+        console.error("channels.stop failed:", res.status);
+      }
+    } catch (err) {
+      console.error("channels.stop network error:", err instanceof Error ? err.message : err);
+    }
+  }
+
+  await supabase.rpc("clear_google_watch_channel");
 }
 
 // ---------------------------------------------------------------------------

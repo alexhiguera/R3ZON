@@ -28,6 +28,8 @@ import {
   getEvent,
   type AgendaEventoRow,
 } from "@/lib/agenda";
+import { getGoogleConnectionStatus } from "@/app/actions/google";
+import { formatGoogleError } from "@/lib/google-errors";
 import { EventModal, type EventModalInitial } from "./EventModal";
 
 import "./calendar.css";
@@ -100,30 +102,68 @@ export default function CalendarView() {
 
   // -----------------------------------------------------------------------
   // Sync con Google (manual, vía botón).
+  // Si el usuario nunca ha conectado, redirigimos al OAuth de Calendar y al
+  // volver auto-disparamos el sync (ver efecto que detecta ?google=connected).
   // -----------------------------------------------------------------------
-  const handleSync = useCallback(() => {
+  const runSync = useCallback(async () => {
     setIsSyncing(true);
     setToast({ kind: "info", text: "Sincronizando con Google Calendar…" });
-    startTx(async () => {
-      try {
-        const result = await syncGoogleCalendar();
-        setToast({
-          kind: "ok",
-          text: `Listo · ${result.inserted} nuevos · ${result.updated} actualizados`,
-        });
-        // refrescamos la vista actual
-        const api = calendarRef.current?.getApi();
-        if (api) {
-          await reloadRange(api.view.activeStart, api.view.activeEnd);
-        }
-      } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : "Error al sincronizar";
-        setToast({ kind: "error", text: msg });
-      } finally {
-        setIsSyncing(false);
+    try {
+      const result = await syncGoogleCalendar();
+      setToast({
+        kind: "ok",
+        text: `Listo · ${result.inserted} nuevos · ${result.updated} actualizados`,
+      });
+      const api = calendarRef.current?.getApi();
+      if (api) {
+        await reloadRange(api.view.activeStart, api.view.activeEnd);
       }
-    });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Error al sincronizar";
+      setToast({ kind: "error", text: msg });
+    } finally {
+      setIsSyncing(false);
+    }
   }, [reloadRange]);
+
+  const handleSync = useCallback(() => {
+    startTx(async () => {
+      const status = await getGoogleConnectionStatus();
+      if (!status.serverConfigured) {
+        setToast({
+          kind: "error",
+          text:
+            `Servidor sin configurar: faltan ${status.missingEnv.join(", ")}. ` +
+            `Define las variables en .env.local y reinicia.`,
+        });
+        return;
+      }
+      if (!status.connected) {
+        // Primera vez: redirige al OAuth scoped a Calendar. Al volver,
+        // ?google=connected dispara el sync automáticamente.
+        window.location.href = "/api/integrations/google/connect?next=/agenda";
+        return;
+      }
+      await runSync();
+    });
+  }, [runSync]);
+
+  // Detectar retorno desde callback de OAuth (?google=connected) y auto-sync.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("google") === "connected") {
+      url.searchParams.delete("google");
+      window.history.replaceState({}, "", url.toString());
+      void runSync();
+    }
+    const errorCode = url.searchParams.get("google_error");
+    if (errorCode) {
+      url.searchParams.delete("google_error");
+      window.history.replaceState({}, "", url.toString());
+      setToast({ kind: "error", text: formatGoogleError(errorCode) });
+    }
+  }, [runSync]);
 
   // Auto-ocultar toasts a los 4s.
   useEffect(() => {

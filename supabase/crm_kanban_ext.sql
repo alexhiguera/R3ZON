@@ -78,3 +78,35 @@ begin
    where id = p_tarea_id
      and negocio_id = public.current_negocio_id();
 end $$;
+
+-- 6. RPC: Batch — reordenar varias tareas en una sola llamada.
+-- Cada item: { id: uuid, columna: text, posicion: int }
+create or replace function public.reordenar_tareas_batch(p_updates jsonb)
+returns void language plpgsql security definer set search_path = public as $$
+declare
+  rec jsonb;
+begin
+  for rec in select * from jsonb_array_elements(p_updates) loop
+    update public.tareas_kanban
+       set columna    = rec->>'columna',
+           posicion   = (rec->>'posicion')::int,
+           updated_at = now()
+     where id = (rec->>'id')::uuid
+       and negocio_id = public.current_negocio_id();
+  end loop;
+end $$;
+
+-- 7. RPC: Batch — reordenar columnas tras drag & drop horizontal.
+-- Cada item: { id: uuid, posicion: int }
+create or replace function public.reordenar_columnas_batch(p_updates jsonb)
+returns void language plpgsql security definer set search_path = public as $$
+declare
+  rec jsonb;
+begin
+  for rec in select * from jsonb_array_elements(p_updates) loop
+    update public.kanban_columnas
+       set posicion = (rec->>'posicion')::int
+     where id = (rec->>'id')::uuid
+       and negocio_id = public.current_negocio_id();
+  end loop;
+end $$;

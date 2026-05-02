@@ -3,14 +3,15 @@
 import { useEffect, useState } from "react";
 import { CheckCircle2, AlertCircle, Loader2, Plug, Unplug } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { getGoogleConnectionStatus, type GoogleStatus } from "@/app/actions/google";
+import { stopCalendarWatch } from "@/lib/agenda";
+import { formatGoogleError } from "@/lib/google-errors";
 import { HelpButton, HelpDrawer } from "./HelpDrawer";
 import { GOOGLE_OAUTH_GUIDE } from "./integracionesGuides";
 
-type Conn = { google_account_email: string | null; expires_at: string } | null;
-
 export function GoogleCard() {
   const supabase = createClient();
-  const [conn, setConn] = useState<Conn>(null);
+  const [status, setStatus]       = useState<GoogleStatus | null>(null);
   const [loading, setLoading]     = useState(true);
   const [busy, setBusy]           = useState(false);
   const [helpOpen, setHelpOpen]   = useState(false);
@@ -18,36 +19,65 @@ export function GoogleCard() {
 
   useEffect(() => {
     let alive = true;
-    (async () => {
-      const { data, error: e } = await supabase
-        .from("google_connections")
-        .select("google_account_email, expires_at")
-        .maybeSingle();
-      if (!alive) return;
-      if (e && e.code !== "PGRST116") setError(e.message);
-      setConn((data as Conn) ?? null);
-      setLoading(false);
-    })();
+    getGoogleConnectionStatus()
+      .then((s) => { if (alive) setStatus(s); })
+      .catch((e: unknown) => {
+        if (alive) setError(e instanceof Error ? e.message : "Error al cargar estado");
+      })
+      .finally(() => { if (alive) setLoading(false); });
     return () => { alive = false; };
-  }, [supabase]);
+  }, []);
+
+  // Detectar retorno desde callback con error (?google_error=…) o éxito (?google=connected).
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    const code = url.searchParams.get("google_error");
+    if (code) {
+      url.searchParams.delete("google_error");
+      window.history.replaceState({}, "", url.toString());
+      setError(formatGoogleError(code));
+    }
+    if (url.searchParams.get("google") === "connected") {
+      url.searchParams.delete("google");
+      window.history.replaceState({}, "", url.toString());
+      // Recargamos el estado para reflejar la nueva conexión.
+      getGoogleConnectionStatus().then((s) => setStatus(s));
+    }
+  }, []);
 
   const conectar = () => {
+    if (status && !status.serverConfigured) {
+      setError(
+        `Faltan variables de entorno en el servidor: ${status.missingEnv.join(", ")}. ` +
+        `Configúralas en .env.local y reinicia el servidor.`
+      );
+      return;
+    }
     setBusy(true);
     // El endpoint construye la URL OAuth y redirige a accounts.google.com.
-    window.location.href = "/api/integrations/google/connect";
+    window.location.href = "/api/integrations/google/connect?next=/ajustes";
   };
 
   const desconectar = async () => {
     if (!confirm("¿Desconectar Google? Tendrás que volver a autorizar para sincronizar la agenda.")) return;
     setBusy(true);
     setError(null);
+    // 1) Detener el watch channel en Google (si lo había) — best-effort.
+    try { await stopCalendarWatch(); } catch { /* ignorable */ }
+    // 2) Borrar tokens. RLS limita a la fila del propio usuario.
     const { error: e } = await supabase.from("google_connections").delete().not("id", "is", null);
     setBusy(false);
     if (e) { setError(e.message); return; }
-    setConn(null);
+    setStatus({
+      connected: false, email: null, expiresAt: null, scope: null,
+      watchActive: false, watchExpiresAt: null,
+      serverConfigured: status?.serverConfigured ?? true,
+      missingEnv: status?.missingEnv ?? [],
+    });
   };
 
-  const conectado = !!conn;
+  const conectado = !!status?.connected;
 
   return (
     <article className="card-glass p-5 sm:p-6">
@@ -86,9 +116,16 @@ export function GoogleCard() {
             <Loader2 size={13} className="animate-spin" /> Cargando…
           </div>
         ) : conectado ? (
-          <div className="flex items-center gap-2 text-sm text-text-hi">
-            <CheckCircle2 size={14} className="text-emerald-300" />
-            {conn?.google_account_email ?? "(cuenta sin email registrado)"}
+          <div className="flex flex-col gap-1 text-sm text-text-hi">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 size={14} className="text-emerald-300" />
+              {status?.email ?? "(cuenta sin email registrado)"}
+            </div>
+            {status?.watchActive && (
+              <div className="text-[11px] text-text-lo">
+                Sincronización en tiempo real activa.
+              </div>
+            )}
           </div>
         ) : (
           <div className="text-sm italic text-text-lo">No hay cuenta conectada todavía.</div>
