@@ -13,12 +13,14 @@ import {
 import { ocrImagen } from "@/lib/ocr/engine";
 import { parseSpanishReceipt, type ReceiptData } from "@/lib/ocr/parser";
 import { createClient } from "@/lib/supabase/client";
+import { useNegocioId } from "@/lib/useNegocioId";
 import { PageHeader } from "@/components/ui/PageHeader";
 
 type Estado = "idle" | "ocr" | "revisar" | "guardando" | "ok";
 
 export default function OCRPage() {
   const router = useRouter();
+  const negocioId = useNegocioId();
   const fileRef = useRef<HTMLInputElement>(null);
   const camRef = useRef<HTMLInputElement>(null);
 
@@ -47,9 +49,15 @@ export default function OCRPage() {
 
   const guardar = async () => {
     if (!datos) return;
+    if (!negocioId) {
+      setError("Cargando perfil del negocio… inténtalo en un segundo.");
+      return;
+    }
     setEstado("guardando");
     const supabase = createClient();
     const { error } = await supabase.from("finanzas").insert({
+      // negocio_id explícito por si el trigger `tg_fill_negocio_id` no está aplicado.
+      negocio_id: negocioId,
       tipo: "gasto",
       concepto: concepto || "Gasto escaneado",
       fecha: datos.fecha ?? new Date().toISOString().slice(0, 10),

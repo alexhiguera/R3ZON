@@ -341,6 +341,24 @@ npx cap sync
 - Reescrito `README.md` con el estado real del proyecto, estructura de carpetas y tabla de módulos.
 - Añadida la sección **Bitácora de iteraciones** que se actualizará en cada turno futuro.
 
+### Iteración 13 — *2026-05-02* — Fix RLS en kanban, finanzas y OCR + build verde
+- **Helper nuevo** [`src/lib/useNegocioId.ts`](src/lib/useNegocioId.ts) — hook que carga el `id` del `perfiles_negocio` del usuario autenticado y lo cachea. Devuelve `null` mientras carga; los formularios deshabilitan el botón Guardar hasta que esté disponible.
+- **Fix RLS en kanban** ([`src/components/kanban/TaskModal.tsx`](src/components/kanban/TaskModal.tsx)) — el INSERT de tarea nueva ahora envía `negocio_id` explícitamente vía `useNegocioId()`. Mismo patrón que ya funcionó para clientes en la iteración 12.
+- **Fix RLS en finanzas** ([`src/app/(app)/finanzas/nuevo/page.tsx`](src/app/%28app%29/finanzas/nuevo/page.tsx)) — idem.
+- **Fix RLS en OCR** ([`src/app/(app)/ocr/page.tsx`](src/app/%28app%29/ocr/page.tsx)) — el guardado del ticket escaneado también sufría el mismo bug; aplicado mismo fix.
+- **Refactor** ([`src/app/(app)/clientes/nuevo/page.tsx`](src/app/%28app%29/clientes/nuevo/page.tsx)) — migrado al helper `useNegocioId()` (DRY).
+- **Verificación**: `npm run build` pasa con las **28 rutas generadas**, incluida la nueva `/_not-found`. Para que el build production pasara, además se arreglaron 3 problemas preexistentes ajenos al ticket pero bloqueantes:
+  - [`tsconfig.json`](tsconfig.json) — `supabase/functions` excluido del typecheck (son funciones Deno con `import "jsr:..."` que TS de Next.js no resuelve).
+  - [`src/components/agenda/CalendarView.tsx`](src/components/agenda/CalendarView.tsx) — el campo `week` salió de `LocaleInput` en versiones recientes de FullCalendar; cast a `LocaleInput` y tipo explícito en el callback `moreLinkText`.
+  - [`src/app/(auth)/login/page.tsx`](src/app/%28auth%29/login/page.tsx) — `useSearchParams()` envuelto en `<Suspense>` (requerido por Next.js 16 para prerender estático).
+- **Por qué este fix funciona aunque no se haya aplicado `fix_tenant_defaults.sql`**: la WITH CHECK de la RLS exige `negocio_id = current_negocio_id()`. Si el INSERT incluye el `negocio_id` correcto desde la app, la condición se cumple y el insert pasa sin necesidad del trigger. El trigger sigue siendo recomendable como red de seguridad pero ya no es bloqueante.
+
+### Iteración 12 — *2026-05-02* — Página 404, formulario cliente simplificado, contactos
+- **Nueva página 404** [`src/app/not-found.tsx`](src/app/not-found.tsx) — pantalla glass con número 404 en gradient cyan→fuchsia, título y dos CTAs: «Ir al panel» (gradient) y «Ver clientes» (secundario). Next.js 16 la sirve automáticamente para cualquier ruta no resuelta.
+- **Fix RLS al crear cliente** ([`src/app/(app)/clientes/nuevo/page.tsx`](src/app/%28app%29/clientes/nuevo/page.tsx)) — el formulario ahora carga `negocio_id` por adelantado consultando `perfiles_negocio` y lo envía explícitamente en el INSERT. Esto blinda contra el caso de que `fix_tenant_defaults.sql` aún no se haya aplicado en la BD del entorno (sin trigger, la RLS rechaza el insert con `new row violates row-level security policy`). El botón Guardar queda deshabilitado hasta que `negocio_id` esté disponible.
+- **Formulario simplificado** — sólo `nombre` es obligatorio. Visibles arriba: nombre, email, teléfono y selector de estado (3 botones). Todo lo demás (CIF, sitio web, sector, dirección fiscal, datos B2B, etiquetas, notas) movido a un acordeón **«Datos adicionales»** colapsado por defecto. UX: el usuario puede crear un cliente en 5 segundos y completar después desde la ficha.
+- **Apartado contactos confirmado**: la pestaña «Contactos» de la ficha (`/clientes/[id]`) ya monta `ContactosTab` con su modal de alta/edición (jerarquía `reports_to`, decisor, puesto, departamento, email, teléfono con WhatsApp), gracias al wrapper `ContactosTabWrapper` añadido en la iteración 11. Estado vacío con CTA «Añadir primer contacto» y organigrama implícito por la relación `reports_to`.
+
 ### Iteración 11 — *2026-05-02* — Fix: clientes, agenda, finanzas y kanban
 Cuatro bugs reportados a la vez. Causa raíz unificada:
 

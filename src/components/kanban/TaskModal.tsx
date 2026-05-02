@@ -5,6 +5,7 @@ import {
   X, Loader2, Trash2, Calendar, Flag, User, CheckCircle,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { useNegocioId } from "@/lib/useNegocioId";
 import { Help, Tooltip } from "@/components/ui/Tooltip";
 import { PRIORIDAD_META, type Columna, type Tarea } from "@/lib/kanban";
 
@@ -19,6 +20,7 @@ type Props = {
 
 export function TaskModal({ tarea, columnaActual, columnas, onClose, onSave, onDelete }: Props) {
   const supabase = createClient();
+  const negocioId = useNegocioId();
   const overlayRef = useRef<HTMLDivElement>(null);
   const esNueva = !tarea?.id;
 
@@ -40,6 +42,9 @@ export function TaskModal({ tarea, columnaActual, columnas, onClose, onSave, onD
 
   const guardar = async () => {
     if (!titulo.trim()) return setError("El título no puede estar vacío.");
+    if (esNueva && !negocioId) {
+      return setError("Cargando perfil del negocio… inténtalo en un segundo.");
+    }
     setLoading(true);
     setError(null);
 
@@ -55,7 +60,9 @@ export function TaskModal({ tarea, columnaActual, columnas, onClose, onSave, onD
     if (esNueva) {
       const { data, error } = await supabase
         .from("tareas_kanban")
-        .insert({ ...payload, posicion: 9999 })
+        // negocio_id explícito por si el trigger `tg_fill_negocio_id` no está
+        // aplicado en la BD — la RLS rechazaría el insert sin él.
+        .insert({ ...payload, posicion: 9999, negocio_id: negocioId })
         .select()
         .single();
       setLoading(false);
@@ -228,7 +235,7 @@ export function TaskModal({ tarea, columnaActual, columnas, onClose, onSave, onD
           {/* Botón guardar */}
           <button
             onClick={guardar}
-            disabled={loading}
+            disabled={loading || (esNueva && !negocioId)}
             className="flex h-12 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan to-fuchsia text-sm font-bold text-bg disabled:opacity-50"
           >
             {loading ? <Loader2 className="animate-spin" size={16} /> : <CheckCircle size={16} />}

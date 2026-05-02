@@ -34,7 +34,10 @@ import "./calendar.css";
 
 // Locale español inline — evitamos el subpath import (`@fullcalendar/core/locales/es`)
 // que falla en algunos bundlers según la versión del package.
-const esLocale: LocaleInput = {
+// `week` ya no es parte de LocaleInput en versiones recientes de FullCalendar
+// (se configura vía `firstDay` en el componente). Casteamos para evitar el
+// error de tipo y mantener compatibilidad si vuelve a aceptarse en el futuro.
+const esLocale = {
   code: "es",
   week: { dow: 1, doy: 4 },
   buttonText: {
@@ -48,7 +51,7 @@ const esLocale: LocaleInput = {
   },
   weekText: "Sm",
   allDayText: "Todo el día",
-  moreLinkText: (n) => `+ ${n} más`,
+  moreLinkText: (n: number) => `+ ${n} más`,
   noEventsText: "No hay eventos",
 };
 
@@ -244,7 +247,7 @@ export default function CalendarView() {
           ref={calendarRef}
           plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
           initialView="timeGridWeek"
-          locale={esLocale}
+          locale={esLocale as LocaleInput}
           firstDay={1}
           height="auto"
           headerToolbar={{

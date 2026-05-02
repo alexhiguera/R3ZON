@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Mail, Loader2, AlertCircle } from "lucide-react";
@@ -24,6 +24,15 @@ function translateError(msg: string): string {
 }
 
 export default function LoginPage() {
+  // useSearchParams() requiere Suspense en build estático (Next.js 16).
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+function LoginForm() {
   const supabase = createClient();
   const router = useRouter();
   const params = useSearchParams();

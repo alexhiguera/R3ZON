@@ -5,10 +5,12 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Loader2, TrendingUp, TrendingDown, CheckCircle } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { useNegocioId } from "@/lib/useNegocioId";
 import { PageHeader } from "@/components/ui/PageHeader";
 
 export default function NuevoMovimiento() {
   const router = useRouter();
+  const negocioId = useNegocioId();
   const [tipo, setTipo] = useState<"ingreso" | "gasto">("ingreso");
   const [concepto, setConcepto] = useState("");
   const [fecha, setFecha] = useState(() => new Date().toISOString().slice(0, 10));
@@ -20,10 +22,17 @@ export default function NuevoMovimiento() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!negocioId) {
+      setError("Cargando perfil del negocio… inténtalo en un segundo.");
+      return;
+    }
     setLoading(true);
     setError(null);
     const supabase = createClient();
     const { error } = await supabase.from("finanzas").insert({
+      // negocio_id explícito por si el trigger `tg_fill_negocio_id` no está
+      // aplicado en la BD — la RLS rechazaría el insert sin él.
+      negocio_id: negocioId,
       tipo,
       concepto,
       fecha,
@@ -106,7 +115,7 @@ export default function NuevoMovimiento() {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !negocioId}
             className="flex h-12 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan to-fuchsia text-sm font-bold text-bg disabled:opacity-50"
           >
             {loading ? <Loader2 className="animate-spin" size={16} /> : <CheckCircle size={16} />}
