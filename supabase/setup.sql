@@ -28,6 +28,8 @@ drop table if exists public.citas               cascade;
 drop table if exists public.config_keys         cascade;
 drop table if exists public.dispositivos_conocidos cascade;
 drop table if exists public.terminos_versiones  cascade;
+drop table if exists public.miembros_negocio    cascade;
+drop table if exists public.pagos_stripe        cascade;
 -- perfiles_negocio se conserva si ya hay usuarios para no perder la sesión;
 -- coméntalo si quieres wipe absoluto:
 -- drop table if exists public.perfiles_negocio cascade;
@@ -39,6 +41,8 @@ commit;
 \i auth_extension.sql
 \i crm_kanban_ext.sql
 \i agenda_ext.sql
+\i team_ext.sql
+\i billing_ext.sql
 
 -- 3. SEED --------------------------------------------------------------------
 \i seed_clientes.sql
@@ -50,5 +54,7 @@ commit;
 --   2) auth_extension.sql
 --   3) crm_kanban_ext.sql
 --   4) agenda_ext.sql
---   5) seed_clientes.sql
+--   5) team_ext.sql
+--   6) billing_ext.sql
+--   7) seed_clientes.sql
 -- =============================================================================

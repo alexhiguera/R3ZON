@@ -341,6 +341,89 @@ npx cap sync
 - Reescrito `README.md` con el estado real del proyecto, estructura de carpetas y tabla de módulos.
 - Añadida la sección **Bitácora de iteraciones** que se actualizará en cada turno futuro.
 
+### Iteración 10 — *2026-05-01* — Ajustes: portal de suscripción (Stripe)
+- **Nueva dependencia**: `stripe` (SDK oficial server-side, sin cliente JS porque usamos redirects a Checkout/Portal).
+- **Nuevo SQL** [`supabase/billing_ext.sql`](supabase/billing_ext.sql):
+  - `perfiles_negocio` extendido con `stripe_customer_id`, `stripe_subscription_id`, `subscription_status`, `subscription_price_id`, `subscription_period_end`, `subscription_cancel_at_period_end`.
+  - Tabla `pagos_stripe` (factura cacheada localmente: `stripe_invoice_id` único, `amount_cents`, `currency`, `status`, `description`, `hosted_invoice_url`, `invoice_pdf_url`, `paid_at`).
+  - RLS de SELECT para el OWNER. INSERT/UPDATE sólo desde el webhook (que usa `service_role_key` y bypassea RLS).
+  - [`supabase/setup.sql`](supabase/setup.sql) actualizado: wipe `pagos_stripe` + `\i billing_ext.sql`.
+- **Helper** [`src/lib/stripe.ts`](src/lib/stripe.ts) — `getStripe()` lazy-singleton + catálogo `PLANS` (Pro 29€/mes, Business 79€/mes con flag `destacado`) + `planFromPriceId()` para resolver el slug local desde un Price ID de Stripe.
+- **Route handlers**:
+  - [`POST /api/billing/checkout`](src/app/api/billing/checkout/route.ts) — Zod valida `plan ∈ {pro,business}`, garantiza Stripe Customer (lo crea on-demand y lo persiste con `service_role` para evitar conflictos RLS), crea Checkout Session en modo `subscription` con `metadata.negocio_id`, `client_reference_id`, `allow_promotion_codes` y devuelve la URL de Stripe.
+  - [`POST /api/billing/portal`](src/app/api/billing/portal/route.ts) — abre Customer Portal de Stripe (gestión de tarjetas, cambio de plan, descarga de facturas, cancelación). Devuelve 400 si aún no hay `stripe_customer_id`.
+  - [`POST /api/billing/webhook`](src/app/api/billing/webhook/route.ts) — `runtime = "nodejs"`, valida firma con `STRIPE_WEBHOOK_SECRET`, maneja:
+    - `checkout.session.completed` / `customer.subscription.{created,updated,deleted}` → sincroniza el estado de la suscripción y actualiza `plan` en `perfiles_negocio` vía `planFromPriceId()`.
+    - `invoice.paid` / `invoice.payment_failed` → upsert idempotente en `pagos_stripe` por `stripe_invoice_id`.
+- **Pestaña Suscripción** ([`SuscripcionTab.tsx`](src/components/ajustes/SuscripcionTab.tsx)):
+  - Cabecera **Plan actual** con pill de estado (`active`/`trialing`/`past_due`/`canceled`) y fecha de próxima renovación (o de finalización si `cancel_at_period_end`). Botón gradient «Gestionar suscripción» que abre el Portal.
+  - **Tabla de precios** (2 cards comparativos al estilo Shadcn) que se muestra **sólo cuando no hay suscripción activa**. La card `Business` lleva ribbon «Recomendado» con gradient cyan→fuchsia.
+  - **Historial de pagos** con fecha, concepto, importe formateado en EUR, estado y enlaces a PDF / vista web de la factura.
+  - Lee `?billing=success|cancelled` que devuelve Stripe tras Checkout y muestra toast informativo, limpiando el query string con `history.replaceState`.
+- **Variables de entorno requeridas** (anotar en `.env.local`):
+  - `STRIPE_SECRET_KEY` (sk_test_… / sk_live_…)
+  - `STRIPE_WEBHOOK_SECRET` (whsec_…)
+  - `STRIPE_PRICE_PRO`, `STRIPE_PRICE_BUSINESS` (price_…)
+- **Configurar webhook**: en el Dashboard de Stripe, crear endpoint `https://<dominio>/api/billing/webhook` suscrito a `checkout.session.completed`, `customer.subscription.*`, `invoice.paid`, `invoice.payment_failed`.
+- **Decisión de diseño**: el catálogo de planes se mantiene replicado en el componente cliente (sólo nombre/precio/features) para evitar un round-trip en el render inicial. Los `Price IDs` reales viven sólo en server (`lib/stripe.ts`) — el cliente no los necesita porque el endpoint `/checkout` los resuelve por el slug `pro`/`business`.
+
+### Iteración 9 — *2026-05-01* — Ajustes: equipo + seguridad
+- **Nuevo SQL** [`supabase/team_ext.sql`](supabase/team_ext.sql):
+  - Enums `rol_miembro` (`admin|editor|lector`) y `estado_miembro` (`invitado|activo|revocado`).
+  - Tabla `miembros_negocio` (`negocio_id`, `user_id` nullable, `email`, `rol`, `estado`, `privacidad_version`, `terminos_version`, `invited_by`, `invited_at`, `accepted_at`, `revoked_at`) con RLS dual: el OWNER ve todo el equipo de su negocio; cada miembro puede leer su propia fila.
+  - RPC `aceptar_invitacion(p_ip, p_user_agent)` — el invitado lo llama tras su primer login: enlaza `user_id`, marca `estado='activo'` y registra los consentimientos RGPD (`privacidad` + `terminos`) en `consentimientos_rgpd` con la versión que se le pidió aceptar al invitarle. **Garantía legal**: la aceptación queda con timestamp, IP y user-agent.
+  - Vista `v_equipo_negocio` que UNIONa el OWNER (extraído de `perfiles_negocio`) con los miembros adicionales — la UI consume una sola query.
+  - [`supabase/setup.sql`](supabase/setup.sql) actualizado para incluir `team_ext.sql` en el wipe + reload.
+- **Helper** [`src/lib/supabase/admin.ts`](src/lib/supabase/admin.ts) — cliente con `SUPABASE_SERVICE_ROLE_KEY` para llamar `auth.admin.*` desde route handlers (nunca importable desde Client Components).
+- **Route handlers**:
+  - [`POST /api/team/invite`](src/app/api/team/invite/route.ts) — valida payload con Zod (`email`, `rol`, `acepta_politicas: literal(true)`), comprueba duplicado, invoca `auth.admin.inviteUserByEmail()` con `redirectTo=/auth/callback?next=/equipo/aceptar` y metadata (`invited_to_negocio`, `invited_rol`, `invited_by`), e inserta la fila en `miembros_negocio` con la versión vigente de privacidad/términos.
+  - [`POST /api/team/revoke`](src/app/api/team/revoke/route.ts) — marca `estado='revocado'` (no borra para preservar la auditoría legal).
+- **Pestaña Equipo** ([`EquipoTab.tsx`](src/components/ajustes/EquipoTab.tsx) + [`InvitarMiembroModal.tsx`](src/components/ajustes/InvitarMiembroModal.tsx)):
+  - Tabla con Nombre · Email · Rol · Estado · Acciones. Owner marcado con icono Crown ámbar y rol Admin no removible.
+  - Pills coloreadas por rol (`admin` fuchsia, `editor` cyan, `lector` neutro) y estado (`activo` esmeralda, `invitado` ámbar, `revocado` rosa).
+  - Modal de invitación con selector visual de rol (3 tarjetas con descripción), checkbox **obligatorio** «Confirmo que el miembro aceptará la política de privacidad y los términos al activar su cuenta» — sin marcar, el botón Enviar queda deshabilitado.
+- **Pestaña Seguridad** ([`SeguridadTab.tsx`](src/components/ajustes/SeguridadTab.tsx)):
+  - Tarjeta de estado **2FA** (consulta `supabase.auth.mfa.listFactors()`), enlaza a `/2fa/configurar` con CTA gradient cuando está OFF y botón secundario «Gestionar» cuando está ON.
+  - Tarjeta «Cerrar sesión en todos los dispositivos» que invoca `supabase.auth.signOut({ scope: "global" })` y redirige a `/login`.
+  - Lista de **dispositivos conocidos** desde `dispositivos_conocidos` (ya existente) con acción «Olvidar» por dispositivo (delete por RLS).
+- **Variables de entorno requeridas**: `SUPABASE_SERVICE_ROLE_KEY` (ya usada por `scripts/seed-admin.mjs`).
+- **Limitación conocida** (declarada explícitamente, no se ha tocado): la función `current_negocio_id()` actual sólo reconoce al OWNER (`perfiles_negocio.user_id = auth.uid()`). Cuando un miembro invitado se loguee, su `current_negocio_id()` devolverá `null` y no podrá acceder a las tablas de dominio del negocio que le invitó. Para activar el modo multi-usuario completo será necesario reescribir `current_negocio_id()` para considerar también `miembros_negocio` — fuera de alcance de esta iteración, anotado como deuda.
+
+### Iteración 8 — *2026-05-01* — Fix: loop 307 en `/onboarding`
+- **Síntoma**: el navegador se quedaba colgado y la terminal mostraba `GET /onboarding 307` en bucle infinito.
+- **Causa raíz**: [`src/app/(app)/layout.tsx`](src/app/%28app%29/layout.tsx) leía el path desde `headers().get("x-invoke-path")`. Ese header era interno de versiones anteriores de Next.js y **dejó de existir en Next.js 16**, por lo que `pathname` siempre era `""`. La guarda `!pathname.startsWith("/onboarding")` se cumplía siempre y, aun estando ya en `/onboarding`, se volvía a redirigir → loop.
+- **Fix**:
+  1. [`src/lib/supabase/middleware.ts`](src/lib/supabase/middleware.ts) reenvía ahora un header `x-pathname` con `request.nextUrl.pathname` en cada request (patrón oficial recomendado por Next.js 15+).
+  2. [`src/app/(app)/layout.tsx`](src/app/%28app%29/layout.tsx) lee `x-pathname` en vez de `x-invoke-path` y, además, hace **early return** cuando ya estamos en `/onboarding` — así nunca puede re-redirigirse a sí mismo aunque el header faltara por algún motivo.
+
+### Iteración 7 — *2026-05-01* — Ajustes: panel de integraciones con sistema de ayuda
+- **Nueva pestaña Integraciones** funcional, sustituye al `PlaceholderTab` correspondiente.
+- **Tarjetas con estado Conectado/Desconectado** + badge de color (emerald/idle):
+  - [`GoogleCard.tsx`](src/components/ajustes/GoogleCard.tsx) — lee `google_connections.google_account_email` directamente (sin descifrar tokens) para mostrar la cuenta conectada. Botón **Conectar** redirige a `/api/integrations/google/connect`. Botón **Desconectar** borra la fila vía RLS.
+  - [`N8nCard.tsx`](src/components/ajustes/N8nCard.tsx) — campos «URL del Webhook» y «API Key» que se persisten via RPC `set_config_key(servicio='n8n', alias='webhook_url'|'api_key', valor=…)` con cifrado **pgcrypto / pgp_sym_encrypt** ya existente en `schema.sql`. Tras guardar, los inputs se vacían y se muestra el badge «Guardado cifrado». Botón **Enviar prueba** que dispara un POST de test al webhook con cabecera `X-N8N-API-KEY`.
+- **Sistema de ayuda crítico** ([`HelpDrawer.tsx`](src/components/ajustes/HelpDrawer.tsx)):
+  - Componente `HelpButton` («?») a la derecha de cada campo + `HelpDrawer` que abre un panel lateral derecho (Sheet) con backdrop blur, animación, cierre con ESC y bloqueo de scroll.
+  - Cada paso de la guía es una tarjeta numerada con badge gradient cyan→fuchsia, con texto y soporte opcional de captura de pantalla (`HelpStep.image`).
+  - Guías escritas para usuarios no técnicos en [`integracionesGuides.ts`](src/components/ajustes/integracionesGuides.ts): «Cómo obtener mi URL de n8n», «Cómo generar una API Key de n8n», «Cómo conectar Google Workspace».
+- **Nuevo route handler** [`/api/integrations/google/connect`](src/app/api/integrations/google/connect/route.ts):
+  - Construye la URL OAuth (`accounts.google.com`) con scopes Calendar + Drive.file + email/profile.
+  - `access_type=offline` + `prompt=consent` para asegurar `refresh_token`.
+  - Cookie `g_oauth_state` httpOnly+SameSite=Lax con CSRF token (10 min) que el callback debe validar.
+  - **Pendiente**: implementar `/api/integrations/google/callback` que valide `state`, intercambie `code` por tokens y los persista llamando a `saveTokens()` de [`src/lib/google.ts`](src/lib/google.ts).
+- **Variables de entorno requeridas**: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` (ya consumidas por `lib/google.ts`).
+- **Seguridad**: ningún secreto se devuelve al cliente tras guardar — los inputs se vacían y la UI sólo lee el listado de `(servicio, alias)` para saber si existe el valor. Los tokens de Google se leen sólo en server actions vía la RPC `get_google_tokens` (security definer).
+
+### Iteración 6 — *2026-05-01* — Ajustes: layout + perfil de negocio
+- **Nueva dependencia**: `zod` (validación de formularios).
+- **Nueva carpeta** [`src/components/ajustes/`](src/components/ajustes/):
+  - `SettingsTabs.tsx` — contenedor con 5 pestañas (`Negocio`, `Integraciones`, `Equipo`, `Suscripción`, `Seguridad`) en navegación lateral en desktop / superior en mobile, con roles ARIA `tablist`/`tab`/`tabpanel`. Construido a medida sobre el sistema de diseño existente (`card-glass`, tokens cyan/fuchsia) — no se introdujo Shadcn/UI porque el proyecto no lo usa.
+  - `NegocioTab.tsx` — formulario para `nombre_negocio`, `cif_nif`, `direccion`, `email_contacto`, `telefono` + selector de logo (subida a bucket `logos` de Supabase Storage, máx. 2 MB, PNG/JPG/WebP/SVG). Botón **Guardar** con `Loader2` animado, errores inline por campo y toast de confirmación/error.
+  - `negocioSchema.ts` — esquema Zod con validación de CIF/NIF (regex laxa 9 chars), email, teléfono E.164 (+ y 7-15 dígitos) y trim/normalización (mayúsculas en CIF, lowercase en email).
+  - `PlaceholderTab.tsx` — placeholder reutilizable para las 4 pestañas pendientes.
+  - `types.ts` — tipo `PerfilNegocio` alineado con `public.perfiles_negocio`.
+- **Sustituido** [`src/app/(app)/ajustes/page.tsx`](src/app/%28app%29/ajustes/page.tsx) — ya no es un `Placeholder`; es server component que carga `perfiles_negocio` por `user_id` y monta `SettingsTabs`. Usa `force-dynamic` para reflejar cambios al instante.
+- **Pendiente de provisión manual en Supabase**: crear bucket público `logos` con política de escritura `auth.uid() = (storage.foldername(name))[1]::uuid` o equivalente, ya que las rutas se prefijan con `{negocio_id}/…`.
+
 ---
 
 ## 📚 Documentos relacionados

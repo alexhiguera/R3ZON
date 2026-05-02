@@ -14,16 +14,23 @@ export default async function AppLayout({
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const pathname = (await headers()).get("x-invoke-path") ?? "";
+  // `x-pathname` lo inyecta `proxy.ts`. `x-invoke-path` desapareció en Next.js 16.
+  const pathname = (await headers()).get("x-pathname") ?? "";
 
-  // Si el onboarding no está completado y no estamos ya en él → redirigir
+  // Si el onboarding no está completado y no estamos ya en él → redirigir.
+  // Importante: si ya estamos en /onboarding hay que SALIR antes de hacer la
+  // consulta para evitar el loop 307 cuando el header viniera vacío.
+  if (pathname.startsWith("/onboarding")) {
+    return <AppShell>{children}</AppShell>;
+  }
+
   const { data: perfil } = await supabase
     .from("perfiles_negocio")
     .select("onboarding_completado")
     .eq("user_id", user.id)
     .single();
 
-  if (perfil && !perfil.onboarding_completado && !pathname.startsWith("/onboarding")) {
+  if (perfil && !perfil.onboarding_completado) {
     redirect("/onboarding");
   }
 

@@ -3,180 +3,213 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Building2, Loader2, Save, Info } from "lucide-react";
+import { ArrowLeft, Loader2, UserPlus, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { Help } from "@/components/ui/Tooltip";
 
-type Form = {
-  nombre: string;
-  cif: string;
-  sector: string;
-  sitio_web: string;
-  email: string;
-  telefono: string;
-  ciudad: string;
-  pais: string;
-  estado: "activa" | "prospecto" | "inactiva";
-};
-
-const INITIAL: Form = {
-  nombre: "", cif: "", sector: "", sitio_web: "", email: "",
-  telefono: "", ciudad: "", pais: "España", estado: "prospecto",
-};
+const ETIQUETAS_SUGERIDAS = ["vip", "nuevo", "empresa", "inactivo"];
 
 export default function NuevoClientePage() {
   const router = useRouter();
-  const [form, setForm] = useState<Form>(INITIAL);
-  const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [etiquetas, setEtiquetas] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState("");
 
-  const set = <K extends keyof Form>(k: K, v: Form[K]) =>
-    setForm((f) => ({ ...f, [k]: v }));
+  const addTag = (tag: string) => {
+    const t = tag.trim().toLowerCase();
+    if (t && !etiquetas.includes(t)) setEtiquetas((p) => [...p, t]);
+    setTagInput("");
+  };
 
-  const guardar = async (e: React.FormEvent) => {
+  const removeTag = (tag: string) =>
+    setEtiquetas((p) => p.filter((t) => t !== tag));
+
+  const submit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!form.nombre.trim()) {
-      setError("La razón social del cliente es obligatoria.");
-      return;
-    }
-    setSaving(true);
+    const fd = new FormData(e.currentTarget);
+    const get = (k: string) => (fd.get(k) as string).trim() || null;
+
+    setLoading(true);
     setError(null);
-
     const supabase = createClient();
-    const { data: perfil } = await supabase
-      .from("perfiles_negocio")
-      .select("id")
-      .single();
-
-    if (!perfil) {
-      setError("No se pudo identificar tu negocio. Vuelve a iniciar sesión.");
-      setSaving(false);
-      return;
-    }
-
-    const { data, error: err } = await supabase
+    const { data, error } = await supabase
       .from("clientes")
-      .insert({ ...form, negocio_id: perfil.id })
+      .insert({
+        nombre: get("nombre")!,
+        apellidos: get("apellidos"),
+        email: get("email"),
+        telefono: get("telefono"),
+        nif: get("nif"),
+        direccion: get("direccion"),
+        notas: get("notas"),
+        etiquetas,
+      })
       .select("id")
       .single();
 
-    setSaving(false);
-    if (err) {
-      setError("No se pudo crear el cliente. Inténtalo de nuevo.");
-      return;
-    }
-    router.push(`/clientes/${data!.id}`);
-    router.refresh();
+    setLoading(false);
+    if (error) return setError(error.message);
+    router.push(`/clientes/${data.id}`);
   };
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="mx-auto flex max-w-2xl flex-col gap-6">
       <Link
         href="/clientes"
         className="inline-flex items-center gap-1.5 text-sm text-text-mid hover:text-text-hi"
       >
-        <ArrowLeft size={14} /> Clientes
+        <ArrowLeft size={14} /> Volver a clientes
       </Link>
 
-      <div className="card-glass overflow-hidden">
-        <div className="rainbow-bar" />
-        <div className="flex items-center gap-4 p-5 sm:p-6">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-indigo-400/20 bg-indigo-900/40 text-indigo-300">
-            <Building2 size={22} />
+      <PageHeader
+        eyebrow="Nuevo cliente"
+        title="Añadir cliente"
+        description="Solo nombre y apellidos son obligatorios. El resto lo puedes rellenar después."
+      />
+
+      <form onSubmit={submit} className="card-glass flex flex-col gap-6 p-5 sm:p-7">
+        {/* Datos principales */}
+        <Section title="Datos personales">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field name="nombre" label="Nombre *" required tooltip="Nombre de pila del cliente." />
+            <Field name="apellidos" label="Apellidos" tooltip="Opcional pero ayuda a encontrarle más fácil." />
+            <Field name="email" label="Email" type="email" tooltip="Úsalo para enviarle emails o facturas directamente desde aquí." />
+            <Field
+              name="telefono"
+              label="Teléfono"
+              tooltip="Con el prefijo del país (ej: +34 612 345 678) los botones de WhatsApp funcionarán automáticamente."
+            />
+            <Field name="nif" label="DNI / CIF" tooltip="Necesario si le vas a emitir facturas." />
           </div>
-          <div>
-            <div className="section-label mb-1">Nuevo cliente</div>
-            <h1 className="font-display text-2xl font-bold">Dar de alta una empresa</h1>
-            <div className="accent-bar mt-1.5" style={{ width: 48 }} />
-          </div>
-        </div>
-      </div>
+        </Section>
 
-      {/* Aviso UX: queda claro que se da de alta una entidad jurídica */}
-      <div className="card-glass flex items-start gap-3 border border-cyan/25 bg-cyan/5 p-4 text-sm text-text-mid">
-        <Info size={16} className="mt-0.5 shrink-0 text-cyan" />
-        <div>
-          <div className="font-semibold text-text-hi">Estás dando de alta una empresa (entidad jurídica).</div>
-          Sus trabajadores los añadirás luego como <span className="text-text-hi">contactos</span> dentro de la
-          ficha del cliente — desde ahí podrás dibujar el organigrama.
-        </div>
-      </div>
+        {/* Dirección */}
+        <Section title="Dirección">
+          <Field name="direccion" label="Dirección completa" tooltip="Aparecerá en las facturas que le emitas." />
+        </Section>
 
-      <form onSubmit={guardar} className="card-glass flex flex-col gap-4 p-5 sm:p-7">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Razón social *"  value={form.nombre}    onChange={(v) => set("nombre", v)}    placeholder="Acme S.L." />
-          <Field label="CIF / NIF"       value={form.cif}       onChange={(v) => set("cif", v)}       placeholder="B12345678" />
-          <Field label="Sector"          value={form.sector}    onChange={(v) => set("sector", v)}    placeholder="Tecnología, Retail…" />
-          <Field label="Sitio web"       value={form.sitio_web} onChange={(v) => set("sitio_web", v)} placeholder="https://acme.com" />
-          <Field label="Email corporativo" value={form.email}   onChange={(v) => set("email", v)}     type="email" placeholder="hola@acme.com" />
-          <Field label="Teléfono"        value={form.telefono}  onChange={(v) => set("telefono", v)}  placeholder="+34 600 000 000" />
-          <Field label="Ciudad"          value={form.ciudad}    onChange={(v) => set("ciudad", v)}    placeholder="Madrid" />
-          <Field label="País"            value={form.pais}      onChange={(v) => set("pais", v)} />
-
-          <label className="flex flex-col gap-1.5 sm:col-span-2">
-            <span className="text-xs font-medium text-text-mid">Estado</span>
-            <div className="flex gap-2">
-              {(["prospecto", "activa", "inactiva"] as const).map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={() => set("estado", s)}
-                  className={`flex-1 rounded-xl border px-3 py-2.5 text-xs font-semibold capitalize transition-colors ${
-                    form.estado === s
-                      ? "border-cyan/50 bg-cyan/10 text-cyan"
-                      : "border-indigo-400/20 bg-indigo-900/30 text-text-mid hover:border-indigo-400/40"
-                  }`}
-                >
-                  {s === "activa" ? "Activo" : s === "inactiva" ? "Inactivo" : "Prospecto"}
+        {/* Etiquetas */}
+        <Section
+          title="Etiquetas"
+          help="Etiquetas para agrupar y filtrar clientes. Ej: 'vip', 'empresa', 'mensual'."
+        >
+          <div className="flex flex-wrap gap-2">
+            {etiquetas.map((tag) => (
+              <span
+                key={tag}
+                className="flex items-center gap-1.5 rounded-full border border-indigo-400/25 bg-indigo-900/40 px-2.5 py-1 text-xs font-medium text-text-mid"
+              >
+                {tag}
+                <button type="button" onClick={() => removeTag(tag)}>
+                  <X size={11} />
                 </button>
-              ))}
-            </div>
-          </label>
-        </div>
+              </span>
+            ))}
+          </div>
+          <div className="mt-2 flex gap-2">
+            <input
+              value={tagInput}
+              onChange={(e) => setTagInput(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addTag(tagInput); } }}
+              placeholder="Escribe y pulsa Enter…"
+              className="h-10 flex-1 rounded-xl border border-indigo-400/20 bg-indigo-900/30 px-3 text-sm text-text-hi placeholder:text-text-lo focus:border-cyan/50 focus:outline-none"
+            />
+            <button
+              type="button"
+              onClick={() => addTag(tagInput)}
+              className="rounded-xl border border-indigo-400/25 bg-indigo-900/40 px-3 text-sm text-indigo-300 hover:border-cyan/40"
+            >
+              Añadir
+            </button>
+          </div>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {ETIQUETAS_SUGERIDAS.filter((t) => !etiquetas.includes(t)).map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => addTag(t)}
+                className="rounded-full border border-indigo-400/15 px-2 py-0.5 text-[0.65rem] text-text-lo hover:border-indigo-400/40 hover:text-text-mid"
+              >
+                + {t}
+              </button>
+            ))}
+          </div>
+        </Section>
+
+        {/* Notas */}
+        <Section title="Notas internas" help="Solo tú las verás. Útil para recordar detalles importantes.">
+          <textarea
+            name="notas"
+            rows={3}
+            placeholder="Ej: Le gusta que le llamen por las mañanas…"
+            className="w-full resize-none rounded-xl border border-indigo-400/20 bg-indigo-900/30 p-3 text-sm text-text-hi placeholder:text-text-lo focus:border-cyan/50 focus:outline-none focus:ring-2 focus:ring-cyan/20"
+          />
+        </Section>
 
         {error && (
-          <div className="rounded-xl border border-danger/30 bg-danger/10 px-3 py-2.5 text-xs text-danger">
+          <div className="rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-xs text-danger">
             {error}
           </div>
         )}
 
-        <div className="flex justify-end gap-2 pt-2">
-          <Link
-            href="/clientes"
-            className="rounded-xl border border-indigo-400/25 bg-indigo-900/40 px-4 py-2.5 text-sm text-text-mid hover:text-text-hi"
-          >
-            Cancelar
-          </Link>
-          <button
-            type="submit"
-            disabled={saving}
-            className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan to-fuchsia px-5 py-2.5 text-sm font-bold text-bg disabled:opacity-50"
-          >
-            {saving ? <Loader2 className="animate-spin" size={14} /> : <Save size={14} />}
-            Crear cliente
-          </button>
-        </div>
+        <button
+          type="submit"
+          disabled={loading}
+          className="flex h-12 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan to-fuchsia text-sm font-bold text-bg disabled:opacity-50"
+        >
+          {loading ? <Loader2 className="animate-spin" size={16} /> : <UserPlus size={16} />}
+          Guardar cliente
+        </button>
       </form>
     </div>
   );
 }
 
-function Field({
-  label, value, onChange, placeholder, type = "text",
+function Section({
+  title,
+  help,
+  children,
 }: {
+  title: string;
+  help?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <div className="mb-3 flex items-center gap-1.5">
+        <span className="section-label">{title}</span>
+        {help && <Help text={help} />}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function Field({
+  name,
+  label,
+  type = "text",
+  required,
+  tooltip,
+}: {
+  name: string;
   label: string;
-  value: string;
-  onChange: (v: string) => void;
-  placeholder?: string;
   type?: string;
+  required?: boolean;
+  tooltip?: string;
 }) {
   return (
     <label className="flex flex-col gap-1.5">
-      <span className="text-xs font-medium text-text-mid">{label}</span>
+      <span className="flex items-center gap-1.5 text-xs font-medium text-text-mid">
+        {label}
+        {tooltip && <Help text={tooltip} />}
+      </span>
       <input
+        name={name}
         type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
+        required={required}
         className="h-11 rounded-xl border border-indigo-400/20 bg-indigo-900/30 px-3 text-sm text-text-hi placeholder:text-text-lo focus:border-cyan/50 focus:outline-none focus:ring-2 focus:ring-cyan/20"
       />
     </label>
