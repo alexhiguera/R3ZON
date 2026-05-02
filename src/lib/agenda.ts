@@ -345,7 +345,7 @@ export async function getEvent(id: string): Promise<AgendaEventoRow | null> {
  */
 export async function createEvent(args: {
   title: string;
-  description?: string;
+  description?: string | null;
   start: string;
   end:   string;
   color?: string | null;
@@ -356,25 +356,32 @@ export async function createEvent(args: {
   const { data: perfil } = await supabase.from("perfiles_negocio").select("id").single();
   if (!perfil) throw new Error("No hay perfil de negocio.");
 
-  // Si hay tokens de Google, creamos primero allí para guardar el id.
+  // Si hay tokens de Google, intentamos crear primero allí para guardar el id.
+  // Si Google falla (token revocado, sin red, scope insuficiente…), seguimos
+  // creando la cita localmente — no debe bloquear al usuario.
   let googleEventId: string | null = null;
-  let googleCalId   = "primary";
-  const tokens = await loadTokens();
-  if (tokens) {
-    const res = await googleFetch(`/calendars/${googleCalId}/events`, {
-      method: "POST",
-      body: JSON.stringify({
-        summary:     args.title,
-        description: args.description ?? "",
-        location:    args.ubicacion ?? "",
-        start: { dateTime: new Date(args.start).toISOString() },
-        end:   { dateTime: new Date(args.end).toISOString() },
-      }),
-    });
-    if (res.ok) {
-      const json = await res.json();
-      googleEventId = json.id ?? null;
+  const googleCalId = "primary";
+  try {
+    const tokens = await loadTokens();
+    if (tokens) {
+      const res = await googleFetch(`/calendars/${googleCalId}/events`, {
+        method: "POST",
+        body: JSON.stringify({
+          summary:     args.title,
+          description: args.description ?? "",
+          location:    args.ubicacion ?? "",
+          start: { dateTime: new Date(args.start).toISOString() },
+          end:   { dateTime: new Date(args.end).toISOString() },
+        }),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        googleEventId = json.id ?? null;
+      }
     }
+  } catch {
+    // Google no disponible → cita sólo local. La sincronización posterior
+    // (botón Sincronizar) la enviará a Google si vuelve la conexión.
   }
 
   const { data, error } = await supabase

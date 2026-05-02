@@ -4,24 +4,33 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  ArrowLeft, User, Calendar, MessageSquare, Zap,
-  Phone, Mail, MessageCircle, Edit3, Save, Loader2,
-  Trash2, Plus,
+  ArrowLeft, Users, Calendar, MessageSquare, Zap, Info,
+  Phone, Mail, MessageCircle, Loader2, Trash2, Building2, Globe,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { Help, Tooltip } from "@/components/ui/Tooltip";
+import { Tooltip } from "@/components/ui/Tooltip";
+import { InfoTab } from "@/components/clientes/InfoTab";
+import { ContactosTab } from "@/components/clientes/ContactosTab";
 import { TabHistorial } from "@/components/crm/TabHistorial";
 import { TabComunicaciones } from "@/components/crm/TabComunicaciones";
 import { TabAutomatizacion } from "@/components/crm/TabAutomatizacion";
+import type { Cliente, Contacto } from "@/components/clientes/types";
 
-type Tab = "info" | "citas" | "comunicaciones" | "automatizacion";
+type Tab = "info" | "contactos" | "citas" | "comunicaciones" | "automatizacion";
 
-const TABS: { id: Tab; label: string; Icon: any; tooltip: string }[] = [
-  { id: "info",           label: "Información", Icon: User,          tooltip: "Datos personales y de contacto del cliente." },
-  { id: "citas",          label: "Historial",   Icon: Calendar,      tooltip: "Todas las citas pasadas y futuras de este cliente." },
-  { id: "comunicaciones", label: "Mensajes",    Icon: MessageSquare, tooltip: "Registro de emails, WhatsApps y notas que le has enviado." },
-  { id: "automatizacion", label: "Automático",  Icon: Zap,           tooltip: "Conecta con n8n o Make para enviar mensajes automáticos." },
+const TABS: { id: Tab; label: string; Icon: typeof Info; tooltip: string }[] = [
+  { id: "info",           label: "Información", Icon: Info,          tooltip: "Datos fiscales y de contacto." },
+  { id: "contactos",      label: "Contactos",   Icon: Users,         tooltip: "Personas dentro de esta empresa." },
+  { id: "citas",          label: "Historial",   Icon: Calendar,      tooltip: "Citas pasadas y futuras." },
+  { id: "comunicaciones", label: "Mensajes",    Icon: MessageSquare, tooltip: "Emails, WhatsApps y notas." },
+  { id: "automatizacion", label: "Automático",  Icon: Zap,           tooltip: "Webhooks y automatizaciones n8n." },
 ];
+
+const ESTADO_BADGE: Record<Cliente["estado"], string> = {
+  activa:    "border-emerald-400/30 bg-emerald-500/10 text-emerald-200",
+  prospecto: "border-cyan/30 bg-cyan/10 text-cyan",
+  inactiva:  "border-rose-400/30 bg-rose-500/10 text-rose-200",
+};
 
 export default function FichaClientePage() {
   const { id } = useParams<{ id: string }>();
@@ -29,11 +38,8 @@ export default function FichaClientePage() {
   const supabase = createClient();
 
   const [tab, setTab] = useState<Tab>("info");
-  const [cliente, setCliente] = useState<any>(null);
+  const [cliente, setCliente] = useState<Cliente | null>(null);
   const [cargando, setCargando] = useState(true);
-  const [editando, setEditando] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState<any>({});
 
   useEffect(() => {
     (async () => {
@@ -42,26 +48,14 @@ export default function FichaClientePage() {
         .select("*")
         .eq("id", id)
         .single();
-      setCliente(data);
-      setForm(data ?? {});
+      setCliente((data as Cliente | null) ?? null);
       setCargando(false);
     })();
-  }, [id]);
-
-  const guardar = async () => {
-    setSaving(true);
-    const { nombre, apellidos, email, telefono, nif, direccion, notas, etiquetas } = form;
-    await supabase
-      .from("clientes")
-      .update({ nombre, apellidos, email, telefono, nif, direccion, notas, etiquetas })
-      .eq("id", id);
-    setCliente({ ...cliente, ...form });
-    setSaving(false);
-    setEditando(false);
-  };
+  }, [id, supabase]);
 
   const eliminar = async () => {
-    if (!confirm(`¿Eliminar a ${cliente?.nombre}? Esta acción no se puede deshacer.`)) return;
+    if (!cliente) return;
+    if (!confirm(`¿Eliminar a ${cliente.nombre}? Esta acción no se puede deshacer.`)) return;
     await supabase.from("clientes").delete().eq("id", id);
     router.push("/clientes");
   };
@@ -82,8 +76,6 @@ export default function FichaClientePage() {
     );
   }
 
-  const nombreCompleto = [cliente.nombre, cliente.apellidos].filter(Boolean).join(" ");
-
   return (
     <div className="flex flex-col gap-5">
       {/* Breadcrumb */}
@@ -102,12 +94,18 @@ export default function FichaClientePage() {
             {cliente.nombre.charAt(0)}
           </div>
           <div className="flex-1">
-            <h1 className="font-display text-2xl font-bold text-text-hi">{nombreCompleto}</h1>
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="font-display text-2xl font-bold text-text-hi">{cliente.nombre}</h1>
+              <span className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${ESTADO_BADGE[cliente.estado]}`}>
+                {cliente.estado}
+              </span>
+            </div>
             <div className="accent-bar mt-1.5" style={{ width: 48 }} />
             <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-xs text-text-lo">
-              {cliente.email && <span>✉ {cliente.email}</span>}
-              {cliente.telefono && <span>📞 {cliente.telefono}</span>}
-              {cliente.nif && <span>ID: {cliente.nif}</span>}
+              {cliente.cif && <span className="inline-flex items-center gap-1"><Building2 size={11} /> {cliente.cif}</span>}
+              {cliente.email && <span className="inline-flex items-center gap-1"><Mail size={11} /> {cliente.email}</span>}
+              {cliente.telefono && <span className="inline-flex items-center gap-1"><Phone size={11} /> {cliente.telefono}</span>}
+              {cliente.sitio_web && <span className="inline-flex items-center gap-1"><Globe size={11} /> {cliente.sitio_web}</span>}
             </div>
           </div>
           {/* Acciones rápidas */}
@@ -122,7 +120,7 @@ export default function FichaClientePage() {
                     <Phone size={16} />
                   </a>
                 </Tooltip>
-                <Tooltip text="Abrir WhatsApp" side="bottom">
+                <Tooltip text="WhatsApp" side="bottom">
                   <a
                     href={`https://wa.me/${cliente.telefono.replace(/\D/g, "")}`}
                     target="_blank"
@@ -176,116 +174,54 @@ export default function FichaClientePage() {
       </div>
 
       {/* Contenido de la pestaña */}
-      {tab === "info" && (
-        <InfoTab
-          form={form}
-          editando={editando}
-          saving={saving}
-          onChange={(k, v) => setForm((f: any) => ({ ...f, [k]: v }))}
-          onEdit={() => setEditando(true)}
-          onSave={guardar}
-          onCancel={() => { setForm(cliente); setEditando(false); }}
-        />
-      )}
-      {tab === "citas" && <TabHistorial clienteId={id} clienteNombre={nombreCompleto} />}
+      {tab === "info"      && <InfoTab cliente={cliente} onUpdate={setCliente} />}
+      {tab === "contactos" && <ContactosTabWrapper clienteId={id} negocioId={cliente.negocio_id} />}
+      {tab === "citas"     && <TabHistorial clienteId={id} clienteNombre={cliente.nombre} />}
       {tab === "comunicaciones" && (
         <TabComunicaciones
           clienteId={id}
-          clienteNombre={nombreCompleto}
-          email={cliente.email}
-          telefono={cliente.telefono}
+          clienteNombre={cliente.nombre}
+          email={cliente.email ?? undefined}
+          telefono={cliente.telefono ?? undefined}
         />
       )}
       {tab === "automatizacion" && (
-        <TabAutomatizacion clienteId={id} cliente={cliente} onUpdate={setCliente} />
+        <TabAutomatizacion clienteId={id} cliente={cliente} onUpdate={(c) => setCliente(c as Cliente)} />
       )}
     </div>
   );
 }
 
-// ─── Pestaña de información ────────────────────────────────────────────────
-function InfoTab({
-  form, editando, saving, onChange, onEdit, onSave, onCancel,
-}: any) {
-  const fields = [
-    { key: "nombre",    label: "Nombre",     tooltip: "Nombre de pila." },
-    { key: "apellidos", label: "Apellidos",  tooltip: "Apellidos del cliente." },
-    { key: "email",     label: "Email",      tooltip: "Email principal de contacto." },
-    { key: "telefono",  label: "Teléfono",   tooltip: "Con prefijo internacional para WhatsApp (ej: +34 612…)." },
-    { key: "nif",       label: "DNI / CIF",  tooltip: "Necesario para emitir facturas." },
-    { key: "direccion", label: "Dirección",  tooltip: "Dirección postal completa." },
-  ];
+function ContactosTabWrapper({ clienteId, negocioId }: { clienteId: string; negocioId: string }) {
+  const supabase = createClient();
+  const [contactos, setContactos] = useState<Contacto[]>([]);
+  const [cargando, setCargando]   = useState(true);
 
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("contactos_cliente")
+        .select("*")
+        .eq("cliente_id", clienteId)
+        .order("nombre", { ascending: true });
+      setContactos((data as Contacto[] | null) ?? []);
+      setCargando(false);
+    })();
+  }, [clienteId, supabase]);
+
+  if (cargando) {
+    return (
+      <div className="card-glass flex items-center gap-2 p-6 text-sm text-text-mid">
+        <Loader2 className="animate-spin" size={14} /> Cargando contactos…
+      </div>
+    );
+  }
   return (
-    <div className="card-glass p-5 sm:p-7">
-      <div className="mb-5 flex items-center justify-between">
-        <div className="section-label">Datos personales</div>
-        {!editando ? (
-          <button
-            onClick={onEdit}
-            className="flex items-center gap-1.5 rounded-xl border border-indigo-400/25 bg-indigo-900/40 px-3 py-2 text-xs font-medium text-text-mid hover:border-cyan/40 hover:text-text-hi"
-          >
-            <Edit3 size={13} /> Editar
-          </button>
-        ) : (
-          <div className="flex gap-2">
-            <button
-              onClick={onCancel}
-              className="rounded-xl border border-indigo-400/25 bg-indigo-900/40 px-3 py-2 text-xs text-text-mid"
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={onSave}
-              disabled={saving}
-              className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-cyan to-fuchsia px-3 py-2 text-xs font-bold text-bg disabled:opacity-50"
-            >
-              {saving ? <Loader2 className="animate-spin" size={12} /> : <Save size={12} />}
-              Guardar
-            </button>
-          </div>
-        )}
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        {fields.map(({ key, label, tooltip }) => (
-          <label key={key} className="flex flex-col gap-1.5">
-            <span className="flex items-center gap-1.5 text-xs font-medium text-text-mid">
-              {label} <Help text={tooltip} />
-            </span>
-            {editando ? (
-              <input
-                value={form[key] ?? ""}
-                onChange={(e) => onChange(key, e.target.value)}
-                className="h-11 rounded-xl border border-indigo-400/20 bg-indigo-900/30 px-3 text-sm text-text-hi focus:border-cyan/50 focus:outline-none focus:ring-2 focus:ring-cyan/20"
-              />
-            ) : (
-              <div className="rounded-xl border border-indigo-400/10 bg-indigo-900/20 px-3 py-2.5 text-sm text-text-hi">
-                {form[key] || <span className="text-text-lo italic">Sin especificar</span>}
-              </div>
-            )}
-          </label>
-        ))}
-      </div>
-
-      {/* Notas */}
-      <div className="mt-4">
-        <span className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-text-mid">
-          Notas internas <Help text="Solo tú las verás. Anotaciones privadas sobre el cliente." />
-        </span>
-        {editando ? (
-          <textarea
-            value={form.notas ?? ""}
-            onChange={(e) => onChange("notas", e.target.value)}
-            rows={3}
-            className="w-full resize-none rounded-xl border border-indigo-400/20 bg-indigo-900/30 p-3 text-sm text-text-hi focus:border-cyan/50 focus:outline-none focus:ring-2 focus:ring-cyan/20"
-          />
-        ) : (
-          <div className="rounded-xl border border-indigo-400/10 bg-indigo-900/20 px-3 py-2.5 text-sm text-text-hi">
-            {form.notas || <span className="text-text-lo italic">Sin notas</span>}
-          </div>
-        )}
-      </div>
-    </div>
+    <ContactosTab
+      clienteId={clienteId}
+      negocioId={negocioId}
+      contactos={contactos}
+      onChange={setContactos}
+    />
   );
 }

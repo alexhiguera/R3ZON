@@ -341,6 +341,28 @@ npx cap sync
 - Reescrito `README.md` con el estado real del proyecto, estructura de carpetas y tabla de módulos.
 - Añadida la sección **Bitácora de iteraciones** que se actualizará en cada turno futuro.
 
+### Iteración 11 — *2026-05-02* — Fix: clientes, agenda, finanzas y kanban
+Cuatro bugs reportados a la vez. Causa raíz unificada:
+
+1. **`Could not find the 'apellidos' column of 'clientes'`** — la tabla `clientes` se reescribió a B2B en la iteración 4 (`nombre` razón social, `cif`, `sector`…) pero las páginas seguían enviando `apellidos`/`nif`/`fecha_alta`/`ultima_visita` del schema antiguo.
+2. **RLS rechaza inserts en `finanzas` y `tareas_kanban`** — la política `tenant_isolation` (`negocio_id = current_negocio_id()`) requiere `negocio_id` en el INSERT, pero `finanzas/nuevo/page.tsx` y `kanban/TaskModal.tsx` no lo enviaban.
+3. **«Crear cita no hace nada»** — la validación bloqueaba citas en el pasado y `createEvent` lanzaba sin red de seguridad si Google fallaba (token revocado, sin red…).
+
+**Fixes aplicados:**
+
+- **SQL nuevo idempotente** [`supabase/fix_tenant_defaults.sql`](supabase/fix_tenant_defaults.sql) — trigger genérico `tg_fill_negocio_id` BEFORE INSERT en `clientes`, `contactos_cliente`, `citas`, `tareas_kanban`, `kanban_columnas`, `comunicaciones`, `finanzas`, `consentimientos_rgpd`, `agenda_eventos`, `config_keys`, `miembros_negocio`, `pagos_stripe`. Si el INSERT no incluye `negocio_id`, el trigger lo rellena con `current_negocio_id()` y la WITH CHECK pasa. Resuelve **todos** los inserts existentes y futuros sin tocar la app. [`supabase/setup.sql`](supabase/setup.sql) actualizado.
+- **Reescrita** [`src/app/(app)/clientes/page.tsx`](src/app/%28app%29/clientes/page.tsx) — listado con campos B2B (`nombre`, `cif`, `sector`, `email`, `telefono`, `sitio_web`, `estado`, `etiquetas`, `created_at`), badge de estado coloreado y búsqueda extendida a CIF/sector.
+- **Reescrita** [`src/app/(app)/clientes/nuevo/page.tsx`](src/app/%28app%29/clientes/nuevo/page.tsx) — formulario B2B con secciones Identidad jurídica, Estado comercial, Contacto, Dirección, Datos B2B, Etiquetas, Notas. Sin `apellidos`/`nif`. El INSERT no envía `negocio_id` — confía en el trigger.
+- **Reescrita** [`src/app/(app)/clientes/[id]/page.tsx`](src/app/%28app%29/clientes/%5Bid%5D/page.tsx) — usa `InfoTab` y `ContactosTab` del módulo B2B nuevo (`@/components/clientes/`) en vez del antiguo `@/components/crm/InfoTab`. Pestaña Contactos añadida (gestión de personas dentro de la empresa con jerarquía). Wrapper `ContactosTabWrapper` que carga los contactos y los pasa con la firma esperada.
+- **Agenda** ([`src/lib/agenda.ts`](src/lib/agenda.ts)) — `createEvent` envuelve la llamada a Google en `try/catch`: si Google falla (token revocado, sin red, scope insuficiente…), la cita se crea en local y se sincronizará en el próximo botón Sincronizar. Tipo de `description` aceptado como `string | null` para evitar el mismatch con el modal.
+- **Agenda** ([`src/components/agenda/EventModal.tsx`](src/components/agenda/EventModal.tsx)) — eliminada la validación «No se pueden crear citas en el pasado» (era restrictiva para registro histórico y dejaba el botón en disabled silenciosamente, dando la sensación de que «no hace nada»).
+
+**Cómo aplicar el fix en una BD existente** (sin perder datos):
+```bash
+psql "$DATABASE_URL" -f supabase/fix_tenant_defaults.sql
+```
+Para limpieza completa: `psql -f supabase/setup.sql` (wipe + reload con todas las extensiones).
+
 ### Iteración 10 — *2026-05-01* — Ajustes: portal de suscripción (Stripe)
 - **Nueva dependencia**: `stripe` (SDK oficial server-side, sin cliente JS porque usamos redirects a Checkout/Portal).
 - **Nuevo SQL** [`supabase/billing_ext.sql`](supabase/billing_ext.sql):

@@ -158,9 +158,6 @@ export function EventModal({
     const e = new Date(end);
     if (Number.isNaN(s.getTime()) || Number.isNaN(e.getTime())) return "Fechas inválidas.";
     if (e <= s) return "La hora de fin debe ser posterior a la de inicio.";
-    if (!isEdit && s.getTime() < Date.now() - 60_000) {
-      return "No se pueden crear citas en el pasado.";
-    }
     return null;
   }, [title, start, end, isEdit]);
 

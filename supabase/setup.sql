@@ -43,6 +43,7 @@ commit;
 \i agenda_ext.sql
 \i team_ext.sql
 \i billing_ext.sql
+\i fix_tenant_defaults.sql
 
 -- 3. SEED --------------------------------------------------------------------
 \i seed_clientes.sql
@@ -56,5 +57,6 @@ commit;
 --   4) agenda_ext.sql
 --   5) team_ext.sql
 --   6) billing_ext.sql
---   7) seed_clientes.sql
+--   7) fix_tenant_defaults.sql
+--   8) seed_clientes.sql
 -- =============================================================================
