@@ -24,6 +24,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { TaskCard } from "@/components/kanban/TaskCard";
 import { TaskModal } from "@/components/kanban/TaskModal";
+import { InlineTaskAdder } from "@/components/kanban/InlineTaskAdder";
 import { ColumnManager } from "@/components/kanban/ColumnManager";
 import { type Columna, type Tarea } from "@/lib/kanban";
 
@@ -33,12 +34,18 @@ import { useDroppable } from "@dnd-kit/core";
 function DroppableColumn({
   col,
   tareas,
-  onAddTask,
+  inlineAdding,
+  onStartInlineAdd,
+  onCancelInlineAdd,
+  onInlineCreated,
   onTaskClick,
 }: {
   col: Columna;
   tareas: Tarea[];
-  onAddTask: () => void;
+  inlineAdding: boolean;
+  onStartInlineAdd: () => void;
+  onCancelInlineAdd: () => void;
+  onInlineCreated: (t: Tarea) => void;
   onTaskClick: (t: Tarea) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: col.slug, data: { type: "column" } });
@@ -65,9 +72,9 @@ function DroppableColumn({
             {tareas.length}
           </span>
         </div>
-        <Tooltip text={`Añadir tarea en "${col.nombre}"`} side="left">
+        <Tooltip text={`Añadir tarea rápida en "${col.nombre}"`} side="left">
           <button
-            onClick={onAddTask}
+            onClick={onStartInlineAdd}
             className="flex h-7 w-7 items-center justify-center rounded-lg border border-indigo-400/20 text-indigo-300 hover:border-cyan/40 hover:text-cyan"
           >
             <Plus size={13} />
@@ -93,10 +100,21 @@ function DroppableColumn({
           ))}
         </SortableContext>
 
-        {tareas.length === 0 && (
-          <div className="flex flex-1 items-center justify-center rounded-xl border border-dashed border-indigo-400/15 py-6 text-xs text-text-lo">
-            Arrastra aquí o usa +
-          </div>
+        {inlineAdding && (
+          <InlineTaskAdder
+            columnaSlug={col.slug}
+            onCreated={onInlineCreated}
+            onCancel={onCancelInlineAdd}
+          />
+        )}
+
+        {tareas.length === 0 && !inlineAdding && (
+          <button
+            onClick={onStartInlineAdd}
+            className="flex flex-1 items-center justify-center rounded-xl border border-dashed border-indigo-400/15 py-6 text-xs text-text-lo transition-colors hover:border-cyan/30 hover:text-cyan"
+          >
+            Arrastra aquí o pulsa + para crear
+          </button>
         )}
       </div>
     </div>
@@ -114,6 +132,8 @@ export default function TareasPage() {
   const [modalTarea, setModalTarea]   = useState<Partial<Tarea> | null | undefined>(undefined); // undefined=cerrado
   const [columnaModal, setColumnaModal] = useState("");
   const [showColMgr, setShowColMgr]   = useState(false);
+  // Slug de la columna donde se está añadiendo una tarea inline (sólo título).
+  const [inlineCol, setInlineCol]     = useState<string | null>(null);
 
   // Referencia para detectar columna origen durante drag
   const tareasRef = useRef<Tarea[]>([]);
@@ -204,27 +224,41 @@ export default function TareasPage() {
         const resto = prev.filter((t) => t.columna !== srcCol);
         return [...resto, ...reordenadas];
       });
-      // Persistir posiciones
-      for (const t of reordenadas) {
-        await supabase
-          .from("tareas_kanban")
-          .update({ posicion: t.posicion })
-          .eq("id", t.id);
+      // Persistir posiciones en paralelo (más rápido y menos chance de quedarse
+      // colgado bloqueando el cliente HTTP del navegador).
+      try {
+        await Promise.all(
+          reordenadas.map((t) =>
+            supabase.from("tareas_kanban").update({ posicion: t.posicion }).eq("id", t.id)
+          )
+        );
+      } catch (err) {
+        console.error("Persistir orden tareas:", err);
       }
       return;
     }
 
-    // Cambio de columna — persistir
-    await supabase
-      .from("tareas_kanban")
-      .update({ columna: dstCol, updated_at: new Date().toISOString() })
-      .eq("id", active.id as string);
+    // Cambio de columna — persistir.
+    try {
+      await supabase
+        .from("tareas_kanban")
+        .update({ columna: dstCol, updated_at: new Date().toISOString() })
+        .eq("id", active.id as string);
+    } catch (err) {
+      console.error("Mover tarea de columna:", err);
+    }
   }
 
   // ── Modal helpers ─────────────────────────────────────────────────────────
+  // Modal completo (botón "Nueva tarea" del toolbar): pide todos los campos.
   const abrirNuevaTarea = (slug: string) => {
     setColumnaModal(slug);
     setModalTarea(null);  // null = nueva
+  };
+
+  // Adder in-line dentro de una columna: sólo título, creación rápida.
+  const empezarInline = (slug: string) => {
+    setInlineCol(slug);
   };
 
   const abrirEditarTarea = (t: Tarea) => {
@@ -310,7 +344,10 @@ export default function TareasPage() {
                 key={col.slug}
                 col={col}
                 tareas={tareasPorColumna[col.slug] ?? []}
-                onAddTask={() => abrirNuevaTarea(col.slug)}
+                inlineAdding={inlineCol === col.slug}
+                onStartInlineAdd={() => empezarInline(col.slug)}
+                onCancelInlineAdd={() => setInlineCol(null)}
+                onInlineCreated={(t) => onSaveTarea(t)}
                 onTaskClick={abrirEditarTarea}
               />
             ))}
