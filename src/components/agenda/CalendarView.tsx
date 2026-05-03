@@ -119,7 +119,15 @@ export default function CalendarView() {
         await reloadRange(api.view.activeStart, api.view.activeEnd);
       }
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Error al sincronizar";
+      const raw = err instanceof Error ? err.message : "Error al sincronizar";
+      // Server Actions serializan errores como mensaje plano; detectamos
+      // 429/rate_limit por contenido para mostrar un toast más claro.
+      const isRateLimit =
+        (err as { code?: string } | null)?.code === "rate_limit" ||
+        /\b429\b|rate limit/i.test(raw);
+      const msg = isRateLimit
+        ? "Google Calendar ha limitado las peticiones. Espera un minuto y vuelve a sincronizar."
+        : raw;
       setToast({ kind: "error", text: msg });
     } finally {
       setIsSyncing(false);

@@ -44,9 +44,20 @@ export default function OnboardingPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const todoAceptado = REQUIRED.every((r) => checked[r.tipo]);
+  const faltantes = REQUIRED.filter((r) => !checked[r.tipo]);
+  const todoAceptado = faltantes.length === 0;
 
   const enviar = async () => {
+    if (!todoAceptado) {
+      // Defensa en profundidad: el botón ya está deshabilitado, pero si por
+      // accesibilidad alguien lo activa con teclado bloqueamos aquí también.
+      setError(
+        `Para activar tu cuenta debes aceptar: ${faltantes
+          .map((f) => f.label)
+          .join(", ")}.`,
+      );
+      return;
+    }
     setLoading(true);
     setError(null);
     const consentimientos = [...REQUIRED, ...OPCIONAL].map((d) => ({
@@ -118,8 +129,15 @@ export default function OnboardingPage() {
             </div>
           )}
 
+          {!todoAceptado && !error && (
+            <div className="mt-4 rounded-lg border border-warn/30 bg-warn/10 px-3 py-2 text-xs text-warn">
+              Marca las {faltantes.length} casilla{faltantes.length === 1 ? "" : "s"} obligatoria{faltantes.length === 1 ? "" : "s"} pendiente{faltantes.length === 1 ? "" : "s"} para continuar.
+            </div>
+          )}
+
           <button
             onClick={enviar}
+            aria-disabled={!todoAceptado || loading}
             disabled={!todoAceptado || loading}
             className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan to-fuchsia text-sm font-bold text-bg transition-all hover:opacity-95 active:scale-[0.99] disabled:opacity-40"
           >

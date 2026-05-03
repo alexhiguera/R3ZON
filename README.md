@@ -221,6 +221,32 @@ npx cap sync
 
 > Resumen de todo lo construido en orden de iteraciones (más reciente → más antiguo).
 
+### Iteración 30 — *2026-05-03* — Gestión de errores global + gating RGPD reforzado
+
+Avance del plan v1.0 (puntos §2 y §3 de [`plan.md`](plan.md)).
+
+**Toast global y feedback en formularios** (§2):
+- Nuevo provider [`Toast`](src/components/ui/Toast.tsx) con hook `useToast()` y aviso en vivo (`aria-live="polite"`) para reemplazar los toasts locales que cada tab implementaba por su cuenta.
+- El provider se monta dentro de [`AppShell`](src/components/layout/AppShell.tsx) → todas las rutas autenticadas pueden disparar `toast.ok / toast.err / toast.info`.
+- [`clientes/nuevo`](src/app/(app)/clientes/nuevo/page.tsx) detecta `navigator.onLine === false` antes de enviar el insert y muestra toast de éxito/error tras la respuesta de Supabase.
+
+**Estados vacíos con CTA** (§2):
+- [`/clientes`](src/app/(app)/clientes/page.tsx) — el placeholder "Aún no tienes clientes" ahora incluye un botón **Añadir primer cliente** que enlaza a `/clientes/nuevo`.
+- [`/tareas`](src/app/(app)/tareas/page.tsx) — el placeholder "Sin columnas" sustituye el mensaje técnico por un CTA **Crear columnas** que abre `ColumnManager` directamente.
+
+**Google Calendar 429 explícito** (§2):
+- [`fetchEventsPage`](src/lib/agenda.ts) reconoce status 429 y lanza un `Error` con `code = "rate_limit"` y `retryAfter` derivado del header. Mensaje añadido a [`formatGoogleError`](src/lib/google-errors.ts).
+- [`CalendarView.runSync`](src/components/agenda/CalendarView.tsx) detecta el error (por `code` o regex `/\b429\b|rate limit/i` para superar la serialización de Server Actions) y muestra "Espera un minuto y vuelve a sincronizar".
+
+**Pantalla de degradación de Supabase** (§2):
+- [`/dashboard`](src/app/(app)/dashboard/page.tsx) — el banner de error pasa de un `div` plano a una tarjeta `card-glass` con icono, mensaje claro y botón **Reintentar** que recarga la página. Los datos se mantienen en pantalla (degradación elegante, no full-blank).
+
+**Onboarding RGPD bloqueante** (§3):
+- [`onboarding/page.tsx`](src/app/(app)/onboarding/page.tsx) — añadido aviso de las casillas obligatorias pendientes, defensa adicional en `enviar()` (por accesibilidad de teclado) y `aria-disabled` en el botón.
+- **Defensa server-side** en la RPC [`registrar_onboarding`](supabase/auth_extension.sql): valida que `terminos`, `privacidad` y `cookies` estén marcados como `aceptado=true` antes de insertar; si falla, lanza `check_violation` y `onboarding_completado` no se actualiza. Esto blinda la lógica si alguien intentara llamar a la RPC saltándose la UI.
+
+Tipado limpio (`tsc --noEmit` verde). El gating de la layout de `(app)` ya redirigía a `/onboarding` si el usuario no había completado consentimientos; ahora además es imposible completarlos sin las tres aceptaciones obligatorias.
+
 ### Iteración 29 — *2026-05-03* — Auditoría responsive + accesibilidad + metadatos
 
 Pasada amplia siguiendo una auditoría dirigida por tres agentes de exploración (responsive móvil, a11y, metadatos).

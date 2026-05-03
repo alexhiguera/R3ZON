@@ -19,6 +19,8 @@ export function formatGoogleError(code: string): string {
       return "No se pudieron guardar los tokens. Revisa que app.config_master_key esté definida en la BD.";
     case "network_error":
       return "Error de red al hablar con Google. Inténtalo de nuevo.";
+    case "rate_limit":
+      return "Google Calendar ha rechazado la sincronización por límite de peticiones. Espera un minuto y vuelve a intentarlo.";
     default:
       return `Error al conectar con Google (${code}).`;
   }

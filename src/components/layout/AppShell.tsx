@@ -4,11 +4,13 @@ import { useState } from "react";
 import { Menu, X } from "lucide-react";
 import { Sidebar } from "./Sidebar";
 import { DeviceTracker } from "@/components/auth/DeviceTracker";
+import { ToastProvider } from "@/components/ui/Toast";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
 
   return (
+    <ToastProvider>
     <div className="min-h-[100dvh] lg:grid lg:grid-cols-[280px_1fr]">
       <DeviceTracker />
       {/* Sidebar desktop */}
@@ -54,5 +56,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </main>
       </div>
     </div>
+    </ToastProvider>
   );
 }

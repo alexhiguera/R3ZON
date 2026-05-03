@@ -10,6 +10,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useNegocioId } from "@/lib/useNegocioId";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Help } from "@/components/ui/Tooltip";
+import { useToast } from "@/components/ui/Toast";
 
 const ETIQUETAS_SUGERIDAS = ["vip", "nuevo", "empresa", "inactivo"];
 const ESTADOS = [
@@ -23,6 +24,7 @@ type EstadoId = (typeof ESTADOS)[number]["id"];
 export default function NuevoClientePage() {
   const router = useRouter();
   const supabase = createClient();
+  const toast = useToast();
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -62,6 +64,13 @@ export default function NuevoClientePage() {
       return Number.isFinite(n) ? n : null;
     };
 
+    if (typeof window !== "undefined" && !navigator.onLine) {
+      const msg = "Sin conexión. Comprueba tu red y vuelve a intentarlo.";
+      setError(msg);
+      toast.err(msg);
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -89,7 +98,12 @@ export default function NuevoClientePage() {
       .single();
 
     setLoading(false);
-    if (error) return setError(error.message);
+    if (error) {
+      setError(error.message);
+      toast.err(`No se pudo guardar el cliente: ${error.message}`);
+      return;
+    }
+    toast.ok("Cliente creado correctamente.");
     router.push(`/clientes/${data.id}`);
   };
 

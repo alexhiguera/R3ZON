@@ -63,6 +63,20 @@ async function fetchEventsPage(params: URLSearchParams): Promise<GoogleEventsLis
   const path = `/calendars/${encodeURIComponent(CALENDAR_ID)}/events?${params.toString()}`;
   const res  = await googleFetch(path);
 
+  if (res.status === 429) {
+    // Google Calendar rate limit — propagamos un error tipado para que la UI
+    // pueda mostrar un mensaje claro y reintentar más tarde.
+    const retryAfter = res.headers.get("retry-after");
+    const seconds = retryAfter ? Number(retryAfter) : 60;
+    const err = new Error(
+      `Google Calendar rate limit (429). Reintenta en ~${Number.isFinite(seconds) ? seconds : 60}s.`,
+    );
+    (err as Error & { code?: string; retryAfter?: number }).code = "rate_limit";
+    (err as Error & { code?: string; retryAfter?: number }).retryAfter =
+      Number.isFinite(seconds) ? seconds : 60;
+    throw err;
+  }
+
   if (res.status === 410) {
     // Sync token caducado → full sync sin límite temporal.
     params.delete("syncToken");

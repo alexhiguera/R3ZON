@@ -1,6 +1,6 @@
 "use client";
 
-import { Activity, Building2, Calendar, Wallet } from "lucide-react";
+import { Activity, AlertTriangle, Building2, Calendar, RefreshCcw, Wallet } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { UpcomingAppointments } from "@/components/dashboard/UpcomingAppointments";
@@ -52,8 +52,24 @@ export default function Dashboard() {
       />
 
       {error && (
-        <div className="rounded-xl border border-rose-400/30 bg-rose-400/10 p-3 text-sm text-rose-200">
-          No se pudieron cargar todos los datos: {error}
+        <div className="card-glass flex flex-col gap-3 border border-rose-400/30 bg-rose-400/5 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <AlertTriangle size={20} className="mt-0.5 shrink-0 text-rose-300" />
+            <div>
+              <div className="font-display text-sm font-bold text-rose-100">
+                No hemos podido contactar con la base de datos
+              </div>
+              <p className="mt-0.5 text-xs text-rose-200/80">
+                Mostramos los datos en caché que tenemos. Detalle técnico: {error}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => window.location.reload()}
+            className="inline-flex items-center gap-2 self-start rounded-xl border border-rose-400/40 bg-rose-400/10 px-3 py-2 text-xs font-semibold text-rose-100 hover:bg-rose-400/20 sm:self-auto"
+          >
+            <RefreshCcw size={13} /> Reintentar
+          </button>
         </div>
       )}
 

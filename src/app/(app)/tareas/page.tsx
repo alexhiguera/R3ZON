@@ -449,8 +449,15 @@ export default function TareasPage() {
           <Kanban size={32} className="text-indigo-400/30" />
           <div className="font-display text-lg font-bold">Sin columnas</div>
           <p className="max-w-xs text-sm text-text-mid">
-            Ejecuta el SQL de extensión en Supabase para inicializar el tablero.
+            Configura tu primer flujo creando las columnas que necesitas
+            (por ejemplo: Pendiente · En curso · Hecho).
           </p>
+          <button
+            onClick={() => setShowColMgr(true)}
+            className="mt-2 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan to-fuchsia px-4 py-2.5 text-sm font-bold text-bg shadow-glow"
+          >
+            <Settings2 size={15} /> Crear columnas
+          </button>
         </div>
       )}
 

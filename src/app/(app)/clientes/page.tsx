@@ -112,8 +112,16 @@ export default function ClientesPage() {
           <p className="max-w-xs text-sm text-text-mid">
             {busqueda
               ? "Prueba con otra razón social, CIF o sector."
-              : "Añade tu primer cliente con el botón de arriba."}
+              : "Crea tu primer cliente y empieza a registrar contactos, citas y facturación."}
           </p>
+          {!busqueda && (
+            <Link
+              href="/clientes/nuevo"
+              className="mt-2 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan to-fuchsia px-4 py-2.5 text-sm font-bold text-bg shadow-glow"
+            >
+              <Plus size={15} /> Añadir primer cliente
+            </Link>
+          )}
         </div>
       )}
 

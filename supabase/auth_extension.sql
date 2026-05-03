@@ -56,10 +56,29 @@ create or replace function public.registrar_onboarding(
 ) returns uuid
 language plpgsql security definer set search_path = public as $$
 declare
-  v_negocio uuid := public.current_negocio_id();
-  v_doc     jsonb;
+  v_negocio   uuid := public.current_negocio_id();
+  v_doc       jsonb;
+  v_required  text[] := array['terminos','privacidad','cookies'];
+  v_tipo      text;
+  v_aceptado  boolean;
 begin
   if v_negocio is null then raise exception 'No tenant'; end if;
+
+  -- Defensa server-side: las casillas obligatorias del RGPD/LOPDGDD deben
+  -- estar marcadas como aceptadas. Si alguien intenta llamar a la RPC
+  -- saltándose la UI, abortamos en transacción para que no se complete el
+  -- onboarding.
+  foreach v_tipo in array v_required loop
+    select coalesce((d->>'aceptado')::boolean, false)
+      into v_aceptado
+      from jsonb_array_elements(p_consentimientos) d
+     where d->>'tipo' = v_tipo
+     limit 1;
+    if v_aceptado is null or v_aceptado = false then
+      raise exception 'Consentimiento obligatorio % no aceptado', v_tipo
+        using errcode = 'check_violation';
+    end if;
+  end loop;
 
   -- Modelo B2B: el consentimiento del propio titular del negocio se guarda
   -- con cliente_id = NULL (la columna es nullable en consentimientos_rgpd).
