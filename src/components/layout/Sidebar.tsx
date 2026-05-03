@@ -9,9 +9,7 @@ import {
   Kanban,
   Wallet,
   ShieldCheck,
-  Lock,
   Settings,
-  ScanLine,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -24,9 +22,7 @@ const NAV: NavItem[] = [
   { href: "/citas",     label: "Agenda",        Icon: Calendar },
   { href: "/tareas",    label: "Tareas",        Icon: Kanban },
   { href: "/finanzas",  label: "Finanzas",      Icon: Wallet },
-  { href: "/ocr",       label: "Escanear",      Icon: ScanLine },
   { href: "/rgpd",      label: "RGPD",          Icon: ShieldCheck },
-  { href: "/2fa/configurar", label: "Seguridad 2FA", Icon: Lock },
   { href: "/ajustes",   label: "Ajustes",       Icon: Settings },
 ];
 

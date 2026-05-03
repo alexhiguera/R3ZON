@@ -411,6 +411,38 @@ Cuatro bugs reportados. Causa raíz unificada: tablas B2C antiguas referenciadas
 - **`GoogleCard.tsx`** y **`CalendarView.tsx`** — comprueban `serverConfigured` antes de redirigir; detectan `?google_error=` y `?google=connected`; limpian query params con `history.replaceState`.
 - **Sync ilimitado** (`agenda.ts`, `agenda-admin.ts`) — full-sync inicial pasa de `−30d/+90d` a **sin límite temporal** (`orderBy=updated`, sin `timeMin/timeMax`). 410-fallback también elimina los bounds.
 
+### Iteración 28 — *2026-05-03* — Fix hidratación: `<a>` anidados en lista de clientes
+
+**Síntoma**: Next.js console error `In HTML, <a> cannot be a descendant of <a>` al renderizar `/clientes`.
+
+**Causa raíz**: la tarjeta de cliente era un `<Link href="/clientes/[id]">` que envolvía los enlaces de acción rápida (`tel:`, `mailto:`, `wa.me`, web) — `<a>` dentro de `<a>` es HTML inválido y rompe la hidratación.
+
+**Fix** [`src/app/(app)/clientes/page.tsx`](src/app/(app)/clientes/page.tsx): patrón "stretched link" — la tarjeta ahora es un `<article relative>` con un `<Link absolute inset-0>` como overlay y los enlaces de acción son hermanos con `relative z-10` y `pointer-events-auto`. Decoración (avatar, nombre, badges) marcada con `pointer-events-none` para que el área clickable de la card siga llevando a la ficha. Eliminados los `e.stopPropagation()` que ya no hacen falta.
+
+### Iteración 27 — *2026-05-03* — Limpieza de navbar + dashboard como resumen integral
+
+**Navbar más limpia** ([`src/components/layout/Sidebar.tsx`](src/components/layout/Sidebar.tsx)):
+- Retirados los items "Seguridad 2FA" y "Escanear" — eran rutas duplicadas. El 2FA sigue accesible desde Ajustes → Seguridad (que ya tenía el bloque completo `mfa.listFactors()` + link a `/2fa/configurar`); el OCR sigue accesible desde la `QuickAction` "Escanear ticket" en Finanzas. Ambas rutas (`/2fa/configurar` y `/ocr`) se mantienen sin cambios — solo se quita el ruido de la barra lateral.
+
+**Dashboard rediseñado** ([`src/app/(app)/dashboard/page.tsx`](src/app/(app)/dashboard/page.tsx)):
+- Antes: 4 KPIs estáticos hardcodeados a "—".
+- Ahora: panel agregador con saludo dinámico (mañana/tarde/noche) y 4 filas de widgets responsivos.
+- **Fila 1 — KPIs**: Clientes (con altas del mes), Citas hoy (con próxima cita destacada), Ingresos del mes (delta % vs mes anterior), Tareas pendientes (con vencidas en rojo).
+- **Fila 2 — Estado financiero**: 3 sub-KPIs (Te queda año, Apartar Hacienda IVA+IRPF, Beneficio del mes) + `<MonthlyBars>` reutilizado de Charts.
+- **Fila 3**: Próximas citas (7 días, vía `listEvents`) + Tareas pendientes (top 5 ordenadas por fecha límite, badges de prioridad y vencimiento).
+- **Fila 4**: Últimos clientes (5, con sector y fecha relativa, link a ficha) + Actividad reciente (10, feed de `comunicaciones` con icono por tipo: nota/email/whatsapp/webhook).
+
+**Hook agregador** ([`src/lib/useDashboardData.ts`](src/lib/useDashboardData.ts)):
+- 13 queries en paralelo con `Promise.all`: counts head-only para KPIs, ranges para listas, join `comunicaciones → clientes(nombre)` para nombrar al cliente en el feed.
+- Reutiliza `useNegocioId()`, `listEvents()` y los tipos `MovimientoFila` existentes — cero duplicación de lógica.
+- Skeletons globales mientras `loading`; banner de error inline si alguna query falla pero no bloquea el render.
+
+**Componentes nuevos** ([`src/components/dashboard/`](src/components/dashboard/)):
+- `KpiCard` reusable (label, value, hint, delta tonal up/down/neutral, 5 acentos cyan/fuchsia/ok/warn/danger, skeleton).
+- `UpcomingAppointments`, `PendingTasks`, `RecentClients`, `RecentActivity`, `FinanceSummary` — cada uno con su empty state y skeleton. Todos siguen el R3ZON Design System (glass, accent-bar, secciones con icono).
+
+Build verde (32 rutas), tipado limpio.
+
 ### Iteración 26 — *2026-05-02* — Google Calendar: cron de renovación de watch channels
 - **Endpoint cron** [`src/app/api/cron/refresh-google-channels/route.ts`](src/app/api/cron/refresh-google-channels/route.ts) — protegido con `CRON_SECRET` (Bearer header) o `x-vercel-cron`. Llama a `refreshExpiringWatchChannels()` y devuelve `{ total, renewed, failed, errors[] }`. Acepta GET y POST (para `pg_cron + net.http_post`).
 - **`refreshExpiringWatchChannels()`** en [`src/lib/agenda-admin.ts`](src/lib/agenda-admin.ts) — lista `google_connections` con `channel_expiration` nulo o en <24h; registra nuevo watch para cada una vía `googleFetchAdmin` + UPDATE service-role. Errores individuales no bloquean al resto.

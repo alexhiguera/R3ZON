@@ -120,13 +120,19 @@ export default function ClientesPage() {
       {/* Cuadrícula de clientes */}
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {clientes.map((c) => (
-          <Link
+          <article
             key={c.id}
-            href={`/clientes/${c.id}`}
-            className="card-glass group flex flex-col gap-3 p-4 transition-all hover:-translate-y-0.5"
+            className="card-glass group relative flex flex-col gap-3 p-4 transition-all hover:-translate-y-0.5"
           >
+            {/* Stretched link — cubre la tarjeta sin envolver los enlaces de acción */}
+            <Link
+              href={`/clientes/${c.id}`}
+              aria-label={c.nombre}
+              className="absolute inset-0 z-0 rounded-[inherit] focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan/40"
+            />
+
             {/* Avatar + nombre + estado */}
-            <div className="flex items-center gap-3">
+            <div className="relative z-10 flex items-center gap-3 pointer-events-none">
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-indigo-400/20 bg-indigo-900/40 font-display text-lg font-bold uppercase text-indigo-300">
                 {c.nombre.charAt(0)}
               </div>
@@ -147,7 +153,7 @@ export default function ClientesPage() {
             </div>
 
             {/* Estado */}
-            <div className="flex items-center gap-2">
+            <div className="relative z-10 flex items-center gap-2 pointer-events-none">
               <span className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${ESTADO_BADGE[c.estado]}`}>
                 {c.estado}
               </span>
@@ -163,15 +169,14 @@ export default function ClientesPage() {
               ))}
             </div>
 
-            {/* Acciones rápidas */}
-            <div className="flex items-center gap-2">
+            {/* Acciones rápidas — los enlaces necesitan pointer-events para superponerse al stretched link */}
+            <div className="relative z-10 flex items-center gap-2">
               {c.telefono && (
                 <>
                   <Tooltip text="Llamar" side="bottom">
                     <a
                       href={`tel:${c.telefono}`}
-                      onClick={(e) => e.stopPropagation()}
-                      className="flex h-8 w-8 items-center justify-center rounded-lg border border-indigo-400/20 bg-indigo-900/40 text-indigo-300 hover:border-ok/40 hover:text-ok"
+                      className="relative z-10 flex h-8 w-8 items-center justify-center rounded-lg border border-indigo-400/20 bg-indigo-900/40 text-indigo-300 hover:border-ok/40 hover:text-ok"
                     >
                       <Phone size={13} />
                     </a>
@@ -181,8 +186,7 @@ export default function ClientesPage() {
                       href={`https://wa.me/${c.telefono.replace(/\D/g, "")}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      onClick={(e) => e.stopPropagation()}
-                      className="flex h-8 w-8 items-center justify-center rounded-lg border border-indigo-400/20 bg-indigo-900/40 text-indigo-300 hover:border-ok/40 hover:text-ok"
+                      className="relative z-10 flex h-8 w-8 items-center justify-center rounded-lg border border-indigo-400/20 bg-indigo-900/40 text-indigo-300 hover:border-ok/40 hover:text-ok"
                     >
                       <MessageCircle size={13} />
                     </a>
@@ -193,8 +197,7 @@ export default function ClientesPage() {
                 <Tooltip text="Email" side="bottom">
                   <a
                     href={`mailto:${c.email}`}
-                    onClick={(e) => e.stopPropagation()}
-                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-indigo-400/20 bg-indigo-900/40 text-indigo-300 hover:border-cyan/40 hover:text-cyan"
+                    className="relative z-10 flex h-8 w-8 items-center justify-center rounded-lg border border-indigo-400/20 bg-indigo-900/40 text-indigo-300 hover:border-cyan/40 hover:text-cyan"
                   >
                     <Mail size={13} />
                   </a>
@@ -206,19 +209,18 @@ export default function ClientesPage() {
                     href={c.sitio_web.startsWith("http") ? c.sitio_web : `https://${c.sitio_web}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    onClick={(e) => e.stopPropagation()}
-                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-indigo-400/20 bg-indigo-900/40 text-indigo-300 hover:border-cyan/40 hover:text-cyan"
+                    className="relative z-10 flex h-8 w-8 items-center justify-center rounded-lg border border-indigo-400/20 bg-indigo-900/40 text-indigo-300 hover:border-cyan/40 hover:text-cyan"
                   >
                     <Globe size={13} />
                   </a>
                 </Tooltip>
               )}
-              <div className="flex-1" />
-              <span className="text-[0.65rem] text-text-lo">
+              <div className="pointer-events-none flex-1" />
+              <span className="pointer-events-none text-[0.65rem] text-text-lo">
                 Alta {new Date(c.created_at).toLocaleDateString("es-ES", { day: "2-digit", month: "short" })}
               </span>
             </div>
-          </Link>
+          </article>
         ))}
       </div>
     </div>
