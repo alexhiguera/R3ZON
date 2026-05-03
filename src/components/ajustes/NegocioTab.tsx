@@ -196,6 +196,7 @@ export function NegocioTab({ perfil }: { perfil: PerfilNegocio }) {
                 type="button"
                 onClick={() => fileRef.current?.click()}
                 disabled={uploading}
+                aria-label={logoUrl ? "Cambiar el logo del negocio" : "Subir un logo para el negocio"}
                 className="flex items-center gap-1.5 rounded-xl border border-indigo-400/25 bg-indigo-900/40 px-3 py-2 text-xs font-medium text-text-hi hover:border-cyan/40 disabled:opacity-50"
               >
                 {uploading ? <Loader2 className="animate-spin" size={13} /> : <Upload size={13} />}
@@ -206,6 +207,7 @@ export function NegocioTab({ perfil }: { perfil: PerfilNegocio }) {
                   type="button"
                   onClick={eliminarLogo}
                   disabled={uploading}
+                  aria-label="Eliminar el logo del negocio"
                   className="flex items-center gap-1.5 rounded-xl border border-rose-400/25 bg-rose-500/10 px-3 py-2 text-xs font-medium text-rose-200 hover:border-rose-400/50 disabled:opacity-50"
                 >
                   <Trash2 size={13} /> Eliminar

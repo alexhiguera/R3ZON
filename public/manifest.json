@@ -1,0 +1,22 @@
+{
+  "name": "R3ZON Business OS",
+  "short_name": "R3ZON",
+  "description": "Sistema operativo de negocio para autónomos y pequeñas empresas: clientes, agenda, tareas, finanzas y OCR de tickets en un único panel.",
+  "start_url": "/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#080714",
+  "theme_color": "#080714",
+  "lang": "es-ES",
+  "dir": "ltr",
+  "categories": ["business", "productivity", "finance"],
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

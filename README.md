@@ -411,6 +411,32 @@ Cuatro bugs reportados. Causa raíz unificada: tablas B2C antiguas referenciadas
 - **`GoogleCard.tsx`** y **`CalendarView.tsx`** — comprueban `serverConfigured` antes de redirigir; detectan `?google_error=` y `?google=connected`; limpian query params con `history.replaceState`.
 - **Sync ilimitado** (`agenda.ts`, `agenda-admin.ts`) — full-sync inicial pasa de `−30d/+90d` a **sin límite temporal** (`orderBy=updated`, sin `timeMin/timeMax`). 410-fallback también elimina los bounds.
 
+### Iteración 29 — *2026-05-03* — Auditoría responsive + accesibilidad + metadatos
+
+Pasada amplia siguiendo una auditoría dirigida por tres agentes de exploración (responsive móvil, a11y, metadatos).
+
+**Responsive móvil (≤400px de ancho)**:
+- [`finanzas/nuevo/page.tsx`](src/app/(app)/finanzas/nuevo/page.tsx), [`ocr/page.tsx`](src/app/(app)/ocr/page.tsx), [`kanban/TaskModal.tsx`](src/components/kanban/TaskModal.tsx) — `grid grid-cols-2` → `grid-cols-1 sm:grid-cols-2` para que los pares de campos no provoquen scroll horizontal.
+- OCR — paddings `p-8/p-10` → `p-5/p-6 sm:p-8/sm:p-10` (tarjetas y `ActionCard`).
+- **Modales con scroll en mobile**: `TaskModal`, `EventModal` y `ContactoModal` ahora son `flex max-h-[calc(100vh-2rem)] flex-col` con cabecera/pie `shrink-0` y body `flex-1 overflow-y-auto`. Permite scrollear el contenido en pantallas cortas sin que se corte el botón de guardar.
+
+**Accesibilidad**:
+- **`aria-label` en links/botones icon-only**: tel/mailto/WhatsApp en [`ContactosTab`](src/components/clientes/ContactosTab.tsx) ahora dicen *"Llamar a Juan García"*, *"Enviar email a Juan García"*, etc. Botones editar/eliminar contacto y de logo en [`NegocioTab`](src/components/ajustes/NegocioTab.tsx) también etiquetados.
+- **`role="dialog"` + `aria-modal` + `aria-labelledby`** añadidos a `TaskModal` y `ContactoModal` (EventModal ya los tenía).
+- **`<span role="button">` con teclado**: el "quitar cliente" del combobox en [`EventModal`](src/components/agenda/EventModal.tsx) ahora responde a Enter/Space (no se podía cambiar a `<button>` sin anidar botones).
+- **`alt` mejorado**: imagen del ticket en OCR pasa de `alt="Ticket"` a `"Foto del ticket escaneado"`.
+- **Iconos icon-only crecidos a 36×36** en `ContactosTab` (antes 32×32) para tocabilidad ≥ guideline.
+- **`type="tel"`** en input de teléfono en `ContactoModal` (autocompletado y teclado móvil correctos).
+
+**Metadatos / SEO / PWA**:
+- **Root layout** ([src/app/layout.tsx](src/app/layout.tsx)) ampliado: `metadataBase` desde `NEXT_PUBLIC_SITE_URL`, `title.template = "%s · R3ZON"`, `applicationName`, `keywords`, `openGraph` con locale `es_ES`, `twitter` summary, `robots` con directivas `googleBot`, `formatDetection: { email/telephone/address: false }`. `viewport` añade `colorScheme: "dark"` y `maximumScale: 5`.
+- **Layouts server por ruta** con metadata específica creados para `dashboard`, `clientes`, `citas`, `tareas`, `finanzas`, `ocr`, `ajustes`, `rgpd`, `onboarding`, `login`, `registro`, `2fa`. Cada uno renderiza solo `{children}` y exporta `metadata` (las páginas internas son Client Components y no pueden exportar metadata directamente). Las rutas internas llevan `robots: { index: false }` para no indexar el panel.
+- **`public/manifest.json`** creado para PWA: name, short_name, start_url=/dashboard, theme_color #080714, locale `es-ES`, categorías business/productivity/finance, icono `/icon.svg`.
+- **Favicon vectorial**: [`src/app/icon.svg`](src/app/icon.svg) (32px) + [`src/app/apple-icon.svg`](src/app/apple-icon.svg) (180px) con la marca R3 sobre gradiente indigo y dot cyan.
+- **`src/app/robots.ts`** y **`src/app/sitemap.ts`** generados desde `NEXT_PUBLIC_SITE_URL`. Sitemap incluye home, login/registro y las 4 páginas legales; robots permite home y `/legal/`, prohíbe el panel y `/api/`.
+
+Build verde (35 rutas, +3 nuevas: `/icon.svg`, `/robots.txt`, `/sitemap.xml`). Tipado limpio.
+
 ### Iteración 28 — *2026-05-03* — Fix hidratación: `<a>` anidados en lista de clientes
 
 **Síntoma**: Next.js console error `In HTML, <a> cannot be a descendant of <a>` al renderizar `/clientes`.

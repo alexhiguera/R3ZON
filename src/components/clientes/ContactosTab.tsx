@@ -163,46 +163,51 @@ export function ContactosTab({
                   {c.email && (
                     <a
                       href={`mailto:${c.email}`}
-                      className="flex h-8 w-8 items-center justify-center rounded-lg border border-indigo-400/20 bg-indigo-900/40 text-indigo-300 hover:border-cyan/40 hover:text-cyan"
+                      aria-label={`Enviar email a ${c.nombre}`}
+                      className="flex h-9 w-9 items-center justify-center rounded-lg border border-indigo-400/20 bg-indigo-900/40 text-indigo-300 hover:border-cyan/40 hover:text-cyan"
                       title="Email"
                     >
-                      <Mail size={13} />
+                      <Mail size={14} />
                     </a>
                   )}
                   {c.telefono && (
                     <>
                       <a
                         href={`tel:${c.telefono}`}
-                        className="flex h-8 w-8 items-center justify-center rounded-lg border border-indigo-400/20 bg-indigo-900/40 text-indigo-300 hover:border-ok/40 hover:text-ok"
+                        aria-label={`Llamar a ${c.nombre}`}
+                        className="flex h-9 w-9 items-center justify-center rounded-lg border border-indigo-400/20 bg-indigo-900/40 text-indigo-300 hover:border-ok/40 hover:text-ok"
                         title="Llamar"
                       >
-                        <Phone size={13} />
+                        <Phone size={14} />
                       </a>
                       <a
                         href={`https://wa.me/${c.telefono.replace(/\D/g, "")}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex h-8 w-8 items-center justify-center rounded-lg border border-indigo-400/20 bg-indigo-900/40 text-indigo-300 hover:border-ok/40 hover:text-ok"
+                        aria-label={`Abrir WhatsApp con ${c.nombre}`}
+                        className="flex h-9 w-9 items-center justify-center rounded-lg border border-indigo-400/20 bg-indigo-900/40 text-indigo-300 hover:border-ok/40 hover:text-ok"
                         title="WhatsApp"
                       >
-                        <MessageCircle size={13} />
+                        <MessageCircle size={14} />
                       </a>
                     </>
                   )}
                   <div className="flex-1" />
                   <button
                     onClick={() => abrirEditar(c)}
-                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-indigo-400/20 bg-indigo-900/40 text-indigo-300 hover:border-cyan/40 hover:text-cyan"
+                    aria-label={`Editar contacto ${c.nombre}`}
+                    className="flex h-9 w-9 items-center justify-center rounded-lg border border-indigo-400/20 bg-indigo-900/40 text-indigo-300 hover:border-cyan/40 hover:text-cyan"
                     title="Editar"
                   >
-                    <Pencil size={13} />
+                    <Pencil size={14} />
                   </button>
                   <button
                     onClick={() => eliminar(c)}
-                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-indigo-400/20 bg-indigo-900/40 text-indigo-300 hover:border-danger/40 hover:text-danger"
+                    aria-label={`Eliminar contacto ${c.nombre}`}
+                    className="flex h-9 w-9 items-center justify-center rounded-lg border border-indigo-400/20 bg-indigo-900/40 text-indigo-300 hover:border-danger/40 hover:text-danger"
                     title="Eliminar"
                   >
-                    <Trash2 size={13} />
+                    <Trash2 size={14} />
                   </button>
                 </div>
               </div>
@@ -278,26 +283,33 @@ function ContactoModal({
     onChange({ ...form, [k]: v });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-4 backdrop-blur-sm sm:items-center">
-      <div className="card-glass w-full max-w-lg overflow-hidden">
-        <div className="rainbow-bar" />
-        <div className="flex items-center justify-between border-b border-indigo-400/10 p-5">
-          <h2 className="font-display text-lg font-bold text-text-hi">
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-4 backdrop-blur-sm sm:items-center"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="contacto-modal-title"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="card-glass flex max-h-[calc(100vh-2rem)] w-full max-w-lg flex-col overflow-hidden">
+        <div className="rainbow-bar shrink-0" />
+        <div className="flex shrink-0 items-center justify-between border-b border-indigo-400/10 p-5">
+          <h2 id="contacto-modal-title" className="font-display text-lg font-bold text-text-hi">
             {form.id ? "Editar contacto" : "Nuevo contacto"}
           </h2>
           <button
             onClick={onClose}
+            aria-label="Cerrar editor de contacto"
             className="flex h-9 w-9 items-center justify-center rounded-lg text-text-lo hover:bg-indigo-900/40 hover:text-text-hi"
           >
             <X size={16} />
           </button>
         </div>
 
-        <div className="grid gap-3 p-5 sm:grid-cols-2">
+        <div className="grid flex-1 gap-3 overflow-y-auto p-5 sm:grid-cols-2">
           <Field label="Nombre *" value={form.nombre} onChange={(v) => set("nombre", v)} />
           <Field label="Apellidos" value={form.apellidos} onChange={(v) => set("apellidos", v)} />
           <Field label="Email" value={form.email} onChange={(v) => set("email", v)} type="email" />
-          <Field label="Teléfono" value={form.telefono} onChange={(v) => set("telefono", v)} />
+          <Field label="Teléfono" value={form.telefono} onChange={(v) => set("telefono", v)} type="tel" />
           <Field label="Puesto" value={form.puesto} onChange={(v) => set("puesto", v)} placeholder="Director Comercial" />
           <Field label="Departamento" value={form.departamento} onChange={(v) => set("departamento", v)} placeholder="Ventas" />
 
@@ -334,7 +346,7 @@ function ContactoModal({
           </label>
         </div>
 
-        <div className="flex justify-end gap-2 border-t border-indigo-400/10 bg-indigo-900/20 p-4">
+        <div className="flex shrink-0 justify-end gap-2 border-t border-indigo-400/10 bg-indigo-900/20 p-4">
           <button
             onClick={onClose}
             className="rounded-xl border border-indigo-400/25 bg-indigo-900/40 px-4 py-2.5 text-sm text-text-mid"

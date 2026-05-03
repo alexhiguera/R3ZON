@@ -94,14 +94,17 @@ export function TaskModal({ tarea, columnaActual, columnas, onClose, onSave, onD
     <div
       ref={overlayRef}
       onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-4 backdrop-blur-sm sm:items-center"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="task-modal-title"
     >
-      <div className="card-glass w-full max-w-lg overflow-hidden">
-        <div className="rainbow-bar" />
+      <div className="card-glass flex max-h-[calc(100vh-2rem)] w-full max-w-lg flex-col overflow-hidden">
+        <div className="rainbow-bar shrink-0" />
 
         {/* Header */}
-        <div className="flex items-center justify-between px-5 pt-5">
-          <h2 className="font-display text-lg font-bold text-text-hi">
+        <div className="flex shrink-0 items-center justify-between px-5 pt-5">
+          <h2 id="task-modal-title" className="font-display text-lg font-bold text-text-hi">
             {esNueva ? "Nueva tarea" : "Editar tarea"}
           </h2>
           <div className="flex items-center gap-2">
@@ -109,6 +112,7 @@ export function TaskModal({ tarea, columnaActual, columnas, onClose, onSave, onD
               <Tooltip text="Eliminar esta tarea permanentemente." side="bottom">
                 <button
                   onClick={eliminar}
+                  aria-label="Eliminar tarea"
                   className="flex h-9 w-9 items-center justify-center rounded-xl border border-indigo-400/20 text-indigo-300 hover:border-danger/40 hover:text-danger"
                 >
                   <Trash2 size={15} />
@@ -117,6 +121,7 @@ export function TaskModal({ tarea, columnaActual, columnas, onClose, onSave, onD
             )}
             <button
               onClick={onClose}
+              aria-label="Cerrar editor de tareas"
               className="flex h-9 w-9 items-center justify-center rounded-xl border border-indigo-400/20 text-indigo-300 hover:text-text-hi"
             >
               <X size={16} />
@@ -125,7 +130,7 @@ export function TaskModal({ tarea, columnaActual, columnas, onClose, onSave, onD
         </div>
 
         {/* Body */}
-        <div className="flex flex-col gap-4 p-5">
+        <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-5">
           {/* Título */}
           <label className="flex flex-col gap-1.5">
             <span className="flex items-center gap-1.5 text-xs font-medium text-text-mid">
@@ -156,7 +161,7 @@ export function TaskModal({ tarea, columnaActual, columnas, onClose, onSave, onD
           </label>
 
           {/* Columna + Prioridad */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <label className="flex flex-col gap-1.5">
               <span className="flex items-center gap-1.5 text-xs font-medium text-text-mid">
                 <User size={11} /> Columna

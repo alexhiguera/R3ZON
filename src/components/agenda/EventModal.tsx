@@ -214,11 +214,11 @@ export function EventModal({
       aria-modal="true"
       aria-labelledby="event-modal-title"
     >
-      <div className="card-glass relative w-full max-w-2xl overflow-hidden">
-        <div className="rainbow-bar" />
+      <div className="card-glass relative flex max-h-[calc(100vh-4rem)] w-full max-w-2xl flex-col overflow-hidden">
+        <div className="rainbow-bar shrink-0" />
 
         {/* Cabecera */}
-        <div className="flex items-start justify-between px-6 pt-5">
+        <div className="flex shrink-0 items-start justify-between px-6 pt-5">
           <div>
             <div className="section-label mb-1">{isEdit ? "Editar cita" : "Nueva cita"}</div>
             <h2 id="event-modal-title" className="font-display text-xl font-bold text-text-hi">
@@ -244,7 +244,7 @@ export function EventModal({
         </div>
 
         {/* Cuerpo */}
-        <div className="grid gap-4 px-6 py-5 sm:grid-cols-2">
+        <div className="grid flex-1 gap-4 overflow-y-auto px-6 py-5 sm:grid-cols-2">
           {/* Título */}
           <div className="sm:col-span-2">
             <label className="mb-1 flex items-center gap-1 text-xs font-semibold text-text-mid">
@@ -283,8 +283,17 @@ export function EventModal({
                   <span
                     role="button"
                     tabIndex={0}
+                    aria-label="Quitar cliente vinculado"
                     onClick={(e) => { e.stopPropagation(); setSelected(null); setClienteId(null); }}
-                    className="text-xs text-text-mid hover:text-danger"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setSelected(null);
+                        setClienteId(null);
+                      }
+                    }}
+                    className="cursor-pointer text-xs text-text-mid hover:text-danger focus:outline-none focus-visible:text-danger"
                   >
                     quitar
                   </span>

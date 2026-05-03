@@ -129,7 +129,7 @@ export default function OCRPage() {
       )}
 
       {estado === "ocr" && (
-        <div className="card-glass p-8 text-center">
+        <div className="card-glass p-5 text-center sm:p-8">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-cyan/30 bg-cyan/10 text-cyan">
             <ScanLine size={22} className="animate-pulse" />
           </div>
@@ -153,7 +153,7 @@ export default function OCRPage() {
             <div className="card-glass overflow-hidden p-3">
               <img
                 src={imagen}
-                alt="Ticket"
+                alt="Foto del ticket escaneado"
                 className="max-h-[400px] w-full rounded-xl object-contain"
               />
             </div>
@@ -168,7 +168,7 @@ export default function OCRPage() {
                 Hemos leído lo que pone en el ticket. Cambia lo que necesites antes de guardar.
               </p>
 
-              <div className="mt-5 grid grid-cols-2 gap-3">
+              <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <Field
                   label="Concepto"
                   value={concepto}
@@ -246,7 +246,7 @@ export default function OCRPage() {
       )}
 
       {estado === "ok" && (
-        <div className="card-glass flex flex-col items-center gap-3 p-10 text-center">
+        <div className="card-glass flex flex-col items-center gap-3 p-6 text-center sm:p-10">
           <span className="flex h-14 w-14 items-center justify-center rounded-2xl border border-ok/30 bg-ok/10 text-ok">
             <CheckCircle size={24} />
           </span>
@@ -278,7 +278,7 @@ function ActionCard({
   return (
     <button
       onClick={onClick}
-      className="card-glass flex flex-col items-center gap-3 p-8 transition-all hover:-translate-y-0.5 active:scale-[0.99]"
+      className="card-glass flex flex-col items-center gap-3 p-6 transition-all hover:-translate-y-0.5 active:scale-[0.99] sm:p-8"
     >
       <span className={`flex h-14 w-14 items-center justify-center rounded-2xl border ${cls}`}>
         <Icon size={22} />

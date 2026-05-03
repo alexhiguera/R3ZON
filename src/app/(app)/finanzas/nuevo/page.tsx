@@ -88,11 +88,11 @@ export default function NuevoMovimiento() {
 
         <form onSubmit={submit} className="mt-5 flex flex-col gap-4">
           <Input label="¿En qué?" value={concepto} onChange={setConcepto} placeholder="Ej: Trabajo para Juan" required />
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Input label="Fecha" type="date" value={fecha} onChange={setFecha} required />
             <Input label="Cantidad sin IVA (€)" type="number" step="0.01" value={base} onChange={setBase} required />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Input label="IVA %" type="number" value={iva} onChange={setIva} />
             <Input label="IRPF %" type="number" value={irpf} onChange={setIrpf} />
           </div>
