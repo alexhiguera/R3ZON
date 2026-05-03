@@ -187,229 +187,39 @@ npx cap sync
 
 | Módulo | Estado | Notas |
 |---|---|---|
-| Diseño base + AppShell | ✅ Completo | Sidebar 56px táctil, drawer mobile |
-| Esquema BD multi-tenant | ✅ Completo | RLS + pgcrypto + triggers |
-| Autenticación email | ✅ Completo | Login, registro, recuperación |
-| OAuth (Google) | ✅ Completo | Solo Google; Apple/Facebook retirados |
-| 2FA (TOTP) | ✅ Completo | Enrolment + verificación |
-| Email nuevo dispositivo | ✅ Completo | Edge Function + Resend |
-| Onboarding RGPD | ✅ Completo | Logs en `consentimientos_rgpd` |
-| Páginas legales | ✅ Plantillas | Privacidad, cookies, términos, aviso |
-| Finanzas — dashboard | ✅ Completo | Recharts + KPIs simples |
-| OCR de tickets | ✅ Completo | Tesseract.js client-side |
-| Clientes CRM (B2B) | ✅ Completo | Empresas, contactos, organigrama, webhook n8n |
-| Tareas Kanban | ✅ Completo | dnd-kit, columnas reordenables, batch RPC, drag total |
-| Agenda + Google Calendar | ✅ Completo | FullCalendar dark, sync bidireccional, push webhook, watch channel auto-renovado |
-| Ajustes — Negocio | ✅ Completo | Perfil, logo en Storage |
-| Ajustes — Integraciones | ✅ Completo | Google Calendar (conectar/desconectar), n8n webhook cifrado |
-| Ajustes — Equipo | ✅ Completo | Invitaciones, roles, revocación con audit trail RGPD |
-| Ajustes — Suscripción | ✅ Completo | Stripe Checkout + Portal + historial facturas |
-| Ajustes — Seguridad | ✅ Completo | 2FA, dispositivos, cierre global |
-| Página 404 | ✅ Completo | Glass con CTAs |
+| Diseño base + AppShell | ✅ Completo | Sidebar 56px táctil, drawer mobile, responsive ≤400px |
+| Esquema BD multi-tenant | ✅ Completo | RLS + pgcrypto + triggers multi-tenant auto-fill |
+| Autenticación email | ✅ Completo | Login, registro, recuperación, dev mode toggle |
+| OAuth (Google) | ✅ Completo | Calendar + Drive.file + profile, offline token, CSRF cookie |
+| 2FA (TOTP) | ✅ Completo | Enrolment + verificación, middleware SSR |
+| Email nuevo dispositivo | ✅ Completo | Edge Function + Resend, fingerprint SHA-256 |
+| Onboarding RGPD | ✅ Completo | Logs en `consentimientos_rgpd` + timestamp/IP/UA |
+| Páginas legales | ✅ Plantillas | Privacidad, cookies, términos, aviso, metadata SEO |
+| Finanzas — dashboard | ✅ Completo | Recharts barras/líneas, KPI delta %, agregados mensuales |
+| Finanzas — nuevo movimiento | ✅ Completo | Toggle "He cobrado / He gastado", cálculo IVA/IRPF en vivo |
+| OCR de tickets | ✅ Completo | Tesseract.js client-side, parser regex ES, edición antes de guardar |
+| Clientes CRM (B2B) | ✅ Completo | B2B 100%, contactos con jerarquía, webhook n8n cifrado |
+| Clientes — ficha | ✅ Completo | 4 tabs (Info, Contactos, Historial citas, Automático), edición inline |
+| Tareas Kanban | ✅ Completo | dnd-kit, columnas reordenables, drag total, creación inline, batch RPC |
+| Tareas — columnas | ✅ Completo | Manager modal con color, rename, delete. Arrastrables horizontalmente |
+| Agenda + Google Calendar | ✅ Completo | FullCalendar v6 dark, sync bidireccional, push webhook, watch channel cron |
+| Agenda — modal cita | ✅ Completo | Google primero, fallback local, vinculación cliente, 6 colores, timestamp |
+| Ajustes — Negocio | ✅ Completo | Perfil empresa, logo en Storage (2MB, PNG/JPG/WebP/SVG) |
+| Ajustes — Integraciones | ✅ Completo | Google (status RPC), n8n webhook cifrado, HelpDrawer guías paso a paso |
+| Ajustes — Equipo | ✅ Completo | Invitaciones RPC, roles (admin/editor/lector), revocación audit trail |
+| Ajustes — Suscripción | ✅ Completo | Stripe Checkout + Portal, webhook firma validada, historial facturas |
+| Ajustes — Seguridad | ✅ Completo | 2FA TOTP, dispositivos conocidos, cierre global, auth.admin only |
+| Dashboard | ✅ Completo | Widgets agregadores (KPIs, próximas citas, tareas, clientes, actividad) |
+| Página 404 | ✅ Completo | Glass con gradient, CTAs contextuales |
+| Responsive / A11y | ✅ Completo | Mobile ≤400px, modal scroll, aria-label/role, alt mejorado, 36×36px iconos |
+| Testing | ✅ Completo | Vitest + 50 tests (parser, finanzas, stripe, google, RPC, webhook) |
+| SEO / PWA / Metadatos | ✅ Completo | metadata por ruta, manifest.json, favicon SVG, robots.ts, sitemap.ts |
 
 ---
 
 ## 📒 Bitácora de iteraciones
 
-> Cada bloque resume lo construido en una iteración. Orden cronológico, numeración secuencial.
-
-### Iteración 1 — *2026-04-28* — Fundación del proyecto
-- **Stack inicial**: Next.js 14, TypeScript, Tailwind, Supabase SSR clients.
-- **Esquema multi-tenant** (`supabase/schema.sql`) con `perfiles_negocio`, `clientes`, `citas`, `tareas_kanban`, `finanzas` (con IVA/IRPF como columnas generadas), `consentimientos_rgpd`, `config_keys` (cifrada con `pgcrypto`). RLS y trigger de bootstrap incluidos.
-- **AppShell** con `Sidebar` (botones grandes 56px) y drawer mobile, siguiendo el R3ZON Design System. Páginas placeholder para todos los módulos.
-
-### Iteración 2 — *2026-04-28* — Credenciales Supabase
-- Guardadas las credenciales reales del proyecto en `.env.local` (gitignored).
-- Migración a la nueva nomenclatura `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
-- `SUPABASE_DB_PASSWORD` separado sin prefijo `NEXT_PUBLIC_` para no exponerlo al bundle.
-
-### Iteración 3 — *2026-04-28* — Autenticación, 2FA, RGPD y legales
-- **Auth completa**: `/login`, `/registro` con email + 3 botones OAuth (Google, Apple, Facebook).
-- **2FA TOTP**: `/2fa/configurar` (QR + clave manual) y `/2fa` (verificación). Middleware fuerza el flujo cuando la sesión es `aal1` con `nextLevel=aal2`.
-- **Email de nuevo dispositivo**: `DeviceTracker` calcula fingerprint SHA-256 y, si es nuevo, invoca la Edge Function `notify-new-device` que envía mail con Resend.
-- **Onboarding RGPD**: checkboxes obligatorios (términos, privacidad, cookies) + opcional marketing → RPC `registrar_onboarding` graba en `consentimientos_rgpd` con IP, UA y versión.
-- **4 páginas legales** (`/legal/*`) con plantillas RGPD/LOPDGDD/LSSI-CE.
-- Nuevas tablas: `terminos_versiones`, `dispositivos_conocidos`. Columnas `onboarding_completado*` en `perfiles_negocio`.
-
-### Iteración 4 — *2026-04-28* — Finanzas, OCR y admin
-- **Credenciales admin** en `.env.local` + script `npm run seed:admin`.
-- **OCR client-side**: `lib/ocr/engine.ts` (wrapper Tesseract.js con modelo spa+eng) + `lib/ocr/parser.ts` (regex específicos para tickets españoles: fecha, CIF/NIF, base, IVA % y total).
-- **Pantalla `/ocr`** con cámara/upload, barra de progreso y revisión editable antes de guardar.
-- **Dashboard `/finanzas`** con Recharts: 4 KPIs ("Lo que has ganado", "Lo que has gastado", "Te queda", "Apartar para Hacienda"), barras mensuales, previsión de impuestos y lista de últimos movimientos.
-- **`/finanzas/nuevo`** con toggle "He cobrado / He gastado" y cálculo en vivo del total.
-- Dependencias añadidas: `tesseract.js`, `recharts`.
-
-### Iteración 5 — *2026-04-28* — Bitácora en README
-- Reescrito `README.md` con el estado real del proyecto, estructura de carpetas y tabla de módulos.
-- Añadida la sección **Bitácora de iteraciones** que se actualiza en cada turno.
-
-### Iteración 6 — *2026-04-28* — CRM completo + Kanban con Drag & Drop
-
-**SQL:** nueva migración `supabase/crm_kanban_ext.sql` con tablas `comunicaciones`, `kanban_columnas` y columnas `webhook_url/webhook_activo` en `clientes`. RLS aplicado. Trigger `seed_kanban` que inicializa 4 columnas por defecto al crear un negocio.
-
-**CRM — Clientes:**
-- `/clientes` — listado en grid con búsqueda en tiempo real (debounce 300ms), botones rápidos de WhatsApp/Email/teléfono y etiquetas de color.
-- `/clientes/nuevo` — formulario con etiquetas personalizadas + sugeridas.
-- `/clientes/[id]` — ficha con 4 pestañas: Información (edición inline), Historial (citas), Mensajes (log comunicaciones), Automático (webhook n8n/Make con botón Probar).
-
-**Kanban:**
-- `@dnd-kit/core` + `@dnd-kit/sortable` — drag & drop táctil y ratón. `PointerSensor` (distancia 8px) + `TouchSensor` (delay 200ms).
-- `DragOverlay` con rotación sutil durante el arrastre. Placeholder punteado en posición de origen.
-- Reordenación dentro de columna y cambio de columna — persistencia optimista.
-- `ColumnManager` — diálogo para crear, renombrar, cambiar color y eliminar columnas.
-- `TaskModal` — creación/edición: título, descripción, columna, prioridad, fecha límite, checkbox "completada". Tareas vencidas con borde rojo.
-
-Dependencias añadidas: `@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities`.
-
-### Iteración 7 — *2026-04-28* — Botón de acceso rápido en dev
-- `DevLoginButton` (`src/components/auth/DevLoginButton.tsx`) — se renderiza **solo cuando `NODE_ENV === 'development'`**; en producción Next.js lo elimina del bundle. Lee `NEXT_PUBLIC_DEV_EMAIL` / `NEXT_PUBLIC_DEV_PASSWORD` y llama a `signInWithPassword`. Badge naranja `DEV MODE` + botón con icono ⚡.
-
-### Iteración 8 — *2026-04-30* — Auth Next.js 15 + Módulo B2B Empresas
-
-**Auth fix Next.js 15:**
-- `src/lib/supabase/server.ts` ahora es `async` y hace `await cookies()`.
-- Login limpio: eliminados botones Apple/Facebook. `OAuthButtons` solo Google con spinner.
-- Mensajes de error traducidos al español con icono `AlertCircle`.
-
-**Módulo Empresas (CRM B2B):**
-- **SQL** (`supabase/empresas_ext.sql`): tablas `empresas` y `contactos_empresa` con FK autorreferencial `reports_to`. Trigger de validación de jerarquía. RLS multi-tenant.
-- **Rutas**: `/empresas` (lista + filtros + skeletons), `/empresas/nuevo`, `/empresas/[id]` (3 pestañas).
-- **Tabs**: Información (edición inline), Contactos (CRUD modal con jerarquía `reports_to`), Estructura jerárquica (`HierarchyChart` con `@xyflow/react`, layout de árbol automático, nodos glass-card, drag/zoom).
-- Dependencia añadida: `@xyflow/react`.
-
-### Iteración 9 — *2026-04-30* — Infraestructura Agenda + Google Calendar API
-
-**SQL** (`supabase/agenda_ext.sql`):
-- Tabla `agenda_eventos` con `google_event_id`, `google_etag`, `last_synced_at`, `estado`. Índice único parcial en `(negocio_id, google_event_id)`.
-- Tabla `google_connections` con `access_token` y `refresh_token` cifrados con `pgp_sym_encrypt`. Una fila por usuario.
-- Funciones SECURITY DEFINER: `set_google_tokens`, `update_google_access_token`, `get_google_tokens`, `set_google_sync_token`.
-
-**Cliente Google** (`src/lib/google.ts`):
-- `loadTokens` / `saveTokens` / `persistSyncToken` — RPC al schema cifrado.
-- `googleFetch(path, init)` — wrapper con refresh proactivo (si `expires_at ≤ now`) y reactivo (401 → intercambia token y reintenta). Sin SDK `googleapis`.
-
-**Motor de sync** (`src/lib/agenda.ts`):
-- `syncGoogleCalendar()` — Server Action. Sync incremental con `nextSyncToken`; 410 → full sync. Pagina con `nextPageToken`. Upsert por `(negocio_id, google_event_id)`.
-
-### Iteración 10 — *2026-04-30* — UI del Calendario (FullCalendar dark)
-
-**Dependencias**: `@fullcalendar/{core,daygrid,timegrid,interaction,react}` v6.1.15.
-
-**Estilos** (`src/components/agenda/calendar.css`): override de variables `--fc-*`, cuadrícula glass, "today" tinted cyan, indicador "ahora" fucsia con glow. Botones toolbar 44px, eventos gradient indigo con variantes por `data-color`.
-
-**Componente `CalendarView.tsx`**: vistas month/week/day, locale español, `firstDay=1`, `slot 07:00-22:00`, `nowIndicator`. `editable` + `eventResizableFromStart` + `selectable`. Pill "Sincronizando…" / "Al día". Botones ≥56px.
-
-**Server actions**: `listEvents`, `updateEventTime` (drag/resize), `createEvent`, `deleteEvent`.
-
-### Iteración 11 — *2026-04-30* — Modal de cita + vinculación con clientes
-
-**Server actions**: `updateEvent` (PATCH Google primero, luego Supabase), `getEvent`, soporte `ubicacion`.
-
-**`EventModal.tsx`**: diálogo glass estilo proyecto. Combobox de clientes con debounce 250ms y AbortController. Campos: título, cliente, inicio/fin, ubicación, notas, selector de 6 colores. Insignia "Esta cita se verá en tu móvil…". Validación: título no vacío, fin > inicio. Botón eliminar con confirmación (borra Google + Supabase).
-
-**Cableado en `CalendarView.tsx`**: `select` y botón "Nueva cita" → modal creación. `eventClick` → `getEvent(id)` → modal edición. `onSaved`/`onDeleted` recarga rango y muestra toast.
-
-### Iteración 12 — *2026-04-30* — Refactor a modelo B2B puro (Clientes = Empresas)
-
-- Eliminado módulo CRM B2C. Renombrado `Empresas` → `Clientes` en rutas, componentes, tipos y sidebar.
-
-**SQL** (`supabase/refactor_b2b_clientes.sql`): `drop table clientes cascade`, `alter table empresas rename to clientes`, `alter table contactos_empresa rename to contactos_cliente`. Recreación de FKs desde todas las tablas dependientes.
-
-**Frontend**: `src/components/empresas/` → `src/components/clientes/`. `Empresa` → `Cliente`. Pestaña "Estructura jerárquica" → **"Organigrama"**. Sidebar usa icono `Building2`.
-
-### Iteración 13 — *2026-04-30* — Reestructura BD + fix Next.js 16 proxy + seed B2B
-
-- `supabase/schema.sql` reescrito: `clientes` nace con todos los campos B2B + `contactos_cliente` integrado. `consentimientos_rgpd.cliente_id` NULLABLE.
-- Borrados `empresas_ext.sql` y `refactor_b2b_clientes.sql` (consolidados).
-- Nuevo `supabase/seed_clientes.sql` — 10 empresas reales con contactos y jerarquía.
-- Nuevo `supabase/setup.sql` — script único de instalación limpia (wipe + `\i` en orden).
-- **Fix Next.js 16**: borrado `src/middleware.ts`, conservado `src/proxy.ts` (resuelve `unhandledRejection: Both middleware file ... and proxy file ... detected`).
-
-### Iteración 14 — *2026-05-01* — Ajustes: layout + perfil de negocio
-- Nueva dependencia: `zod`.
-- `SettingsTabs.tsx` — 5 pestañas (Negocio · Integraciones · Equipo · Suscripción · Seguridad), navegación lateral desktop / superior mobile.
-- `NegocioTab.tsx` — formulario `nombre_negocio`, `cif_nif`, `direccion`, `email_contacto`, `telefono` + logo en bucket `logos` de Supabase Storage (máx. 2 MB, PNG/JPG/WebP/SVG).
-- `negocioSchema.ts` — Zod con validación CIF/NIF, email, teléfono E.164.
-
-### Iteración 15 — *2026-05-01* — Ajustes: panel de integraciones con sistema de ayuda
-- **`GoogleCard.tsx`** — lee `google_connections.google_account_email` para mostrar cuenta conectada. Botón Conectar → `/api/integrations/google/connect`. Botón Desconectar → borra fila.
-- **`N8nCard.tsx`** — URL webhook + API Key persistidos vía RPC `set_config_key` con `pgp_sym_encrypt`. Botón "Enviar prueba" dispara POST al webhook.
-- **`HelpDrawer.tsx`** — botón "?" + panel lateral con guías paso a paso para usuarios no técnicos (`integracionesGuides.ts`).
-- **Route handler** `/api/integrations/google/connect` — URL OAuth con scopes Calendar + Drive.file + email/profile, `access_type=offline` + `prompt=consent`, cookie `g_oauth_state` httpOnly+SameSite=Lax (CSRF, 10 min).
-
-### Iteración 16 — *2026-05-01* — Fix: loop 307 en `/onboarding`
-- **Síntoma**: `GET /onboarding 307` en bucle infinito.
-- **Causa raíz**: `layout.tsx` leía `x-invoke-path` (header interno de Next.js antiguo, desaparecido en v16) → `pathname` siempre `""` → la guarda `!startsWith("/onboarding")` se cumplía siempre → re-redirect.
-- **Fix**: `middleware.ts` reenvía `x-pathname` con `request.nextUrl.pathname`; `layout.tsx` lo lee y hace early return cuando ya está en `/onboarding`.
-
-### Iteración 17 — *2026-05-01* — Ajustes: equipo + seguridad
-
-**SQL** (`supabase/team_ext.sql`): enums `rol_miembro` / `estado_miembro`, tabla `miembros_negocio`, RPC `aceptar_invitacion` (enlaza `user_id`, registra consentimientos RGPD con timestamp+IP+UA), vista `v_equipo_negocio`.
-
-**Route handlers**: `POST /api/team/invite` (Zod + `auth.admin.inviteUserByEmail` + insert en `miembros_negocio`), `POST /api/team/revoke` (marca `revocado`, no borra — audit trail).
-
-**`EquipoTab.tsx`**: tabla con pills coloreadas por rol (admin fuchsia, editor cyan, lector neutro) y estado (activo esmeralda, invitado ámbar, revocado rosa). Owner con icono Crown, no removible.
-
-**`InvitarMiembroModal.tsx`**: 3 tarjetas visuales de rol + checkbox RGPD obligatorio.
-
-**`SeguridadTab.tsx`**: estado 2FA (`mfa.listFactors()`), cierre global (`signOut({ scope: "global" })`), lista de dispositivos con acción "Olvidar".
-
-### Iteración 18 — *2026-05-01* — Ajustes: portal de suscripción (Stripe)
-- Nueva dependencia: `stripe`.
-- **SQL** (`supabase/billing_ext.sql`): campos stripe en `perfiles_negocio`, tabla `pagos_stripe` con RLS dual (OWNER lee; webhook con service_role escribe).
-- **`lib/stripe.ts`**: lazy-singleton + catálogo `PLANS` (Pro 29€/mes, Business 79€/mes) + `planFromPriceId()`.
-- **Route handlers**: `POST /api/billing/checkout` (Zod valida plan, garantiza Stripe Customer, crea Checkout Session), `POST /api/billing/portal` (Customer Portal), `POST /api/billing/webhook` (`runtime="nodejs"`, valida firma, maneja `checkout.session.completed`, `customer.subscription.*`, `invoice.paid`, `invoice.payment_failed`).
-- **`SuscripcionTab.tsx`**: cabecera "Plan actual" con pill de estado y próxima renovación, tabla de precios (oculta si hay suscripción activa), historial de pagos con enlaces PDF/web.
-- Env requeridas: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_PRO`, `STRIPE_PRICE_BUSINESS`.
-
-### Iteración 19 — *2026-05-02* — Fix: clientes, agenda, finanzas y kanban
-Cuatro bugs reportados. Causa raíz unificada: tablas B2C antiguas referenciadas desde frontend, `negocio_id` ausente en INSERTs.
-
-- **SQL** [`supabase/fix_tenant_defaults.sql`](supabase/fix_tenant_defaults.sql) — trigger `tg_fill_negocio_id` BEFORE INSERT en 12 tablas. Si el INSERT omite `negocio_id`, el trigger lo rellena con `current_negocio_id()`. Resuelve todos los inserts presentes y futuros.
-- **Clientes**: páginas listado, nuevo y ficha reescritas con campos B2B reales. Combobox en `EventModal` busca por `nombre`/`cif`/`email`.
-- **Agenda**: `createEvent` envuelve Google en `try/catch` (fallo → crea en local, sync posterior). Eliminada validación "no crear citas en el pasado".
-- **Kanban / Finanzas / OCR**: `TaskModal`, `finanzas/nuevo`, `ocr/page` corregidos para incluir `negocio_id` explícito.
-
-### Iteración 20 — *2026-05-02* — Página 404, formulario cliente simplificado, contactos
-- **404** [`src/app/not-found.tsx`](src/app/not-found.tsx) — pantalla glass con número en gradient cyan→fuchsia, CTAs "Ir al panel" + "Ver clientes".
-- **Formulario simplificado** `/clientes/nuevo` — solo `nombre` obligatorio visible; resto en acordeón "Datos adicionales" colapsado. Cliente creable en 5 segundos.
-- **Tab Contactos confirmada** — `ContactosTab` montado en `/clientes/[id]` con modal alta/edición, jerarquía `reports_to`, decisor, puesto, WhatsApp.
-
-### Iteración 21 — *2026-05-02* — Fix RLS en kanban, finanzas y OCR + build verde
-- **`src/lib/useNegocioId.ts`** — hook que carga `id` de `perfiles_negocio` y lo cachea; formularios deshabilitan botón Guardar hasta que esté disponible.
-- **Fix RLS**: `TaskModal`, `finanzas/nuevo`, `ocr/page`, `clientes/nuevo` migrados a `useNegocioId()` con envío explícito de `negocio_id`.
-- **`npm run build` verde** (28 rutas): arreglados 3 problemas preexistentes — `tsconfig.json` excluye `supabase/functions` (Deno), `CalendarView` sin `week` de `LocaleInput`, `login/page.tsx` con `useSearchParams()` en `<Suspense>`.
-
-### Iteración 22 — *2026-05-02* — Kanban: drag total, creación rápida y persistencia paralela
-- **Tarjeta arrastrable desde cualquier parte** — eliminado el handle `GripVertical`; `attributes` + `listeners` al `<div>` raíz. Cursor `grab/grabbing`, `touch-none`/`select-none`.
-- **`InlineTaskAdder.tsx`** — creación in-line solo con título: Enter crea, Esc cancela, click fuera vacío cancela. Input permanece abierto para varias seguidas. Estado vacío de columna como botón que abre el adder.
-- **Persistencia paralela** — `for…await` secuencial → `Promise.all(...)`. Menos bloqueo HTTP, menor probabilidad de race con HMR.
-
-### Iteración 23 — *2026-05-02* — Kanban: columnas reordenables, batch persistence, drop indicator
-- **Columnas arrastrables horizontalmente** (`SortableColumn` con `horizontalListSortingStrategy`). `GripHorizontal` como `setActivatorNodeRef` — arrastrar tarjetas no mueve la columna. Drag de columnas y tareas en un único `DndContext` discriminados por `data.type`.
-- **Persistencia batch**: RPCs `reordenar_tareas_batch(p_updates jsonb)` y `reordenar_columnas_batch(p_updates jsonb)` en `crm_kanban_ext.sql`. Al mover tarjeta entre columnas se recalculan posiciones de **ambas** columnas. Fallback a `Promise.all` si la RPC aún no existe en BD.
-- **`ColumnManager` rediseñado** — lista vertical sortable con dnd-kit, drag handle `GripVertical`. "Nueva columna" como fila inline compacta (color-dot + input + botón `+`).
-- **Botón `+`** — `h-8 w-8` ghost/outline: borde indigo, hover cyan `bg-cyan/5`.
-- **Drop indicator mejorado** — placeholder con borde cyan punteado, `bg-cyan/5` y `animate-pulse`. `DragOverlay` con easing `cubic-bezier`.
-
-### Iteración 24 — *2026-05-02* — Google Calendar: callback OAuth + webhook push + Server Action de estado
-- **Bug raíz** ("UI Desconectado / Sincronizar inoperante"): faltaba `/api/integrations/google/callback/route.ts`. Creado: valida `state` cookie (CSRF), intercambia `code` por tokens, persiste cifrados vía `set_google_tokens`, redirige a `/agenda?google=connected`. Login Google y permisos Calendar **separados**. Nunca loguea code/tokens.
-- **Push notifications**: SQL en `agenda_ext.sql` — columnas `channel_id / channel_token / channel_resource_id / channel_expiration` + unique index parcial. RPCs `set_google_watch_channel`, `clear_google_watch_channel`, `find_connection_by_channel` (service_role only), `get_google_tokens_admin`, `update_google_access_token_admin`, `set_google_sync_token_admin`. `REVOKE ... FROM public, anon, authenticated` + `GRANT ... TO service_role`.
-- **Watch channel en `agenda.ts`**: `registerCalendarWatch()` (randomUUID + randomBytes token, POST `/events/watch`), `ensureWatchChannel()` (renueva si <24h, invocado al final de `syncGoogleCalendar()` best-effort), `stopCalendarWatch()` (llamado al desconectar).
-- **Webhook** `src/app/api/integrations/google/webhook/route.ts`: `state==='sync'` → ack 200; valida `(channel_id, token)` vía `find_connection_by_channel`; lanza `syncGoogleCalendarFor(userId)` del path admin (sin `"use server"`). Siempre devuelve 200 (no 5xx para evitar loops de reintento).
-- **`src/lib/google-admin.ts`**: `googleFetchAdmin` + refresh con `update_google_access_token_admin`. `import "server-only"`.
-- **`src/app/actions/google.ts`**: `getGoogleConnectionStatus()` devuelve `{ connected, email, expiresAt, scope, watchActive, watchExpiresAt }`, nunca tokens.
-- **`CalendarView.tsx`**: botón Sincronizar → si `!connected` redirige OAuth; si vuelve con `?google=connected` ejecuta sync automático y limpia URL.
-
-### Iteración 25 — *2026-05-02* — Google Calendar: bug del botón Sincronizar + sync ilimitado
-- **Bug "botón no hace nada"** (`connect/route.ts`): faltaban env vars → redirect silencioso a `/ajustes?error=...`. Fix:
-  - Propaga `?next=…` mediante cookie `g_oauth_next` (httpOnly, sameSite=lax). `safeNext()` previene open-redirect.
-  - Si faltan `GOOGLE_CLIENT_ID/SECRET` redirige a la página de origen con `?google_error=missing_google_credentials`.
-- **`callback/route.ts`** — lee `next` desde cookie `g_oauth_next` (Google no devuelve query params). Borra ambas cookies al terminar.
-- **`getGoogleConnectionStatus()`** añade `{ serverConfigured, missingEnv[] }`. Comprueba `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_WEBHOOK_URL`.
-- **`src/lib/google-errors.ts`** — `formatGoogleError(code)` traduce códigos `?google_error=…` a mensajes legibles. Movido fuera de `"use server"` (solo funciones async son exportables desde Server Actions en Next.js 16).
-- **`GoogleCard.tsx`** y **`CalendarView.tsx`** — comprueban `serverConfigured` antes de redirigir; detectan `?google_error=` y `?google=connected`; limpian query params con `history.replaceState`.
-- **Sync ilimitado** (`agenda.ts`, `agenda-admin.ts`) — full-sync inicial pasa de `−30d/+90d` a **sin límite temporal** (`orderBy=updated`, sin `timeMin/timeMax`). 410-fallback también elimina los bounds.
+> Resumen de todo lo construido en orden de iteraciones (más reciente → más antiguo).
 
 ### Iteración 29 — *2026-05-03* — Auditoría responsive + accesibilidad + metadatos
 
@@ -445,7 +255,7 @@ Build verde (35 rutas, +3 nuevas: `/icon.svg`, `/robots.txt`, `/sitemap.xml`). T
 
 **Fix** [`src/app/(app)/clientes/page.tsx`](src/app/(app)/clientes/page.tsx): patrón "stretched link" — la tarjeta ahora es un `<article relative>` con un `<Link absolute inset-0>` como overlay y los enlaces de acción son hermanos con `relative z-10` y `pointer-events-auto`. Decoración (avatar, nombre, badges) marcada con `pointer-events-none` para que el área clickable de la card siga llevando a la ficha. Eliminados los `e.stopPropagation()` que ya no hacen falta.
 
-### Iteración 27 — *2026-05-03* — Limpieza de navbar + dashboard como resumen integral
+### Iteración 27 — *2026-05-03* — Limpieza de navbar + dashboard como resumen integral + Testing
 
 **Navbar más limpia** ([`src/components/layout/Sidebar.tsx`](src/components/layout/Sidebar.tsx)):
 - Retirados los items "Seguridad 2FA" y "Escanear" — eran rutas duplicadas. El 2FA sigue accesible desde Ajustes → Seguridad (que ya tenía el bloque completo `mfa.listFactors()` + link a `/2fa/configurar`); el OCR sigue accesible desde la `QuickAction` "Escanear ticket" en Finanzas. Ambas rutas (`/2fa/configurar` y `/ocr`) se mantienen sin cambios — solo se quita el ruido de la barra lateral.
@@ -469,6 +279,19 @@ Build verde (35 rutas, +3 nuevas: `/icon.svg`, `/robots.txt`, `/sitemap.xml`). T
 
 Build verde (32 rutas), tipado limpio.
 
+**Testing mínimo viable** (plan §1):
+- **Vitest 2.1** instalado con [`vitest.config.ts`](vitest.config.ts) (alias `@/*` y stub de `server-only` para que los módulos admin se carguen fuera de Next).
+- **Scripts nuevos** en `package.json`: `npm test`, `npm run test:run`, `npm run test:coverage`.
+- **50 tests / 6 ficheros** pasando, sin tocar producción:
+  - [`tests/parser.test.ts`](tests/parser.test.ts) — OCR español: fechas (`dd/mm/yyyy`, `dd-mm-yy`, normalización siglo), CIF/NIF/NIE, base + IVA + total con separadores `1.234,56`, cálculo derivado cuando solo hay total + porcentaje.
+  - [`tests/finanzas.test.ts`](tests/finanzas.test.ts) — `totales()` (IVA repercutido vs soportado, devolución Hacienda) y `agregarPorMes()` (12 buckets, filtro de año).
+  - [`tests/stripe.test.ts`](tests/stripe.test.ts) — webhook con firma real (`stripe.webhooks.generateTestHeaderString`): rechaza firmas inválidas, persiste `invoice.paid` en `pagos_stripe`, ignora customers huérfanos. Cubre además `planFromPriceId`.
+  - [`tests/google-admin.test.ts`](tests/google-admin.test.ts) — refresh proactivo de access_token expirado, retry ante 401, error sin filtrar body cuando `invalid_grant`, propagación de `loadTokensFor` y `persistSyncTokenFor`.
+  - [`tests/google-oauth-callback.test.ts`](tests/google-oauth-callback.test.ts) — flujo `GET /api/integrations/google/callback`: error de Google, CSRF (`invalid_state`), redirect a `/login` sin sesión, `no_refresh_token`, flujo completo con persistencia vía `set_google_tokens`.
+  - [`tests/supabase-rpc.test.ts`](tests/supabase-rpc.test.ts) — wrappers RPC (`get_google_tokens`, `set_google_tokens`, `set_google_sync_token`).
+- **Mocks ligeros**: `vi.mock("@/lib/supabase/admin"|"server")` con `rpc` espiado y `vi.spyOn(globalThis, "fetch")` — sin red, sin Supabase real, sin Stripe real.
+- `npx tsc --noEmit` y `npm run test:run` verdes. La suite cubre los 5 puntos del plan §1 y deja la base lista para refactorizar con red de seguridad.
+
 ### Iteración 26 — *2026-05-02* — Google Calendar: cron de renovación de watch channels
 - **Endpoint cron** [`src/app/api/cron/refresh-google-channels/route.ts`](src/app/api/cron/refresh-google-channels/route.ts) — protegido con `CRON_SECRET` (Bearer header) o `x-vercel-cron`. Llama a `refreshExpiringWatchChannels()` y devuelve `{ total, renewed, failed, errors[] }`. Acepta GET y POST (para `pg_cron + net.http_post`).
 - **`refreshExpiringWatchChannels()`** en [`src/lib/agenda-admin.ts`](src/lib/agenda-admin.ts) — lista `google_connections` con `channel_expiration` nulo o en <24h; registra nuevo watch para cada una vía `googleFetchAdmin` + UPDATE service-role. Errores individuales no bloquean al resto.
@@ -476,6 +299,204 @@ Build verde (32 rutas), tipado limpio.
 - **Setup alternativo**: pg_cron en Supabase con `net.http_post` cabeceando `Authorization: Bearer ${CRON_SECRET}`, o GitHub Actions con `curl`.
 - **Env nueva**: `CRON_SECRET` (`openssl rand -base64 32`).
 - **Por qué un cron y no solo `ensureWatchChannel()`**: si un usuario no abre la agenda durante 7 días, el canal expira y deja de recibir push. El cron diario garantiza renovación independiente del uso.
+
+### Iteración 25 — *2026-05-02* — Google Calendar: bug del botón Sincronizar + sync ilimitado
+- **Bug "botón no hace nada"** (`connect/route.ts`): faltaban env vars → redirect silencioso a `/ajustes?error=...`. Fix:
+  - Propaga `?next=…` mediante cookie `g_oauth_next` (httpOnly, sameSite=lax). `safeNext()` previene open-redirect.
+  - Si faltan `GOOGLE_CLIENT_ID/SECRET` redirige a la página de origen con `?google_error=missing_google_credentials`.
+- **`callback/route.ts`** — lee `next` desde cookie `g_oauth_next` (Google no devuelve query params). Borra ambas cookies al terminar.
+- **`getGoogleConnectionStatus()`** añade `{ serverConfigured, missingEnv[] }`. Comprueba `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_WEBHOOK_URL`.
+- **`src/lib/google-errors.ts`** — `formatGoogleError(code)` traduce códigos `?google_error=…` a mensajes legibles. Movido fuera de `"use server"` (solo funciones async son exportables desde Server Actions en Next.js 16).
+- **`GoogleCard.tsx`** y **`CalendarView.tsx`** — comprueban `serverConfigured` antes de redirigir; detectan `?google_error=` y `?google=connected`; limpian query params con `history.replaceState`.
+- **Sync ilimitado** (`agenda.ts`, `agenda-admin.ts`) — full-sync inicial pasa de `−30d/+90d` a **sin límite temporal** (`orderBy=updated`, sin `timeMin/timeMax`). 410-fallback también elimina los bounds.
+
+### Iteración 24 — *2026-05-02* — Google Calendar: callback OAuth + webhook push + Server Action de estado
+- **Bug raíz** ("UI Desconectado / Sincronizar inoperante"): faltaba `/api/integrations/google/callback/route.ts`. Creado: valida `state` cookie (CSRF), intercambia `code` por tokens, persiste cifrados vía `set_google_tokens`, redirige a `/agenda?google=connected`. Login Google y permisos Calendar **separados**. Nunca loguea code/tokens.
+- **Push notifications**: SQL en `agenda_ext.sql` — columnas `channel_id / channel_token / channel_resource_id / channel_expiration` + unique index parcial. RPCs `set_google_watch_channel`, `clear_google_watch_channel`, `find_connection_by_channel` (service_role only), `get_google_tokens_admin`, `update_google_access_token_admin`, `set_google_sync_token_admin`. `REVOKE ... FROM public, anon, authenticated` + `GRANT ... TO service_role`.
+- **Watch channel en `agenda.ts`**: `registerCalendarWatch()` (randomUUID + randomBytes token, POST `/events/watch`), `ensureWatchChannel()` (renueva si <24h, invocado al final de `syncGoogleCalendar()` best-effort), `stopCalendarWatch()` (llamado al desconectar).
+- **Webhook** `src/app/api/integrations/google/webhook/route.ts`: `state==='sync'` → ack 200; valida `(channel_id, token)` vía `find_connection_by_channel`; lanza `syncGoogleCalendarFor(userId)` del path admin (sin `"use server"`). Siempre devuelve 200 (no 5xx para evitar loops de reintento).
+- **`src/lib/google-admin.ts`**: `googleFetchAdmin` + refresh con `update_google_access_token_admin`. `import "server-only"`.
+- **`src/app/actions/google.ts`**: `getGoogleConnectionStatus()` devuelve `{ connected, email, expiresAt, scope, watchActive, watchExpiresAt }`, nunca tokens.
+- **`CalendarView.tsx`**: botón Sincronizar → si `!connected` redirige OAuth; si vuelve con `?google=connected` ejecuta sync automático y limpia URL.
+
+### Iteración 23 — *2026-05-02* — Kanban: columnas reordenables, batch persistence, drop indicator
+- **Columnas arrastrables horizontalmente** (`SortableColumn` con `horizontalListSortingStrategy`). `GripHorizontal` como `setActivatorNodeRef` — arrastrar tarjetas no mueve la columna. Drag de columnas y tareas en un único `DndContext` discriminados por `data.type`.
+- **Persistencia batch**: RPCs `reordenar_tareas_batch(p_updates jsonb)` y `reordenar_columnas_batch(p_updates jsonb)` en `crm_kanban_ext.sql`. Al mover tarjeta entre columnas se recalculan posiciones de **ambas** columnas. Fallback a `Promise.all` si la RPC aún no existe en BD.
+- **`ColumnManager` rediseñado** — lista vertical sortable con dnd-kit, drag handle `GripVertical`. "Nueva columna" como fila inline compacta (color-dot + input + botón `+`).
+- **Botón `+`** — `h-8 w-8` ghost/outline: borde indigo, hover cyan `bg-cyan/5`.
+- **Drop indicator mejorado** — placeholder con borde cyan punteado, `bg-cyan/5` y `animate-pulse`. `DragOverlay` con easing `cubic-bezier`.
+
+### Iteración 22 — *2026-05-02* — Kanban: drag total, creación rápida y persistencia paralela
+- **Tarjeta arrastrable desde cualquier parte** — eliminado el handle `GripVertical`; `attributes` + `listeners` al `<div>` raíz. Cursor `grab/grabbing`, `touch-none`/`select-none`.
+- **`InlineTaskAdder.tsx`** — creación in-line solo con título: Enter crea, Esc cancela, click fuera vacío cancela. Input permanece abierto para varias seguidas. Estado vacío de columna como botón que abre el adder.
+- **Persistencia paralela** — `for…await` secuencial → `Promise.all(...)`. Menos bloqueo HTTP, menor probabilidad de race con HMR.
+
+### Iteración 21 — *2026-05-02* — Fix RLS en kanban, finanzas y OCR + build verde
+- **`src/lib/useNegocioId.ts`** — hook que carga `id` de `perfiles_negocio` y lo cachea; formularios deshabilitan botón Guardar hasta que esté disponible.
+- **Fix RLS**: `TaskModal`, `finanzas/nuevo`, `ocr/page`, `clientes/nuevo` migrados a `useNegocioId()` con envío explícito de `negocio_id`.
+- **`npm run build` verde** (28 rutas): arreglados 3 problemas preexistentes — `tsconfig.json` excluye `supabase/functions` (Deno), `CalendarView` sin `week` de `LocaleInput`, `login/page.tsx` con `useSearchParams()` en `<Suspense>`.
+
+### Iteración 20 — *2026-05-02* — Página 404, formulario cliente simplificado, contactos
+- **404** [`src/app/not-found.tsx`](src/app/not-found.tsx) — pantalla glass con número en gradient cyan→fuchsia, CTAs "Ir al panel" + "Ver clientes".
+- **Formulario simplificado** `/clientes/nuevo` — solo `nombre` obligatorio visible; resto en acordeón "Datos adicionales" colapsado. Cliente creable en 5 segundos.
+- **Tab Contactos confirmada** — `ContactosTab` montado en `/clientes/[id]` con modal alta/edición, jerarquía `reports_to`, decisor, puesto, WhatsApp.
+
+### Iteración 19 — *2026-05-02* — Fix: clientes, agenda, finanzas y kanban
+Cuatro bugs reportados. Causa raíz unificada: tablas B2C antiguas referenciadas desde frontend, `negocio_id` ausente en INSERTs.
+
+- **SQL** [`supabase/fix_tenant_defaults.sql`](supabase/fix_tenant_defaults.sql) — trigger `tg_fill_negocio_id` BEFORE INSERT en 12 tablas. Si el INSERT omite `negocio_id`, el trigger lo rellena con `current_negocio_id()`. Resuelve todos los inserts presentes y futuros.
+- **Clientes**: páginas listado, nuevo y ficha reescritas con campos B2B reales. Combobox en `EventModal` busca por `nombre`/`cif`/`email`.
+- **Agenda**: `createEvent` envuelve Google en `try/catch` (fallo → crea en local, sync posterior). Eliminada validación "no crear citas en el pasado".
+- **Kanban / Finanzas / OCR**: `TaskModal`, `finanzas/nuevo`, `ocr/page` corregidos para incluir `negocio_id` explícito.
+
+### Iteración 18 — *2026-05-01* — Ajustes: portal de suscripción (Stripe)
+- Nueva dependencia: `stripe`.
+- **SQL** (`supabase/billing_ext.sql`): campos stripe en `perfiles_negocio`, tabla `pagos_stripe` con RLS dual (OWNER lee; webhook con service_role escribe).
+- **`lib/stripe.ts`**: lazy-singleton + catálogo `PLANS` (Pro 29€/mes, Business 79€/mes) + `planFromPriceId()`.
+- **Route handlers**: `POST /api/billing/checkout` (Zod valida plan, garantiza Stripe Customer, crea Checkout Session), `POST /api/billing/portal` (Customer Portal), `POST /api/billing/webhook` (`runtime="nodejs"`, valida firma, maneja `checkout.session.completed`, `customer.subscription.*`, `invoice.paid`, `invoice.payment_failed`).
+- **`SuscripcionTab.tsx`**: cabecera "Plan actual" con pill de estado y próxima renovación, tabla de precios (oculta si hay suscripción activa), historial de pagos con enlaces PDF/web.
+- Env requeridas: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_PRO`, `STRIPE_PRICE_BUSINESS`.
+
+### Iteración 17 — *2026-05-01* — Ajustes: equipo + seguridad
+
+**SQL** (`supabase/team_ext.sql`): enums `rol_miembro` / `estado_miembro`, tabla `miembros_negocio`, RPC `aceptar_invitacion` (enlaza `user_id`, registra consentimientos RGPD con timestamp+IP+UA), vista `v_equipo_negocio`.
+
+**Route handlers**: `POST /api/team/invite` (Zod + `auth.admin.inviteUserByEmail` + insert en `miembros_negocio`), `POST /api/team/revoke` (marca `revocado`, no borra — audit trail).
+
+**`EquipoTab.tsx`**: tabla con pills coloreadas por rol (admin fuchsia, editor cyan, lector neutro) y estado (activo esmeralda, invitado ámbar, revocado rosa). Owner con icono Crown, no removible.
+
+**`InvitarMiembroModal.tsx`**: 3 tarjetas visuales de rol + checkbox RGPD obligatorio.
+
+**`SeguridadTab.tsx`**: estado 2FA (`mfa.listFactors()`), cierre global (`signOut({ scope: "global" })`), lista de dispositivos con acción "Olvidar".
+
+### Iteración 16 — *2026-05-01* — Fix: loop 307 en `/onboarding`
+- **Síntoma**: `GET /onboarding 307` en bucle infinito.
+- **Causa raíz**: `layout.tsx` leía `x-invoke-path` (header interno de Next.js antiguo, desaparecido en v16) → `pathname` siempre `""` → la guarda `!startsWith("/onboarding")` se cumplía siempre → re-redirect.
+- **Fix**: `middleware.ts` reenvía `x-pathname` con `request.nextUrl.pathname`; `layout.tsx` lo lee y hace early return cuando ya está en `/onboarding`.
+
+### Iteración 15 — *2026-05-01* — Ajustes: panel de integraciones con sistema de ayuda
+- **`GoogleCard.tsx`** — lee `google_connections.google_account_email` para mostrar cuenta conectada. Botón Conectar → `/api/integrations/google/connect`. Botón Desconectar → borra fila.
+- **`N8nCard.tsx`** — URL webhook + API Key persistidos vía RPC `set_config_key` con `pgp_sym_encrypt`. Botón "Enviar prueba" dispara POST al webhook.
+- **`HelpDrawer.tsx`** — botón "?" + panel lateral con guías paso a paso para usuarios no técnicos (`integracionesGuides.ts`).
+- **Route handler** `/api/integrations/google/connect` — URL OAuth con scopes Calendar + Drive.file + email/profile, `access_type=offline` + `prompt=consent`, cookie `g_oauth_state` httpOnly+SameSite=Lax (CSRF, 10 min).
+
+### Iteración 14 — *2026-05-01* — Ajustes: layout + perfil de negocio
+- Nueva dependencia: `zod`.
+- `SettingsTabs.tsx` — 5 pestañas (Negocio · Integraciones · Equipo · Suscripción · Seguridad), navegación lateral desktop / superior mobile.
+- `NegocioTab.tsx` — formulario `nombre_negocio`, `cif_nif`, `direccion`, `email_contacto`, `telefono` + logo en bucket `logos` de Supabase Storage (máx. 2 MB, PNG/JPG/WebP/SVG).
+- `negocioSchema.ts` — Zod con validación CIF/NIF, email, teléfono E.164.
+
+### Iteración 13 — *2026-04-30* — Reestructura BD + fix Next.js 16 proxy + seed B2B
+
+- `supabase/schema.sql` reescrito: `clientes` nace con todos los campos B2B + `contactos_cliente` integrado. `consentimientos_rgpd.cliente_id` NULLABLE.
+- Borrados `empresas_ext.sql` y `refactor_b2b_clientes.sql` (consolidados).
+- Nuevo `supabase/seed_clientes.sql` — 10 empresas reales con contactos y jerarquía.
+- Nuevo `supabase/setup.sql` — script único de instalación limpia (wipe + `\i` en orden).
+- **Fix Next.js 16**: borrado `src/middleware.ts`, conservado `src/proxy.ts` (resuelve `unhandledRejection: Both middleware file ... and proxy file ... detected`).
+
+### Iteración 12 — *2026-04-30* — Refactor a modelo B2B puro (Clientes = Empresas)
+
+- Eliminado módulo CRM B2C. Renombrado `Empresas` → `Clientes` en rutas, componentes, tipos y sidebar.
+
+**SQL** (`supabase/refactor_b2b_clientes.sql`): `drop table clientes cascade`, `alter table empresas rename to clientes`, `alter table contactos_empresa rename to contactos_cliente`. Recreación de FKs desde todas las tablas dependientes.
+
+**Frontend**: `src/components/empresas/` → `src/components/clientes/`. `Empresa` → `Cliente`. Pestaña "Estructura jerárquica" → **"Organigrama"**. Sidebar usa icono `Building2`.
+
+### Iteración 11 — *2026-04-30* — Modal de cita + vinculación con clientes
+
+**Server actions**: `updateEvent` (PATCH Google primero, luego Supabase), `getEvent`, soporte `ubicacion`.
+
+**`EventModal.tsx`**: diálogo glass estilo proyecto. Combobox de clientes con debounce 250ms y AbortController. Campos: título, cliente, inicio/fin, ubicación, notas, selector de 6 colores. Insignia "Esta cita se verá en tu móvil…". Validación: título no vacío, fin > inicio. Botón eliminar con confirmación (borra Google + Supabase).
+
+**Cableado en `CalendarView.tsx`**: `select` y botón "Nueva cita" → modal creación. `eventClick` → `getEvent(id)` → modal edición. `onSaved`/`onDeleted` recarga rango y muestra toast.
+
+### Iteración 10 — *2026-04-30* — UI del Calendario (FullCalendar dark)
+
+**Dependencias**: `@fullcalendar/{core,daygrid,timegrid,interaction,react}` v6.1.15.
+
+**Estilos** (`src/components/agenda/calendar.css`): override de variables `--fc-*`, cuadrícula glass, "today" tinted cyan, indicador "ahora" fucsia con glow. Botones toolbar 44px, eventos gradient indigo con variantes por `data-color`.
+
+**Componente `CalendarView.tsx`**: vistas month/week/day, locale español, `firstDay=1`, `slot 07:00-22:00`, `nowIndicator`. `editable` + `eventResizableFromStart` + `selectable`. Pill "Sincronizando…" / "Al día". Botones ≥56px.
+
+**Server actions**: `listEvents`, `updateEventTime` (drag/resize), `createEvent`, `deleteEvent`.
+
+### Iteración 9 — *2026-04-30* — Infraestructura Agenda + Google Calendar API
+
+**SQL** (`supabase/agenda_ext.sql`):
+- Tabla `agenda_eventos` con `google_event_id`, `google_etag`, `last_synced_at`, `estado`. Índice único parcial en `(negocio_id, google_event_id)`.
+- Tabla `google_connections` con `access_token` y `refresh_token` cifrados con `pgp_sym_encrypt`. Una fila por usuario.
+- Funciones SECURITY DEFINER: `set_google_tokens`, `update_google_access_token`, `get_google_tokens`, `set_google_sync_token`.
+
+**Cliente Google** (`src/lib/google.ts`):
+- `loadTokens` / `saveTokens` / `persistSyncToken` — RPC al schema cifrado.
+- `googleFetch(path, init)` — wrapper con refresh proactivo (si `expires_at ≤ now`) y reactivo (401 → intercambia token y reintenta). Sin SDK `googleapis`.
+
+**Motor de sync** (`src/lib/agenda.ts`):
+- `syncGoogleCalendar()` — Server Action. Sync incremental con `nextSyncToken`; 410 → full sync. Pagina con `nextPageToken`. Upsert por `(negocio_id, google_event_id)`.
+
+### Iteración 8 — *2026-04-30* — Auth Next.js 15 + Módulo B2B Empresas
+
+**Auth fix Next.js 15:**
+- `src/lib/supabase/server.ts` ahora es `async` y hace `await cookies()`.
+- Login limpio: eliminados botones Apple/Facebook. `OAuthButtons` solo Google con spinner.
+- Mensajes de error traducidos al español con icono `AlertCircle`.
+
+**Módulo Empresas (CRM B2B):**
+- **SQL** (`supabase/empresas_ext.sql`): tablas `empresas` y `contactos_empresa` con FK autorreferencial `reports_to`. Trigger de validación de jerarquía. RLS multi-tenant.
+- **Rutas**: `/empresas` (lista + filtros + skeletons), `/empresas/nuevo`, `/empresas/[id]` (3 pestañas).
+- **Tabs**: Información (edición inline), Contactos (CRUD modal con jerarquía `reports_to`), Estructura jerárquica (`HierarchyChart` con `@xyflow/react`, layout de árbol automático, nodos glass-card, drag/zoom).
+- Dependencia añadida: `@xyflow/react`.
+
+### Iteración 7 — *2026-04-28* — Botón de acceso rápido en dev
+- `DevLoginButton` (`src/components/auth/DevLoginButton.tsx`) — se renderiza **solo cuando `NODE_ENV === 'development'`**; en producción Next.js lo elimina del bundle. Lee `NEXT_PUBLIC_DEV_EMAIL` / `NEXT_PUBLIC_DEV_PASSWORD` y llama a `signInWithPassword`. Badge naranja `DEV MODE` + botón con icono ⚡.
+
+### Iteración 6 — *2026-04-28* — CRM completo + Kanban con Drag & Drop
+
+**SQL:** nueva migración `supabase/crm_kanban_ext.sql` con tablas `comunicaciones`, `kanban_columnas` y columnas `webhook_url/webhook_activo` en `clientes`. RLS aplicado. Trigger `seed_kanban` que inicializa 4 columnas por defecto al crear un negocio.
+
+**CRM — Clientes:**
+- `/clientes` — listado en grid con búsqueda en tiempo real (debounce 300ms), botones rápidos de WhatsApp/Email/teléfono y etiquetas de color.
+- `/clientes/nuevo` — formulario con etiquetas personalizadas + sugeridas.
+- `/clientes/[id]` — ficha con 4 pestañas: Información (edición inline), Historial (citas), Mensajes (log comunicaciones), Automático (webhook n8n/Make con botón Probar).
+
+**Kanban:**
+- `@dnd-kit/core` + `@dnd-kit/sortable` — drag & drop táctil y ratón. `PointerSensor` (distancia 8px) + `TouchSensor` (delay 200ms).
+- `DragOverlay` con rotación sutil durante el arrastre. Placeholder punteado en posición de origen.
+- Reordenación dentro de columna y cambio de columna — persistencia optimista.
+- `ColumnManager` — diálogo para crear, renombrar, cambiar color y eliminar columnas.
+- `TaskModal` — creación/edición: título, descripción, columna, prioridad, fecha límite, checkbox "completada". Tareas vencidas con borde rojo.
+
+Dependencias añadidas: `@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities`.
+
+### Iteración 5 — *2026-04-28* — Bitácora en README
+- Reescrito `README.md` con el estado real del proyecto, estructura de carpetas y tabla de módulos.
+- Añadida la sección **Bitácora de iteraciones** que se actualiza en cada turno.
+
+### Iteración 4 — *2026-04-28* — Finanzas, OCR y admin
+- **Credenciales admin** en `.env.local` + script `npm run seed:admin`.
+- **OCR client-side**: `lib/ocr/engine.ts` (wrapper Tesseract.js con modelo spa+eng) + `lib/ocr/parser.ts` (regex específicos para tickets españoles: fecha, CIF/NIF, base, IVA % y total).
+- **Pantalla `/ocr`** con cámara/upload, barra de progreso y revisión editable antes de guardar.
+- **Dashboard `/finanzas`** con Recharts: 4 KPIs ("Lo que has ganado", "Lo que has gastado", "Te queda", "Apartar para Hacienda"), barras mensuales, previsión de impuestos y lista de últimos movimientos.
+- **`/finanzas/nuevo`** con toggle "He cobrado / He gastado" y cálculo en vivo del total.
+- Dependencias añadidas: `tesseract.js`, `recharts`.
+
+### Iteración 3 — *2026-04-28* — Autenticación, 2FA, RGPD y legales
+- **Auth completa**: `/login`, `/registro` con email + 3 botones OAuth (Google, Apple, Facebook).
+- **2FA TOTP**: `/2fa/configurar` (QR + clave manual) y `/2fa` (verificación). Middleware fuerza el flujo cuando la sesión es `aal1` con `nextLevel=aal2`.
+- **Email de nuevo dispositivo**: `DeviceTracker` calcula fingerprint SHA-256 y, si es nuevo, invoca la Edge Function `notify-new-device` que envía mail con Resend.
+- **Onboarding RGPD**: checkboxes obligatorios (términos, privacidad, cookies) + opcional marketing → RPC `registrar_onboarding` graba en `consentimientos_rgpd` con IP, UA y versión.
+- **4 páginas legales** (`/legal/*`) con plantillas RGPD/LOPDGDD/LSSI-CE.
+- Nuevas tablas: `terminos_versiones`, `dispositivos_conocidos`. Columnas `onboarding_completado*` en `perfiles_negocio`.
+
+### Iteración 2 — *2026-04-28* — Credenciales Supabase
+- Guardadas las credenciales reales del proyecto en `.env.local` (gitignored).
+- Migración a la nueva nomenclatura `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
+- `SUPABASE_DB_PASSWORD` separado sin prefijo `NEXT_PUBLIC_` para no exponerlo al bundle.
+
+### Iteración 1 — *2026-04-28* — Fundación del proyecto
+- **Stack inicial**: Next.js 14, TypeScript, Tailwind, Supabase SSR clients.
+- **Esquema multi-tenant** (`supabase/schema.sql`) con `perfiles_negocio`, `clientes`, `citas`, `tareas_kanban`, `finanzas` (con IVA/IRPF como columnas generadas), `consentimientos_rgpd`, `config_keys` (cifrada con `pgcrypto`). RLS y trigger de bootstrap incluidos.
+- **AppShell** con `Sidebar` (botones grandes 56px) y drawer mobile, siguiendo el R3ZON Design System. Páginas placeholder para todos los módulos.
 
 ---
 
