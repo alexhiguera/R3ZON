@@ -221,6 +221,20 @@ npx cap sync
 
 > Resumen de todo lo construido en orden de iteraciones (más reciente → más antiguo).
 
+### Iteración 32 — *2026-05-11* — Editor de documentos: simplificación UX + métodos de pago guardados
+
+Reorganización del editor `/documentos/nuevo` para reducir fricción y un nuevo tab en Ajustes.
+
+- **Cliente**: por defecto un buscador con autocomplete (busca por nombre, CIF o email contra los clientes existentes); botón secundario "Añadir cliente manualmente" que despliega los campos y un checkbox "Guardar también como cliente en mi CRM" (al generar, si está marcado, hace `INSERT` en `clientes` antes del documento).
+- **Cabecera colapsable**: por defecto muestra una línea-resumen ("Serie A · 11 may 26 · vence 26 may 26") y un botón verde "Modificar". Defaults: serie A, hoy, vencimiento +15 días, IRPF 0%.
+- **Pago colapsable**: misma mecánica que cabecera. Selector de métodos guardados (con ⭐ en el predeterminado) + opción "Introducir manualmente" + checkbox "Guardar este método para reutilizarlo".
+- **Métodos de pago guardados**: nueva tabla [`metodos_pago`](supabase/metodos_pago_ext.sql) con índice único parcial para garantizar un solo predeterminado por negocio. Nuevo tab "Facturación" en Ajustes [`FacturacionTab`](src/components/ajustes/FacturacionTab.tsx) para CRUD de los métodos.
+- **Layout**: `lg:grid-cols-2` simétrico, formulario izquierda + previsualización derecha. La preview es `sticky top-4` para que se mantenga visible al scrollear el formulario.
+- **Botón "Ver en grande"**: encima de la preview. Abre un modal fullscreen con backdrop blur y el documento centrado en formato A4 (botón "Abrir en pestaña" dentro del modal usa la misma ventana de impresión que el descargar).
+- Líneas: sin cambios (tu petición explícita).
+
+Suite verde: **8 archivos · 82 tests**.
+
 ### Iteración 31 — *2026-05-11* — Módulo Documentos (facturas, tickets, presupuestos, albaranes, proformas)
 
 Nuevo apartado en la sidebar entre Fichajes y Finanzas para emitir cualquier documento comercial. La página `/documentos/nuevo` muestra primero un selector de tipo y, al elegir uno, se abre un editor con **formulario a la izquierda y previsualización en vivo a la derecha**.

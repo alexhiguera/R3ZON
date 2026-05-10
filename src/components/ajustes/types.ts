@@ -15,4 +15,10 @@ export type PerfilNegocio = {
   updated_at: string;
 };
 
-export type TabId = "negocio" | "integraciones" | "equipo" | "suscripcion" | "seguridad";
+export type TabId =
+  | "negocio"
+  | "facturacion"
+  | "integraciones"
+  | "equipo"
+  | "suscripcion"
+  | "seguridad";

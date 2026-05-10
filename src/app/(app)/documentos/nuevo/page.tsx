@@ -19,6 +19,12 @@ import {
   ClipboardList,
   FileSignature,
   AlertCircle,
+  Search,
+  UserPlus,
+  Pencil,
+  Maximize2,
+  X,
+  ChevronDown,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useNegocioId } from "@/lib/useNegocioId";
@@ -48,6 +54,14 @@ type ClienteFila = {
   email: string | null;
 };
 
+type MetodoPagoFila = {
+  id: string;
+  etiqueta: string;
+  tipo: string;
+  detalle: string | null;
+  predeterminado: boolean;
+};
+
 type DocumentoGenerado = {
   id: string;
   referencia: string;
@@ -63,6 +77,13 @@ const ICONO_TIPO: Record<TipoDocumento, typeof FileText> = {
   proforma:    FileSignature,
 };
 
+const hoyISO = () => new Date().toISOString().slice(0, 10);
+const hoyMas15 = () => {
+  const d = new Date();
+  d.setDate(d.getDate() + 15);
+  return d.toISOString().slice(0, 10);
+};
+
 export default function NuevoDocumentoPage() {
   const supabase = createClient();
   const router = useRouter();
@@ -72,43 +93,53 @@ export default function NuevoDocumentoPage() {
 
   const [tipo, setTipo] = useState<TipoDocumento | null>(null);
 
-  // Datos del emisor (perfiles_negocio) — se cargan al inicio
+  // ── Datos del emisor ────────────────────────────────────────────────────
   const [emisor, setEmisor] = useState<EmisorSnapshot>({
     nombre: "", cif: null, direccion: null, email: null, telefono: null,
   });
 
-  // Cliente
+  // ── Cliente ─────────────────────────────────────────────────────────────
   const [clientes, setClientes] = useState<ClienteFila[]>([]);
   const [clienteId, setClienteId] = useState<string | null>(null);
   const [cliente, setCliente] = useState<ClienteSnapshot>({
     nombre: "", cif: null, direccion: null, email: null,
   });
+  const [busquedaCliente, setBusquedaCliente] = useState("");
+  const [mostrarManual, setMostrarManual] = useState(false);
+  const [guardarComoCliente, setGuardarComoCliente] = useState(true);
 
-  // Cabecera
+  // ── Cabecera (con valores por defecto) ──────────────────────────────────
   const [serie, setSerie] = useState("A");
-  const [fechaEmision, setFechaEmision] = useState(() =>
-    new Date().toISOString().slice(0, 10),
-  );
-  const [fechaVencimiento, setFechaVencimiento] = useState("");
-
-  // Líneas y configuración fiscal
-  const [lineas, setLineas] = useState<LineaDocumento[]>([lineaVacia()]);
+  const [fechaEmision, setFechaEmision] = useState(hoyISO);
+  const [fechaVencimiento, setFechaVencimiento] = useState(hoyMas15);
   const [irpfPct, setIrpfPct] = useState<number>(0);
+  const [cabeceraAbierta, setCabeceraAbierta] = useState(false);
 
-  // Pago / notas
+  // ── Líneas ──────────────────────────────────────────────────────────────
+  const [lineas, setLineas] = useState<LineaDocumento[]>([lineaVacia()]);
+
+  // ── Métodos de pago ─────────────────────────────────────────────────────
+  const [metodosGuardados, setMetodosGuardados] = useState<MetodoPagoFila[]>([]);
+  const [metodoSeleccionadoId, setMetodoSeleccionadoId] = useState<string | "manual">("manual");
   const [metodoPago, setMetodoPago] = useState("transferencia");
   const [condicionesPago, setCondicionesPago] = useState("");
+  const [pagoAbierto, setPagoAbierto] = useState(false);
+  const [guardarMetodoNuevo, setGuardarMetodoNuevo] = useState(false);
+  const [etiquetaMetodoNuevo, setEtiquetaMetodoNuevo] = useState("");
+
+  // ── Notas ───────────────────────────────────────────────────────────────
   const [notas, setNotas] = useState("");
 
-  // Estado de generación
+  // ── Estado de generación / fullscreen ───────────────────────────────────
   const [generando, setGenerando] = useState(false);
   const [generado, setGenerado] = useState<DocumentoGenerado | null>(null);
   const [enviadoFinanzas, setEnviadoFinanzas] = useState(false);
+  const [fullscreen, setFullscreen] = useState(false);
 
-  // Carga inicial: emisor + clientes
+  // ── Carga inicial ───────────────────────────────────────────────────────
   useEffect(() => {
     (async () => {
-      const [{ data: perfil }, { data: cls }] = await Promise.all([
+      const [{ data: perfil }, { data: cls }, { data: mps }] = await Promise.all([
         supabase
           .from("perfiles_negocio")
           .select("nombre_negocio,cif_nif,direccion,email_contacto,telefono")
@@ -117,6 +148,11 @@ export default function NuevoDocumentoPage() {
           .from("clientes")
           .select("id,nombre,cif,direccion,email")
           .order("nombre"),
+        supabase
+          .from("metodos_pago")
+          .select("id,etiqueta,tipo,detalle,predeterminado")
+          .order("predeterminado", { ascending: false })
+          .order("etiqueta"),
       ]);
 
       if (perfil) {
@@ -129,9 +165,51 @@ export default function NuevoDocumentoPage() {
         });
       }
       setClientes((cls ?? []) as ClienteFila[]);
+
+      const ms = (mps ?? []) as MetodoPagoFila[];
+      setMetodosGuardados(ms);
+      const def = ms.find((m) => m.predeterminado) ?? ms[0];
+      if (def) {
+        setMetodoSeleccionadoId(def.id);
+        setMetodoPago(def.etiqueta);
+        setCondicionesPago(def.detalle ?? "");
+      }
     })();
   }, [supabase]);
 
+  // ── Búsqueda de clientes ────────────────────────────────────────────────
+  const sugerencias = useMemo(() => {
+    const q = busquedaCliente.trim().toLowerCase();
+    if (!q) return [];
+    return clientes
+      .filter(
+        (c) =>
+          c.nombre.toLowerCase().includes(q) ||
+          (c.cif ?? "").toLowerCase().includes(q) ||
+          (c.email ?? "").toLowerCase().includes(q),
+      )
+      .slice(0, 6);
+  }, [clientes, busquedaCliente]);
+
+  function elegirCliente(c: ClienteFila) {
+    setClienteId(c.id);
+    setCliente({
+      nombre:    c.nombre,
+      cif:       c.cif,
+      direccion: c.direccion,
+      email:     c.email,
+    });
+    setBusquedaCliente(c.nombre);
+    setMostrarManual(false);
+  }
+
+  function limpiarCliente() {
+    setClienteId(null);
+    setCliente({ nombre: "", cif: null, direccion: null, email: null });
+    setBusquedaCliente("");
+  }
+
+  // ── Totales y validación ────────────────────────────────────────────────
   const totales = useMemo(() => calcularTotales(lineas, irpfPct), [lineas, irpfPct]);
   const errores = validarParaGenerar({
     tipo: tipo ?? "ticket",
@@ -140,30 +218,25 @@ export default function NuevoDocumentoPage() {
     lineas,
   });
 
-  // ── Handlers líneas ────────────────────────────────────────────────────
+  // ── Líneas ──────────────────────────────────────────────────────────────
   const actualizarLinea = (i: number, patch: Partial<LineaDocumento>) =>
     setLineas((prev) => prev.map((l, idx) => (idx === i ? { ...l, ...patch } : l)));
 
   const eliminarLinea = (i: number) =>
     setLineas((prev) => (prev.length > 1 ? prev.filter((_, idx) => idx !== i) : prev));
 
-  // ── Selección de cliente ───────────────────────────────────────────────
-  const seleccionarCliente = (id: string) => {
-    setClienteId(id);
-    const c = clientes.find((x) => x.id === id);
-    if (c) {
-      setCliente({
-        nombre:    c.nombre,
-        cif:       c.cif,
-        direccion: c.direccion,
-        email:     c.email,
-      });
-    } else {
-      setCliente({ nombre: "", cif: null, direccion: null, email: null });
+  // ── Métodos de pago ─────────────────────────────────────────────────────
+  function elegirMetodoGuardado(id: string) {
+    setMetodoSeleccionadoId(id);
+    if (id === "manual") return;
+    const m = metodosGuardados.find((x) => x.id === id);
+    if (m) {
+      setMetodoPago(m.etiqueta);
+      setCondicionesPago(m.detalle ?? "");
     }
-  };
+  }
 
-  // ── Generación ─────────────────────────────────────────────────────────
+  // ── Generación ──────────────────────────────────────────────────────────
   async function generar() {
     if (!tipo || !negocioId) return;
     if (errores.length > 0) {
@@ -172,9 +245,46 @@ export default function NuevoDocumentoPage() {
     }
     setGenerando(true);
 
+    // Si el cliente fue introducido manualmente y se marcó "Guardar también", lo creamos antes.
+    let clienteIdFinal = clienteId;
+    if (mostrarManual && guardarComoCliente && cliente.nombre && !clienteId) {
+      const { data: nuevoCli, error: errCli } = await supabase
+        .from("clientes")
+        .insert({
+          negocio_id: negocioId,
+          nombre:    cliente.nombre,
+          cif:       cliente.cif,
+          direccion: cliente.direccion,
+          email:     cliente.email,
+        })
+        .select("id")
+        .single();
+      if (errCli) {
+        toast.err(`No se pudo guardar el cliente: ${errCli.message}`);
+      } else if (nuevoCli) {
+        clienteIdFinal = nuevoCli.id;
+        toast.ok("Cliente añadido a tu CRM.");
+      }
+    }
+
+    // Si se marcó guardar el método de pago nuevo, lo persistimos
+    if (
+      metodoSeleccionadoId === "manual" &&
+      guardarMetodoNuevo &&
+      etiquetaMetodoNuevo.trim() &&
+      negocioId
+    ) {
+      await supabase.from("metodos_pago").insert({
+        negocio_id: negocioId,
+        etiqueta: etiquetaMetodoNuevo.trim(),
+        tipo: "otros",
+        detalle: condicionesPago || null,
+        predeterminado: metodosGuardados.length === 0,
+      });
+    }
+
     const anio = new Date(fechaEmision).getFullYear();
 
-    // 1. Reservar número correlativo (atómico vía advisory lock)
     const { data: numero, error: errNum } = await supabase.rpc(
       "siguiente_numero_documento",
       { p_tipo: tipo, p_serie: serie, p_anio: anio },
@@ -186,12 +296,11 @@ export default function NuevoDocumentoPage() {
       return;
     }
 
-    // 2. Insertar el documento ya con estado "generado" (inmutable a partir de ahí)
     const { data, error } = await supabase
       .from("documentos")
       .insert({
         negocio_id: negocioId,
-        cliente_id: clienteId,
+        cliente_id: clienteIdFinal,
         tipo,
         serie,
         numero,
@@ -228,33 +337,35 @@ export default function NuevoDocumentoPage() {
   }
 
   // ── Acciones post-generación ───────────────────────────────────────────
-  function descargarPDF() {
+  function abrirVentanaImpresion(modo: "pdf" | "vista") {
     if (!previewRef.current) return;
     const html = previewRef.current.innerHTML;
     const titulo = generado?.referencia ?? "documento";
     const w = window.open("", "_blank", "width=900,height=1100");
     if (!w) {
-      toast.err("El navegador bloqueó la ventana de impresión.");
+      toast.err("El navegador bloqueó la ventana.");
       return;
     }
+    const autoPrint = modo === "pdf" ? "<script>window.onload=()=>window.print()</script>" : "";
     w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${titulo}</title>
       <style>
         body{margin:0;background:#f1f5f9;padding:24px;font-family:system-ui,sans-serif}
+        .doc-wrap{max-width:900px;margin:0 auto;background:#fff;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,.15)}
         @page{size:A4;margin:18mm}
-        @media print{body{background:#fff;padding:0}}
-      </style></head><body>${html}<script>window.onload=()=>{window.print();}</script></body></html>`);
+        @media print{body{background:#fff;padding:0}.doc-wrap{box-shadow:none;max-width:none;border-radius:0}}
+      </style></head><body><div class="doc-wrap">${html}</div>${autoPrint}</body></html>`);
     w.document.close();
   }
 
   function enviarPorEmail() {
-    if (!generado) return;
+    if (!generado || !tipo) return;
     const destinatario = cliente.email ?? "";
     const asunto = encodeURIComponent(
-      `${ETIQUETA_TIPO[tipo!]} ${generado.referencia} — ${emisor.nombre}`,
+      `${ETIQUETA_TIPO[tipo]} ${generado.referencia} — ${emisor.nombre}`,
     );
     const cuerpo = encodeURIComponent(
       `Hola${cliente.nombre ? ` ${cliente.nombre}` : ""},\n\n` +
-        `Adjunto te envío la ${ETIQUETA_TIPO[tipo!].toLowerCase()} ${generado.referencia} ` +
+        `Adjunto te envío la ${ETIQUETA_TIPO[tipo].toLowerCase()} ${generado.referencia} ` +
         `por importe de ${eur(totales.total)}.\n\n` +
         `Un saludo,\n${emisor.nombre}`,
     );
@@ -263,22 +374,18 @@ export default function NuevoDocumentoPage() {
   }
 
   async function añadirAFinanzas() {
-    if (!generado || !negocioId || enviadoFinanzas) return;
-
-    // Una factura emitida es un ingreso. Promediamos el IVA por simplicidad
-    // (el documento puede tener varios tipos; aquí guardamos la base global).
+    if (!generado || !negocioId || enviadoFinanzas || !tipo) return;
     const ivaPctMedio =
       totales.base_imponible > 0
         ? (totales.iva_total / totales.base_imponible) * 100
         : 21;
-
     const { data, error } = await supabase
       .from("finanzas")
       .insert({
         negocio_id: negocioId,
         cliente_id: clienteId,
         tipo: "ingreso",
-        concepto: `${ETIQUETA_TIPO[tipo!]} ${generado.referencia}`,
+        concepto: `${ETIQUETA_TIPO[tipo]} ${generado.referencia}`,
         fecha: fechaEmision,
         base_imponible: totales.base_imponible,
         iva_porcentaje: Math.round(ivaPctMedio * 100) / 100,
@@ -289,22 +396,20 @@ export default function NuevoDocumentoPage() {
       })
       .select("id")
       .single();
-
     if (error || !data) {
       toast.err(`No se pudo añadir a finanzas: ${error?.message ?? "desconocido"}`);
       return;
     }
-
     await supabase
       .from("documentos")
       .update({ finanza_id: data.id })
       .eq("id", generado.id);
-
     setEnviadoFinanzas(true);
     toast.ok("Movimiento añadido a Finanzas como ingreso pendiente.");
   }
 
   // ──────────────────────────────────────────────────────────────────────
+  // PASO 1 — Selector de tipo
   if (!tipo) {
     return (
       <div className="flex flex-col gap-5">
@@ -346,7 +451,15 @@ export default function NuevoDocumentoPage() {
   }
 
   // ──────────────────────────────────────────────────────────────────────
-  // Editor con form a la izquierda y previsualización a la derecha
+  // PASO 2 — Editor (form izquierda + preview derecha)
+  const cabeceraResumen =
+    `Serie ${serie} · ${formatearFechaCorta(fechaEmision)}` +
+    (fechaVencimiento ? ` · vence ${formatearFechaCorta(fechaVencimiento)}` : "") +
+    (irpfPct > 0 ? ` · IRPF ${irpfPct}%` : "");
+
+  const pagoResumen =
+    metodoPago + (condicionesPago ? ` · ${condicionesPago}` : "");
+
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -370,112 +483,204 @@ export default function NuevoDocumentoPage() {
         description={DESCRIPCION_TIPO[tipo]}
       />
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr),minmax(0,1.1fr)]">
-        {/* ─── FORMULARIO ─────────────────────────────────────────── */}
+      <div className="grid gap-5 lg:grid-cols-2">
+        {/* ─── FORMULARIO (izquierda) ──────────────────────────────── */}
         <fieldset
           disabled={generado !== null}
           className="flex flex-col gap-4 disabled:opacity-60"
         >
-          <Card title="Cabecera">
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Serie">
-                <input
-                  type="text"
-                  value={serie}
-                  onChange={(e) => setSerie(e.target.value.toUpperCase().slice(0, 4))}
-                  className={inputCls}
-                />
-              </Field>
-              <Field label="Fecha de emisión">
-                <input
-                  type="date"
-                  value={fechaEmision}
-                  onChange={(e) => setFechaEmision(e.target.value)}
-                  className={inputCls}
-                />
-              </Field>
-              <Field label={tipo === "presupuesto" ? "Válido hasta" : "Vencimiento"}>
-                <input
-                  type="date"
-                  value={fechaVencimiento}
-                  onChange={(e) => setFechaVencimiento(e.target.value)}
-                  className={inputCls}
-                />
-              </Field>
-              <Field label="IRPF %">
-                <input
-                  type="number"
-                  value={irpfPct}
-                  step="0.01"
-                  min={0}
-                  onChange={(e) => setIrpfPct(parseFloat(e.target.value) || 0)}
-                  className={inputCls}
-                />
-              </Field>
-            </div>
+          {/* CLIENTE */}
+          <Card title="Cliente">
+            {!mostrarManual ? (
+              <div className="flex flex-col gap-2">
+                <div className="relative">
+                  <Search
+                    size={14}
+                    className="pointer-events-none absolute left-3 top-3.5 text-text-lo"
+                  />
+                  <input
+                    type="text"
+                    value={busquedaCliente}
+                    onChange={(e) => {
+                      setBusquedaCliente(e.target.value);
+                      if (clienteId) limpiarCliente();
+                    }}
+                    placeholder="Buscar cliente por nombre, CIF o email…"
+                    className={`${inputCls} pl-9`}
+                  />
+                  {sugerencias.length > 0 && !clienteId && (
+                    <div className="absolute z-10 mt-1 w-full overflow-hidden rounded-xl border border-indigo-400/30 bg-bg shadow-2xl">
+                      {sugerencias.map((c) => (
+                        <button
+                          key={c.id}
+                          type="button"
+                          onClick={() => elegirCliente(c)}
+                          className="flex w-full flex-col items-start gap-0.5 px-3 py-2 text-left hover:bg-indigo-900/40"
+                        >
+                          <span className="text-sm font-semibold text-text-hi">
+                            {c.nombre}
+                          </span>
+                          <span className="text-[0.7rem] text-text-lo">
+                            {c.cif ?? "Sin CIF"}{c.email ? ` · ${c.email}` : ""}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {clienteId && (
+                  <div className="flex items-center gap-2 rounded-xl border border-ok/30 bg-ok/10 px-3 py-2 text-sm">
+                    <CheckCircle2 size={14} className="text-ok" />
+                    <span className="flex-1 text-text-hi">
+                      <strong>{cliente.nombre}</strong>
+                      {cliente.cif && <span className="ml-1 text-text-mid">({cliente.cif})</span>}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={limpiarCliente}
+                      className="text-xs text-text-mid hover:text-text-hi"
+                    >
+                      Cambiar
+                    </button>
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMostrarManual(true);
+                    limpiarCliente();
+                  }}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-dashed border-fuchsia/40 bg-fuchsia/5 py-2.5 text-sm font-semibold text-fuchsia hover:bg-fuchsia/10"
+                >
+                  <UserPlus size={14} /> Añadir cliente manualmente
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="Nombre" full>
+                    <input
+                      type="text"
+                      value={cliente.nombre}
+                      onChange={(e) => setCliente({ ...cliente, nombre: e.target.value })}
+                      className={inputCls}
+                      autoFocus
+                    />
+                  </Field>
+                  <Field label="CIF/NIF">
+                    <input
+                      type="text"
+                      value={cliente.cif ?? ""}
+                      onChange={(e) => setCliente({ ...cliente, cif: e.target.value || null })}
+                      className={inputCls}
+                    />
+                  </Field>
+                  <Field label="Email">
+                    <input
+                      type="email"
+                      value={cliente.email ?? ""}
+                      onChange={(e) => setCliente({ ...cliente, email: e.target.value || null })}
+                      className={inputCls}
+                    />
+                  </Field>
+                  <Field label="Dirección" full>
+                    <input
+                      type="text"
+                      value={cliente.direccion ?? ""}
+                      onChange={(e) =>
+                        setCliente({ ...cliente, direccion: e.target.value || null })
+                      }
+                      className={inputCls}
+                    />
+                  </Field>
+                </div>
+
+                <label className="flex items-center gap-2 text-xs text-text-mid">
+                  <input
+                    type="checkbox"
+                    checked={guardarComoCliente}
+                    onChange={(e) => setGuardarComoCliente(e.target.checked)}
+                    className="h-4 w-4 rounded border-indigo-400/30 bg-indigo-900/30 text-cyan focus:ring-cyan/30"
+                  />
+                  Guardar también como cliente en mi CRM
+                </label>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMostrarManual(false);
+                    limpiarCliente();
+                  }}
+                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-indigo-400/20 bg-indigo-900/20 py-2 text-xs font-semibold text-text-mid hover:text-text-hi"
+                >
+                  <Search size={12} /> Volver a buscar
+                </button>
+              </div>
+            )}
           </Card>
 
-          <Card
-            title={
-              REQUIERE_CLIENTE_FISCAL.includes(tipo)
-                ? "Cliente (obligatorio con CIF)"
-                : "Cliente (opcional)"
-            }
-          >
-            <Field label="Selecciona un cliente existente">
-              <select
-                value={clienteId ?? ""}
-                onChange={(e) => seleccionarCliente(e.target.value)}
-                className={inputCls}
-              >
-                <option value="">— Manual / sin cliente —</option>
-                {clientes.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.nombre}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <div className="mt-3 grid grid-cols-2 gap-3">
-              <Field label="Nombre">
-                <input
-                  type="text"
-                  value={cliente.nombre}
-                  onChange={(e) => setCliente({ ...cliente, nombre: e.target.value })}
-                  className={inputCls}
-                />
-              </Field>
-              <Field label="CIF/NIF">
-                <input
-                  type="text"
-                  value={cliente.cif ?? ""}
-                  onChange={(e) => setCliente({ ...cliente, cif: e.target.value || null })}
-                  className={inputCls}
-                />
-              </Field>
-              <Field label="Dirección" full>
-                <input
-                  type="text"
-                  value={cliente.direccion ?? ""}
-                  onChange={(e) =>
-                    setCliente({ ...cliente, direccion: e.target.value || null })
-                  }
-                  className={inputCls}
-                />
-              </Field>
-              <Field label="Email" full>
-                <input
-                  type="email"
-                  value={cliente.email ?? ""}
-                  onChange={(e) =>
-                    setCliente({ ...cliente, email: e.target.value || null })
-                  }
-                  className={inputCls}
-                />
-              </Field>
-            </div>
-          </Card>
+          {/* CABECERA — colapsable */}
+          {!cabeceraAbierta ? (
+            <ResumenColapsable
+              titulo="Cabecera"
+              resumen={cabeceraResumen}
+              onModificar={() => setCabeceraAbierta(true)}
+            />
+          ) : (
+            <Card
+              title="Cabecera"
+              accion={
+                <button
+                  type="button"
+                  onClick={() => setCabeceraAbierta(false)}
+                  className="text-xs text-text-mid hover:text-text-hi"
+                >
+                  Colapsar
+                </button>
+              }
+            >
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Serie">
+                  <input
+                    type="text"
+                    value={serie}
+                    onChange={(e) => setSerie(e.target.value.toUpperCase().slice(0, 4))}
+                    className={inputCls}
+                  />
+                </Field>
+                <Field label="Fecha de emisión">
+                  <input
+                    type="date"
+                    value={fechaEmision}
+                    onChange={(e) => setFechaEmision(e.target.value)}
+                    className={inputCls}
+                  />
+                </Field>
+                <Field label={tipo === "presupuesto" ? "Válido hasta" : "Vencimiento"}>
+                  <input
+                    type="date"
+                    value={fechaVencimiento}
+                    onChange={(e) => setFechaVencimiento(e.target.value)}
+                    className={inputCls}
+                  />
+                </Field>
+                <Field label="Retención IRPF %">
+                  <input
+                    type="number"
+                    value={irpfPct}
+                    step="0.01"
+                    min={0}
+                    onChange={(e) => setIrpfPct(parseFloat(e.target.value) || 0)}
+                    className={inputCls}
+                  />
+                </Field>
+              </div>
+            </Card>
+          )}
 
+          {/* LÍNEAS */}
           <Card title="Líneas">
             <div className="flex flex-col gap-3">
               {lineas.map((l, i) => (
@@ -540,42 +745,113 @@ export default function NuevoDocumentoPage() {
             </div>
           </Card>
 
-          <Card title="Pago y notas">
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Método de pago">
+          {/* PAGO — colapsable */}
+          {!pagoAbierto ? (
+            <ResumenColapsable
+              titulo="Pago"
+              resumen={pagoResumen}
+              onModificar={() => setPagoAbierto(true)}
+            />
+          ) : (
+            <Card
+              title="Pago"
+              accion={
+                <button
+                  type="button"
+                  onClick={() => setPagoAbierto(false)}
+                  className="text-xs text-text-mid hover:text-text-hi"
+                >
+                  Colapsar
+                </button>
+              }
+            >
+              <Field label="Método guardado">
                 <select
-                  value={metodoPago}
-                  onChange={(e) => setMetodoPago(e.target.value)}
+                  value={metodoSeleccionadoId}
+                  onChange={(e) => elegirMetodoGuardado(e.target.value)}
                   className={inputCls}
                 >
-                  <option value="transferencia">Transferencia</option>
-                  <option value="efectivo">Efectivo</option>
-                  <option value="bizum">Bizum</option>
-                  <option value="tarjeta">Tarjeta</option>
-                  <option value="domiciliacion">Domiciliación</option>
-                  <option value="otros">Otros</option>
+                  {metodosGuardados.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.etiqueta}
+                      {m.predeterminado ? " ⭐" : ""}
+                    </option>
+                  ))}
+                  <option value="manual">— Introducir manualmente —</option>
                 </select>
+                {metodosGuardados.length === 0 && (
+                  <Link
+                    href="/ajustes"
+                    className="mt-1 text-[0.7rem] text-cyan hover:underline"
+                  >
+                    Aún no tienes métodos guardados — añádelos en Ajustes
+                  </Link>
+                )}
               </Field>
-              <Field label="Condiciones de pago">
-                <input
-                  type="text"
-                  value={condicionesPago}
-                  onChange={(e) => setCondicionesPago(e.target.value)}
-                  placeholder="Ej: 30 días"
-                  className={inputCls}
-                />
-              </Field>
-              <Field label="Notas internas" full>
-                <textarea
-                  value={notas}
-                  onChange={(e) => setNotas(e.target.value)}
-                  rows={3}
-                  className={`${inputCls} h-auto resize-none py-2`}
-                />
-              </Field>
-            </div>
+
+              {metodoSeleccionadoId === "manual" && (
+                <div className="mt-3 grid grid-cols-2 gap-3">
+                  <Field label="Método" full>
+                    <input
+                      type="text"
+                      value={metodoPago}
+                      onChange={(e) => setMetodoPago(e.target.value)}
+                      placeholder="Transferencia, Bizum, efectivo…"
+                      className={inputCls}
+                    />
+                  </Field>
+                  <Field label="Detalle / instrucciones" full>
+                    <input
+                      type="text"
+                      value={condicionesPago}
+                      onChange={(e) => setCondicionesPago(e.target.value)}
+                      placeholder="IBAN, plazo, observaciones…"
+                      className={inputCls}
+                    />
+                  </Field>
+                  <label className="col-span-2 flex items-center gap-2 text-xs text-text-mid">
+                    <input
+                      type="checkbox"
+                      checked={guardarMetodoNuevo}
+                      onChange={(e) => setGuardarMetodoNuevo(e.target.checked)}
+                      className="h-4 w-4 rounded border-indigo-400/30 bg-indigo-900/30 text-cyan focus:ring-cyan/30"
+                    />
+                    Guardar este método para reutilizarlo
+                  </label>
+                  {guardarMetodoNuevo && (
+                    <Field label="Etiqueta del método" full>
+                      <input
+                        type="text"
+                        value={etiquetaMetodoNuevo}
+                        onChange={(e) => setEtiquetaMetodoNuevo(e.target.value)}
+                        placeholder="Transferencia BBVA"
+                        className={inputCls}
+                      />
+                    </Field>
+                  )}
+                </div>
+              )}
+
+              {metodoSeleccionadoId !== "manual" && condicionesPago && (
+                <div className="mt-3 rounded-lg border border-indigo-400/15 bg-indigo-900/20 px-3 py-2 text-xs text-text-mid">
+                  {condicionesPago}
+                </div>
+              )}
+            </Card>
+          )}
+
+          {/* NOTAS */}
+          <Card title="Notas (opcional)">
+            <textarea
+              value={notas}
+              onChange={(e) => setNotas(e.target.value)}
+              rows={3}
+              placeholder="Notas internas o mensaje para el cliente…"
+              className={`${inputCls} h-auto resize-none py-2`}
+            />
           </Card>
 
+          {/* GENERAR */}
           {!generado && (
             <>
               {errores.length > 0 && (
@@ -597,17 +873,22 @@ export default function NuevoDocumentoPage() {
                 {generando ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle2 size={18} />}
                 Generar {ETIQUETA_TIPO[tipo].toLowerCase()}
               </button>
-              <p className="text-center text-[0.7rem] text-text-lo">
-                Una vez generada, el documento queda guardado de forma inmutable
-                con su número correlativo.
-              </p>
             </>
           )}
         </fieldset>
 
-        {/* ─── PREVISUALIZACIÓN ──────────────────────────────────── */}
-        <div className="flex flex-col gap-3">
-          <div className="section-label">Previsualización</div>
+        {/* ─── PREVISUALIZACIÓN (derecha) ─────────────────────────── */}
+        <div className="flex flex-col gap-3 lg:sticky lg:top-4 lg:h-fit">
+          <div className="flex items-center justify-between">
+            <div className="section-label">Previsualización</div>
+            <button
+              type="button"
+              onClick={() => setFullscreen(true)}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-cyan/30 bg-cyan/10 px-3 py-1.5 text-xs font-semibold text-cyan hover:bg-cyan/20"
+            >
+              <Maximize2 size={12} /> Ver en grande
+            </button>
+          </div>
           <div className="overflow-hidden rounded-2xl border border-indigo-400/20 bg-white shadow-2xl">
             <div ref={previewRef}>
               <PlantillaDocumento
@@ -632,7 +913,7 @@ export default function NuevoDocumentoPage() {
             <div className="card-glass p-4">
               <div className="section-label mb-3">¿Qué quieres hacer ahora?</div>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                <AccionBtn onClick={descargarPDF} Icono={Download} label="Descargar PDF" tono="cyan" />
+                <AccionBtn onClick={() => abrirVentanaImpresion("pdf")} Icono={Download} label="Descargar PDF" tono="cyan" />
                 <AccionBtn
                   onClick={enviarPorEmail}
                   Icono={Send}
@@ -654,14 +935,56 @@ export default function NuevoDocumentoPage() {
                   yaHecho={enviadoFinanzas}
                 />
               </div>
-              <p className="mt-3 text-[0.7rem] text-text-lo">
-                Añadir a Finanzas crea un ingreso pendiente vinculado a este documento.
-                Hazlo solo si el cliente quiere registrar el pago en tu contabilidad.
-              </p>
             </div>
           )}
         </div>
       </div>
+
+      {/* MODAL FULLSCREEN */}
+      {fullscreen && (
+        <div
+          className="fixed inset-0 z-50 flex flex-col bg-black/70 backdrop-blur-sm"
+          onClick={() => setFullscreen(false)}
+        >
+          <div className="flex items-center justify-end gap-2 p-3">
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); abrirVentanaImpresion("vista"); }}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-cyan/30 bg-cyan/10 px-3 py-1.5 text-xs font-semibold text-cyan hover:bg-cyan/20"
+            >
+              <Download size={12} /> Abrir en pestaña
+            </button>
+            <button
+              type="button"
+              onClick={() => setFullscreen(false)}
+              aria-label="Cerrar"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-indigo-400/30 bg-indigo-900/40 text-text-hi hover:bg-indigo-900/60"
+            >
+              <X size={16} />
+            </button>
+          </div>
+          <div
+            className="mx-auto mb-6 w-full max-w-4xl flex-1 overflow-auto rounded-t-2xl bg-white shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <PlantillaDocumento
+              tipo={tipo}
+              serie={serie}
+              numero={generado?.numero ?? null}
+              anio={new Date(fechaEmision).getFullYear()}
+              fecha_emision={fechaEmision}
+              fecha_vencimiento={fechaVencimiento || null}
+              emisor={emisor}
+              cliente={cliente}
+              lineas={lineas}
+              irpf_pct={irpfPct}
+              notas={notas || null}
+              condiciones_pago={condicionesPago || null}
+              metodo_pago={metodoPago || null}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -671,12 +994,54 @@ export default function NuevoDocumentoPage() {
 const inputCls =
   "h-10 w-full rounded-lg border border-indigo-400/20 bg-indigo-900/30 px-3 text-sm text-text-hi placeholder:text-text-lo focus:border-cyan/50 focus:outline-none focus:ring-2 focus:ring-cyan/20";
 
-function Card({ title, children }: { title: string; children: React.ReactNode }) {
+function Card({
+  title,
+  children,
+  accion,
+}: {
+  title: string;
+  children: React.ReactNode;
+  accion?: React.ReactNode;
+}) {
   return (
     <div className="card-glass p-4">
-      <div className="section-label mb-3">{title}</div>
+      <div className="mb-3 flex items-center justify-between">
+        <span className="section-label">{title}</span>
+        {accion}
+      </div>
       {children}
     </div>
+  );
+}
+
+function ResumenColapsable({
+  titulo,
+  resumen,
+  onModificar,
+}: {
+  titulo: string;
+  resumen: string;
+  onModificar: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onModificar}
+      className="card-glass group flex items-center gap-3 p-3 text-left transition-colors hover:border-cyan/30"
+    >
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-indigo-400/20 bg-indigo-900/30 text-text-mid group-hover:text-cyan">
+        <ChevronDown size={14} />
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="text-[0.65rem] font-semibold uppercase tracking-wider text-text-lo">
+          {titulo}
+        </div>
+        <div className="truncate text-sm text-text-hi">{resumen}</div>
+      </div>
+      <span className="inline-flex items-center gap-1 rounded-lg border border-cyan/30 bg-cyan/10 px-3 py-1.5 text-xs font-semibold text-cyan">
+        <Pencil size={12} /> Modificar
+      </span>
+    </button>
   );
 }
 
@@ -757,4 +1122,11 @@ function AccionBtn({
       <Icono size={15} /> {label}
     </button>
   );
+}
+
+function formatearFechaCorta(iso: string): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "2-digit" });
 }
