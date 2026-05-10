@@ -2,6 +2,9 @@ import { defineConfig } from "vitest/config";
 import path from "node:path";
 
 export default defineConfig({
+  // Vitest no procesa CSS — desactivar PostCSS evita que un módulo roto en
+  // node_modules (picomatch) bloquee la suite de tests.
+  css: { postcss: { plugins: [] } },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
