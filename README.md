@@ -221,6 +221,18 @@ npx cap sync
 
 > Resumen de todo lo construido en orden de iteraciones (más reciente → más antiguo).
 
+### Iteración 31 — *2026-05-11* — Módulo Documentos (facturas, tickets, presupuestos, albaranes, proformas)
+
+Nuevo apartado en la sidebar entre Fichajes y Finanzas para emitir cualquier documento comercial. La página `/documentos/nuevo` muestra primero un selector de tipo y, al elegir uno, se abre un editor con **formulario a la izquierda y previsualización en vivo a la derecha**.
+
+- **Esquema** [`supabase/documentos_ext.sql`](supabase/documentos_ext.sql): tabla `documentos` con `numero` correlativo único por (negocio, tipo, serie, año), `referencia` generada (`tipo-serie-año-NNNNN`), `emisor_snapshot` y `cliente_snapshot` JSONB que congelan los datos al generar (una factura no cambia si el cliente actualiza su CIF), y trigger `tg_documentos_inmutable` que bloquea modificaciones de fondo cuando `estado != 'borrador'`. RLS por `current_negocio_id()`.
+- **Numeración atómica**: RPC `siguiente_numero_documento(p_tipo, p_serie, p_anio)` con `pg_advisory_xact_lock` derivado por hash de los identificadores → evita huecos y carreras incluso bajo concurrencia.
+- **Lógica pura** [`src/lib/documentos.ts`](src/lib/documentos.ts): tipos, `calcularTotales(lineas, irpf_pct)` con desglose por tipo de IVA, `validarParaGenerar()` que distingue tipos que requieren CIF del cliente (factura, proforma) de los que no (ticket, albarán), `referenciaDocumento()`, `eur()`.
+- **Editor** [`src/app/(app)/documentos/nuevo/page.tsx`](src/app/\(app\)/documentos/nuevo/page.tsx): selector de tipo → editor con cabecera (serie/fechas/IRPF), selector de cliente (predefinido + edición manual), líneas con cantidad/precio/descuento/IVA por línea, método y condiciones de pago, notas. Botón verde **Generar** que ejecuta validación + RPC de numeración + INSERT inmutable. Tras generar, panel de acciones: **Descargar PDF** (vía `window.print` en ventana nueva con `@page A4`), **Enviar por email** (`mailto:` prerrellenado con destinatario, asunto y cuerpo), **Guardado en la app** (estado siempre persistido) y **Añadir a Finanzas** opcional que crea un movimiento de ingreso vinculado vía `finanza_id`.
+- **Plantilla** [`src/components/documentos/PlantillaDocumento.tsx`](src/components/documentos/PlantillaDocumento.tsx): se usa tanto en preview como en el PDF. Estilos en línea (no Tailwind) para que se preserven al inyectarse en la ventana de impresión. Incluye desglose de IVA por tipo y bloque pago/notas opcional.
+- **Listado** [`src/app/(app)/documentos/page.tsx`](src/app/\(app\)/documentos/page.tsx) con chips de filtro por tipo (con conteo) y CTA verde "Nuevo documento". Detalle [`/documentos/[id]`](src/app/\(app\)/documentos/[id]/page.tsx) con previsualización a la izquierda y aside de acciones.
+- **Tests** [`tests/documentos.test.ts`](tests/documentos.test.ts): 14 casos para totales (vacío, descuentos, varios IVAs, IRPF sobre la base, valores no numéricos), validación según tipo y formato de referencia. Suite global verde **8 archivos · 82 tests**.
+
 ### Iteración 30 — *2026-05-03* — Gestión de errores global + gating RGPD reforzado
 
 Avance del plan v1.0 (puntos §2 y §3 de [`plan.md`](plan.md)).
