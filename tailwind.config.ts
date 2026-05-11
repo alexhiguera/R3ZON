@@ -6,26 +6,29 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        bg: "#080714",
+        // Theme Engine: las CSS vars guardan "r g b" (sin coma) para que los
+        // modificadores de alpha (bg-cyan/20, border-indigo-400/40) sigan
+        // funcionando cuando el usuario cambia la paleta.
+        bg:        "rgb(var(--bg) / <alpha-value>)",
         indigo: {
-          300: "#a5b4fc",
-          400: "#818cf8",
-          600: "#4f46e5",
-          700: "#3730a3",
-          800: "#312e81",
-          900: "#1e1b4b",
+          300:     "rgb(var(--indigo-300) / <alpha-value>)",
+          400:     "rgb(var(--indigo-400) / <alpha-value>)",
+          600:     "rgb(var(--indigo-600) / <alpha-value>)",
+          700:     "rgb(var(--indigo-700) / <alpha-value>)",
+          800:     "rgb(var(--indigo-800) / <alpha-value>)",
+          900:     "rgb(var(--indigo-900) / <alpha-value>)",
         },
-        cyan: { DEFAULT: "#22d3ee" },
-        fuchsia: { DEFAULT: "#e879f9" },
+        cyan:    { DEFAULT: "rgb(var(--cyan)    / <alpha-value>)" },
+        fuchsia: { DEFAULT: "rgb(var(--fuchsia) / <alpha-value>)" },
         ok: "#34d399",
         warn: "#fb923c",
         danger: "#f87171",
-        "text-hi": "#f0f4ff",
-        "text-mid": "#c7d2fe",
+        "text-hi":  "rgb(var(--text-hi)  / <alpha-value>)",
+        "text-mid": "rgb(var(--text-mid) / <alpha-value>)",
       },
       fontFamily: {
-        display: ["Syne", "system-ui", "sans-serif"],
-        sans: ["DM Sans", "system-ui", "sans-serif"],
+        display: ["var(--font-display)", "Syne", "system-ui", "sans-serif"],
+        sans: ["var(--font-sans)", "DM Sans", "system-ui", "sans-serif"],
       },
       borderRadius: { card: "18px", kpi: "16px" },
       backdropBlur: { glass: "14px" },

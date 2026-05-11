@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { AppShell } from "@/components/layout/AppShell";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
+import { ThemeProvider } from "@/lib/theme/ThemeProvider";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function AppLayout({
@@ -23,9 +24,11 @@ export default async function AppLayout({
   // consulta para evitar el loop 307 cuando el header viniera vacío.
   if (pathname.startsWith("/onboarding")) {
     return (
-      <AppShell>
-        <ErrorBoundary>{children}</ErrorBoundary>
-      </AppShell>
+      <ThemeProvider>
+        <AppShell>
+          <ErrorBoundary>{children}</ErrorBoundary>
+        </AppShell>
+      </ThemeProvider>
     );
   }
 
@@ -40,8 +43,10 @@ export default async function AppLayout({
   }
 
   return (
-    <AppShell>
-      <ErrorBoundary>{children}</ErrorBoundary>
-    </AppShell>
+    <ThemeProvider>
+      <AppShell>
+        <ErrorBoundary>{children}</ErrorBoundary>
+      </AppShell>
+    </ThemeProvider>
   );
 }

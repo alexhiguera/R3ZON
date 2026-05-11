@@ -21,4 +21,5 @@ export type TabId =
   | "integraciones"
   | "equipo"
   | "suscripcion"
-  | "seguridad";
+  | "seguridad"
+  | "apariencia";

@@ -221,6 +221,55 @@ npx cap sync
 
 > Resumen de todo lo construido en orden de iteraciones (más reciente → más antiguo).
 
+### Iteración 39 — *2026-05-11* — Fix: paleta de tema fluye a clases Tailwind con alpha + mensaje guía si falta la tabla
+
+**Problema reportado**
+- Al cambiar paleta, los colores no se adaptaban en la UI (Tailwind compila `bg-cyan/20`, `border-indigo-400/40`, etc. a RGB hardcoded desde `tailwind.config.ts`, así que las CSS vars hex no surtían efecto).
+- Al guardar salía `Could not find the table 'public.user_preferences' in the schema cache` porque la migración `supabase/theme_ext.sql` todavía no estaba aplicada en la BD.
+
+**Fix — colores con alpha-aware**
+- `tailwind.config.ts`: tokens controlados por el tema (`bg`, `indigo-{300,400,600,700,800,900}`, `cyan`, `fuchsia`, `text-hi`, `text-mid`) cambian a `rgb(var(--TOKEN) / <alpha-value>)`. Los semánticos (`ok`, `warn`, `danger`) siguen hardcoded. `fontFamily` ahora prepende `var(--font-sans)` / `var(--font-display)`.
+- `src/app/globals.css`: defaults en `:root` migrados a tripletes "r g b" (`--bg: 8 7 20`, `--cyan: 34 211 238`, …). `html/body` usan `rgb(var(--bg))` y `rgb(var(--text-hi))`. `.card-glass`, `.rainbow-bar`, `.accent-bar`, `.section-label`, `.btn-big`, scrollbar y body gradients también pasan a `rgb(var(--x) / α)`. `.card-glass` ahora respeta `--radius-scale` con `calc(18px * var(--radius-scale))`.
+- `src/lib/theme/theme.ts`: nuevo set `RGB_VARS` + `hexToTriplet()`. `setVar()` convierte hex → "r g b" solo cuando el target está en `RGB_VARS`; las fuentes y escalas siguen como strings. El modo claro con paleta no-custom también vuelca tonos claros en los `--indigo-*` para que cards y bordes contrasten.
+- `src/app/layout.tsx`: el inline-script de boot ahora trae helper `hx()` (hex → "r g b") y aplica los tripletes antes del primer paint. Sigue sin FOUC.
+
+**Fix — error "table not found"**
+- `src/lib/theme/ThemeProvider.tsx`: helper `isMissingTableError()` detecta `PGRST205` / `42P01` / mensajes con "schema cache" o "does not exist". Cuando la tabla aún no existe, se muestra en el header del tab Apariencia un mensaje guía ("Falta aplicar supabase/theme_ext.sql en la BD. Cambios guardados solo en este navegador.") en lugar del error técnico de PostgREST. Los cambios siguen viviendo en `localStorage` así que la UI se ve actualizada igualmente.
+
+**Pendiente del usuario**
+- Ejecutar `supabase/theme_ext.sql` en Supabase SQL Editor (productivo) y regenerar `src/lib/database.types.ts` para activar persistencia cross-device.
+
+**Verificación**
+- `npx tsc --noEmit` → cero errores.
+- `npm run build` → ✓ compila.
+- `npm run test:run` → **131/131 verdes**.
+
+---
+
+### Iteración 38 — *2026-05-11* — Motor de personalización (Theme Engine) por usuario en Ajustes
+
+**Nuevo módulo `/ajustes → Apariencia` (tab Palette, entre Negocio y Facturación)**
+- `src/lib/theme/theme-schema.json`: declarativo (Schema-First) — controles `mode`, `palette` (4 presets + `custom`), 5 colores hexadecimales en modo custom, 2 tipografías (`font.sans` y `font.display` con 6 opciones cada una, incluida `system-ui`), `fontSize` (4 escalas) y `radius` (3 niveles). El renderer del tab y el applier de CSS leen del mismo JSON, así que añadir un control nuevo solo requiere tocar el schema.
+- `src/lib/theme/theme.ts`: `applyTheme()` inyecta CSS variables en `:root` (`--bg`, `--indigo-*`, `--cyan`, `--fuchsia`, `--text-*`, `--font-sans`, `--font-display`, `--font-scale`, `--radius-scale`). Carga Google Fonts on-demand creando `<link rel="stylesheet">` deduplicado por familia. En modo claro con paleta no-custom, override tonal automático (fondo `#f6f7fb`, texto `#0b0a1f`).
+- `src/lib/theme/ThemeProvider.tsx`: provider client-side. Estado inicial = `localStorage` (evita FOUC) → hydrate desde `user_preferences.theme` (DB es autoritativa). Persistencia con debounce 600 ms vía `upsert` (onConflict `user_id`). Expone `setField`, `setMany`, `reset`, y los estados `loading`/`saving`/`saveError`.
+- `src/components/ajustes/AparienciaTab.tsx`: paleta como grid de swatches, segmented buttons para modo/tamaño/radio, color pickers nativos + input hex para la paleta `custom`, font picker con vista previa renderizada con la familia seleccionada. Cabecera con estado de sincronización (loading / saving / sincronizado / error) y botón "Restablecer".
+
+**Persistencia per-user**
+- `supabase/theme_ext.sql` nuevo: tabla `public.user_preferences (user_id PK → auth.users, theme jsonb, updated_at)` + trigger `tg_user_prefs_touch` + RLS `user_prefs_owner` (`user_id = auth.uid()`) + RPC `save_user_theme(jsonb)` (opcional, security definer) con `grant execute … to authenticated`. **No** depende de `negocio_id` — la preferencia es individual del usuario, no del tenant.
+- Pendiente de aplicar en BD productiva: ejecutar `supabase/theme_ext.sql` en Supabase SQL Editor y regenerar `database.types.ts` (la tabla queda untyped en cliente hasta entonces; los `.from("user_preferences")` funcionan en runtime pero sin tipado fuerte).
+
+**Boot sin FOUC**
+- `src/app/layout.tsx`: añadido `<script>` inline en `<head>` que lee `localStorage["r3zon:theme:v1"]` y aplica paleta + fuentes + escalas antes del primer paint. Contiene las 4 paletas hard-coded (espejo del schema) para evitar el flash entre el tema base y el del usuario.
+- `src/app/globals.css`: `--font-sans`, `--font-display`, `--font-scale` y `--radius-scale` añadidos a `:root`; `html, body` usa `var(--font-sans)` y `calc(16px * var(--font-scale))`.
+- `src/app/(app)/layout.tsx`: `<ThemeProvider>` envuelve `AppShell` tanto en la rama de onboarding como en la principal.
+
+**Verificación**
+- `npx tsc --noEmit` → cero errores.
+- `npm run build` → ✓ compila.
+- `npm run test:run` → **131/131 verdes** (sin regresiones).
+
+---
+
 ### Iteración 37 — *2026-05-11* — Aplicar trigger en BD productiva, tipos generados, error handling en API y más tests UI
 
 **Aplicado al servidor (vía Supabase MCP)**

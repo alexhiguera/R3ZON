@@ -1,0 +1,173 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "title": "R3ZON Theme Engine",
+  "description": "Schema-First: cualquier control de personalización del usuario debe declararse aquí. El consumidor (AparienciaTab + ThemeProvider) lee este JSON para renderizar controles e inyectar CSS variables en :root.",
+  "version": 1,
+  "controls": [
+    {
+      "id": "mode",
+      "label": "Modo",
+      "type": "segmented",
+      "default": "dark",
+      "options": [
+        { "value": "dark",  "label": "Oscuro" },
+        { "value": "light", "label": "Claro"  }
+      ]
+    },
+    {
+      "id": "palette",
+      "label": "Paleta",
+      "type": "preset",
+      "default": "r3zon",
+      "options": [
+        {
+          "value": "r3zon",
+          "label": "R3ZON (cyan · fuchsia)",
+          "vars": {
+            "--bg":          "#080714",
+            "--indigo-900":  "#1e1b4b",
+            "--indigo-800":  "#312e81",
+            "--indigo-700":  "#3730a3",
+            "--indigo-600":  "#4f46e5",
+            "--indigo-400":  "#818cf8",
+            "--indigo-300":  "#a5b4fc",
+            "--cyan":        "#22d3ee",
+            "--fuchsia":     "#e879f9",
+            "--text-hi":     "#f0f4ff",
+            "--text-mid":    "#c7d2fe"
+          }
+        },
+        {
+          "value": "esmeralda",
+          "label": "Esmeralda (verde · teal)",
+          "vars": {
+            "--bg":          "#06120e",
+            "--indigo-900":  "#064e3b",
+            "--indigo-800":  "#065f46",
+            "--indigo-700":  "#047857",
+            "--indigo-600":  "#059669",
+            "--indigo-400":  "#34d399",
+            "--indigo-300":  "#6ee7b7",
+            "--cyan":        "#14b8a6",
+            "--fuchsia":     "#22d3ee",
+            "--text-hi":     "#ecfdf5",
+            "--text-mid":    "#a7f3d0"
+          }
+        },
+        {
+          "value": "magma",
+          "label": "Magma (naranja · rojo)",
+          "vars": {
+            "--bg":          "#140706",
+            "--indigo-900":  "#7c2d12",
+            "--indigo-800":  "#9a3412",
+            "--indigo-700":  "#c2410c",
+            "--indigo-600":  "#ea580c",
+            "--indigo-400":  "#fb923c",
+            "--indigo-300":  "#fdba74",
+            "--cyan":        "#facc15",
+            "--fuchsia":     "#f87171",
+            "--text-hi":     "#fff7ed",
+            "--text-mid":    "#fed7aa"
+          }
+        },
+        {
+          "value": "noir",
+          "label": "Noir (grises · acero)",
+          "vars": {
+            "--bg":          "#0a0a0a",
+            "--indigo-900":  "#171717",
+            "--indigo-800":  "#262626",
+            "--indigo-700":  "#404040",
+            "--indigo-600":  "#525252",
+            "--indigo-400":  "#a3a3a3",
+            "--indigo-300":  "#d4d4d4",
+            "--cyan":        "#e5e5e5",
+            "--fuchsia":     "#fafafa",
+            "--text-hi":     "#fafafa",
+            "--text-mid":    "#a3a3a3"
+          }
+        },
+        {
+          "value": "custom",
+          "label": "Personalizada"
+        }
+      ]
+    },
+    {
+      "id": "colors.bg",       "label": "Fondo",          "type": "color",
+      "var": "--bg",           "default": "#080714",     "when": { "palette": "custom" }
+    },
+    {
+      "id": "colors.primary",  "label": "Primario",       "type": "color",
+      "var": "--indigo-600",   "default": "#4f46e5",     "when": { "palette": "custom" }
+    },
+    {
+      "id": "colors.accent1",  "label": "Acento 1",       "type": "color",
+      "var": "--cyan",         "default": "#22d3ee",     "when": { "palette": "custom" }
+    },
+    {
+      "id": "colors.accent2",  "label": "Acento 2",       "type": "color",
+      "var": "--fuchsia",      "default": "#e879f9",     "when": { "palette": "custom" }
+    },
+    {
+      "id": "colors.text",     "label": "Texto",          "type": "color",
+      "var": "--text-hi",      "default": "#f0f4ff",     "when": { "palette": "custom" }
+    },
+    {
+      "id": "font.sans",
+      "label": "Tipografía base",
+      "type": "font",
+      "var": "--font-sans",
+      "default": "DM Sans",
+      "options": [
+        { "value": "DM Sans",  "googleHref": "DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600" },
+        { "value": "Inter",    "googleHref": "Inter:wght@300;400;500;600;700" },
+        { "value": "Manrope",  "googleHref": "Manrope:wght@300;400;500;600;700" },
+        { "value": "Nunito",   "googleHref": "Nunito:wght@300;400;500;600;700" },
+        { "value": "Roboto",   "googleHref": "Roboto:wght@300;400;500;700" },
+        { "value": "system-ui","googleHref": null }
+      ]
+    },
+    {
+      "id": "font.display",
+      "label": "Tipografía display",
+      "type": "font",
+      "var": "--font-display",
+      "default": "Syne",
+      "options": [
+        { "value": "Syne",        "googleHref": "Syne:wght@400;600;700;800" },
+        { "value": "Space Grotesk","googleHref": "Space+Grotesk:wght@400;600;700" },
+        { "value": "Sora",        "googleHref": "Sora:wght@400;600;700;800" },
+        { "value": "Outfit",      "googleHref": "Outfit:wght@400;600;700;800" },
+        { "value": "Poppins",     "googleHref": "Poppins:wght@400;600;700;800" },
+        { "value": "system-ui",   "googleHref": null }
+      ]
+    },
+    {
+      "id": "fontSize",
+      "label": "Tamaño base",
+      "type": "segmented",
+      "var": "--font-scale",
+      "default": "1",
+      "options": [
+        { "value": "0.9375", "label": "Compacto" },
+        { "value": "1",      "label": "Normal"   },
+        { "value": "1.0625", "label": "Cómodo"   },
+        { "value": "1.125",  "label": "Grande"   }
+      ]
+    },
+    {
+      "id": "radius",
+      "label": "Bordes redondeados",
+      "type": "segmented",
+      "var": "--radius-scale",
+      "default": "1",
+      "options": [
+        { "value": "0.5", "label": "Suave"  },
+        { "value": "1",   "label": "Normal" },
+        { "value": "1.5", "label": "Pronunciado" }
+      ]
+    }
+  ]
+}

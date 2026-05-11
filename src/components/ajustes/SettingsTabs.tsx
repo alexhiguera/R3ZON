@@ -8,6 +8,7 @@ import {
   CreditCard,
   ShieldCheck,
   Receipt,
+  Palette,
   type LucideIcon,
 } from "lucide-react";
 import { NegocioTab } from "./NegocioTab";
@@ -16,10 +17,12 @@ import { IntegracionesTab } from "./IntegracionesTab";
 import { EquipoTab } from "./EquipoTab";
 import { SeguridadTab } from "./SeguridadTab";
 import { SuscripcionTab } from "./SuscripcionTab";
+import { AparienciaTab } from "./AparienciaTab";
 import type { PerfilNegocio, TabId } from "./types";
 
 const TABS: { id: TabId; label: string; Icon: LucideIcon }[] = [
   { id: "negocio",       label: "Negocio",       Icon: Building2 },
+  { id: "apariencia",    label: "Apariencia",    Icon: Palette },
   { id: "facturacion",   label: "Facturación",   Icon: Receipt },
   { id: "integraciones", label: "Integraciones", Icon: Plug },
   { id: "equipo",        label: "Equipo",        Icon: Users },
@@ -69,6 +72,7 @@ export function SettingsTabs({ perfil }: { perfil: PerfilNegocio }) {
         aria-labelledby={`tab-${active}`}
       >
         {active === "negocio"       && <NegocioTab perfil={perfil} />}
+        {active === "apariencia"    && <AparienciaTab />}
         {active === "facturacion"   && <FacturacionTab />}
         {active === "integraciones" && <IntegracionesTab />}
         {active === "equipo" && <EquipoTab />}
