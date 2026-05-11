@@ -103,16 +103,23 @@ export function applyTheme(values: ThemeValues) {
   }
 
   // Light-mode tonal override sólo si la paleta no es "custom".
+  // "Blanco roto" en lugar de blanco puro para no cegar.
   if (mode === "light" && merged["palette"] !== "custom") {
-    setVar("--bg", "#f6f7fb");
-    setVar("--text-hi", "#0b0a1f");
-    setVar("--text-mid", "#3b3a55");
-    // Tonos claros para los indigos (cards y bordes).
-    setVar("--indigo-900", "#e0e7ff");
-    setVar("--indigo-800", "#c7d2fe");
-    setVar("--indigo-700", "#a5b4fc");
-    setVar("--indigo-400", "#6366f1");
-    setVar("--indigo-300", "#4f46e5");
+    setVar("--bg", "#eef0f6");          // blanco roto
+    setVar("--text-hi", "#161529");
+    setVar("--text-mid", "#4a4a6a");
+    // Tonos claros para los indigos (cards y bordes coherentes en claro).
+    setVar("--indigo-900", "#dde2f3");
+    setVar("--indigo-800", "#cdd5ef");
+    setVar("--indigo-700", "#b3bde6");
+    setVar("--indigo-400", "#7079b5");
+    setVar("--indigo-300", "#5b6498");
+    // Variables de texto secundario (no son tripletes RGB).
+    document.documentElement.style.setProperty("--text-lo", "rgba(90, 96, 130, 0.55)");
+    document.documentElement.style.setProperty("--text-ghost", "rgba(90, 96, 130, 0.4)");
+  } else if (mode === "dark") {
+    document.documentElement.style.setProperty("--text-lo", "rgba(165, 180, 252, 0.5)");
+    document.documentElement.style.setProperty("--text-ghost", "rgba(165, 180, 252, 0.42)");
   }
 
   for (const c of themeSchema.controls) {

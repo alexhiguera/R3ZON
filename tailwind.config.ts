@@ -33,17 +33,17 @@ const config: Config = {
       borderRadius: { card: "18px", kpi: "16px" },
       backdropBlur: { glass: "14px" },
       boxShadow: {
-        glass: "0 22px 60px rgba(99,102,241,0.20)",
-        glow: "0 0 30px rgba(99,102,241,0.55)",
+        glass: "0 22px 60px rgb(var(--indigo-600) / 0.20)",
+        glow:  "0 0 30px rgb(var(--indigo-600) / 0.55)",
       },
       backgroundImage: {
         "rainbow":
-          "linear-gradient(90deg, #6366f1, #22d3ee, #e879f9, #6366f1)",
-        "accent": "linear-gradient(90deg, #22d3ee, #e879f9)",
+          "linear-gradient(90deg, rgb(var(--indigo-600)), rgb(var(--cyan)), rgb(var(--fuchsia)), rgb(var(--indigo-600)))",
+        "accent": "linear-gradient(90deg, rgb(var(--cyan)), rgb(var(--fuchsia)))",
         "glass":
-          "linear-gradient(135deg, rgba(49,46,129,0.38), rgba(30,27,75,0.65))",
+          "linear-gradient(135deg, rgb(var(--indigo-800) / 0.38), rgb(var(--indigo-900) / 0.65))",
         "glass-strong":
-          "linear-gradient(135deg, rgba(49,46,129,0.52), rgba(30,27,75,0.74))",
+          "linear-gradient(135deg, rgb(var(--indigo-800) / 0.52), rgb(var(--indigo-900) / 0.74))",
       },
     },
   },

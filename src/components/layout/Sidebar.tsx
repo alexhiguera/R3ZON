@@ -13,11 +13,13 @@ import {
   Boxes,
   ShoppingCart,
   Wallet,
+  Truck,
   ShieldCheck,
   Settings,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { UserMenu } from "./UserMenu";
 
 type NavItem = { href: string; label: string; Icon: LucideIcon };
 
@@ -32,6 +34,7 @@ const NAV: NavItem[] = [
   { href: "/tpv",       label: "TPV",           Icon: ShoppingCart },
   { href: "/documentos", label: "Documentos",   Icon: FileText },
   { href: "/finanzas",  label: "Finanzas",      Icon: Wallet },
+  { href: "/proveedores", label: "Proveedores", Icon: Truck },
   { href: "/rgpd",      label: "RGPD",          Icon: ShieldCheck },
   { href: "/ajustes",   label: "Ajustes",       Icon: Settings },
 ];
@@ -90,10 +93,8 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         );
       })}
 
-      <div className="mt-auto rounded-2xl border border-indigo-400/15 bg-glass p-3 text-xs text-text-mid">
-        <div className="section-label mb-1">Plan</div>
-        <div className="font-display text-sm font-bold text-text-hi">Free</div>
-        <div className="text-[0.7rem] text-text-lo">Coste servidor 0€ · Procesamiento local</div>
+      <div className="mt-auto pt-2">
+        <UserMenu onNavigate={onNavigate} />
       </div>
     </nav>
   );

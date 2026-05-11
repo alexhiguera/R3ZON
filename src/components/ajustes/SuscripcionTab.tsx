@@ -10,6 +10,7 @@ import {
   Sparkles,
   Download,
   Receipt,
+  Plus,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -89,6 +90,8 @@ export function SuscripcionTab() {
       flash({ kind: "ok", msg: "¡Suscripción completada! Puede tardar unos segundos en aparecer." });
     } else if (billing === "cancelled") {
       flash({ kind: "err", msg: "Has cancelado el pago. No se ha cobrado nada." });
+    } else if (billing === "metodo_anadido") {
+      flash({ kind: "ok", msg: "Método de pago añadido correctamente." });
     }
     if (billing) {
       const url = new URL(window.location.href);
@@ -180,6 +183,9 @@ export function SuscripcionTab() {
       {/* Plan actual */}
       <PlanActual sub={sub} onPortal={irAlPortal} busy={busy === "portal"} tieneSuscripcion={tieneSuscripcion} />
 
+      {/* Métodos de pago */}
+      <MetodosPago onFlash={flash} />
+
       {/* Si NO tiene suscripción → tabla de precios */}
       {!tieneSuscripcion && (
         <div className="grid gap-5 md:grid-cols-2">
@@ -197,6 +203,115 @@ export function SuscripcionTab() {
 
       {/* Historial */}
       <HistorialPagos pagos={pagos} />
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+
+type PaymentMethod = {
+  id: string;
+  brand: string;
+  last4: string;
+  exp_month: number | null;
+  exp_year: number | null;
+};
+
+function MetodosPago({ onFlash }: { onFlash: (t: Toast) => void }) {
+  const [methods, setMethods] = useState<PaymentMethod[]>([]);
+  const [configured, setConfigured] = useState<boolean | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [adding, setAdding] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const res = await fetch("/api/billing/payment-methods");
+      const json = await res.json().catch(() => ({}));
+      if (!alive) return;
+      setConfigured(json.configured ?? false);
+      setMethods((json.methods as PaymentMethod[]) ?? []);
+      setLoading(false);
+    })();
+    return () => { alive = false; };
+  }, []);
+
+  const anadirMetodo = async () => {
+    setAdding(true);
+    const res = await fetch("/api/billing/setup-checkout", { method: "POST" });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok || !json.url) {
+      setAdding(false);
+      onFlash({ kind: "err", msg: json.error ?? "No se pudo iniciar el alta del método." });
+      return;
+    }
+    window.location.href = json.url;
+  };
+
+  return (
+    <div className="card-glass overflow-hidden">
+      <div className="flex items-start justify-between gap-3 border-b border-indigo-400/20 p-5">
+        <div className="flex items-start gap-2">
+          <CreditCard size={16} className="mt-0.5 text-text-mid" />
+          <div>
+            <div className="section-label mb-0.5">Métodos de pago</div>
+            <p className="text-xs text-text-mid">
+              Las tarjetas guardadas se utilizan para renovar tu suscripción.
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={anadirMetodo}
+          disabled={adding || configured === false}
+          className="inline-flex items-center gap-1.5 rounded-xl border border-cyan/40 bg-cyan/10 px-3 py-1.5 text-xs font-bold text-cyan hover:bg-cyan/20 disabled:cursor-not-allowed disabled:opacity-50"
+          title={configured === false ? "Stripe no está configurado todavía" : ""}
+        >
+          {adding ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />}
+          Añadir método
+        </button>
+      </div>
+
+      <div className="p-5">
+        {loading ? (
+          <div className="flex items-center gap-2 text-xs text-text-mid">
+            <Loader2 size={12} className="animate-spin" /> Cargando…
+          </div>
+        ) : configured === false ? (
+          <div className="rounded-xl border border-amber-400/30 bg-amber-500/10 p-4 text-xs text-amber-200">
+            <strong>Stripe pendiente de configurar.</strong>
+            <p className="mt-1">
+              Define <code>STRIPE_SECRET_KEY</code>, <code>STRIPE_PRICE_PRO</code> y
+              <code> STRIPE_PRICE_BUSINESS</code> en las variables de entorno y aplica los webhooks
+              de <code>billing_ext.sql</code> para activar el alta de tarjetas, suscripciones y
+              renovaciones.
+            </p>
+          </div>
+        ) : methods.length === 0 ? (
+          <div className="text-center text-xs italic text-text-lo">
+            Aún no hay métodos de pago guardados.
+          </div>
+        ) : (
+          <ul className="space-y-2">
+            {methods.map((m) => (
+              <li
+                key={m.id}
+                className="flex items-center gap-3 rounded-xl border border-indigo-400/20 bg-indigo-900/30 px-3 py-2.5 text-sm"
+              >
+                <span className="rounded-md border border-cyan/30 bg-cyan/10 px-2 py-0.5 text-[10px] font-bold uppercase text-cyan">
+                  {m.brand}
+                </span>
+                <span className="font-mono text-text-hi">•••• •••• •••• {m.last4}</span>
+                {m.exp_month && m.exp_year && (
+                  <span className="ml-auto text-[11px] text-text-mid">
+                    {String(m.exp_month).padStart(2, "0")}/{String(m.exp_year).slice(-2)}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   );
 }

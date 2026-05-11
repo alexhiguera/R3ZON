@@ -221,6 +221,57 @@ npx cap sync
 
 > Resumen de todo lo construido en orden de iteraciones (más reciente → más antiguo).
 
+### Iteración 40 — *2026-05-11* — Iconos+charts+light theme · menú usuario · perfil · proveedores · productos con imagen+barcode · suscripción con método de pago
+
+**Tema (fixes pendientes)**
+- `tailwind.config.ts`: `backgroundImage` (rainbow, accent, glass, glass-strong) y `boxShadow` (glass, glow) ahora usan `rgb(var(--…) / α)` en vez de hex/rgba hardcoded. Hacía que la sección activa de la sidebar y la caja del plan no respondieran al cambio de tema.
+- `src/lib/theme/useThemeColors.ts` nuevo: hook que lee `getComputedStyle` y devuelve `rgb()` resueltos para Recharts (cyan, fuchsia, indigos, bg…). Se re-suscribe al cambio de tema vía `useThemeEngine`.
+- `src/components/finanzas/Charts.tsx`: reescrito para consumir `useThemeColors()` — ejes, grid, barras, líneas, tooltip y leyenda ahora cambian con el tema.
+- `src/lib/theme/theme.ts`: modo claro estrena un "blanco roto" (`#eef0f6` en vez de blanco puro) + tonos coherentes en `--indigo-*` para cards y bordes claros + override de `--text-lo` / `--text-ghost` (en hex/rgba directo porque no son tripletes). Dark-mode los restablece al revertir.
+
+**Navbar — menú de usuario**
+- `src/components/layout/UserMenu.tsx` nuevo: card en la base del sidebar con avatar (de `user_metadata.avatar_url`), nombre y plan. Dropdown con [Mi perfil, Cambiar de cuenta, Cerrar sesión]. Cierra al click fuera y con `Esc`.
+- `Sidebar.tsx`: reemplaza la antigua caja "Plan" por `<UserMenu />`. La info del plan se mueve al subtítulo del menú.
+- Nuevo item de navegación "Proveedores" (icono `Truck`) entre Finanzas y RGPD.
+
+**Perfil de usuario** — `/perfil`
+- `src/app/(app)/perfil/page.tsx`: editar nombre, teléfono, puesto + subir avatar a bucket `avatars`. Email y fecha de alta read-only. Sección "Permisos" muestra rol (owner/admin/miembro) derivado de `perfiles_negocio.user_id` o `miembros_negocio.rol`, con la lista de capacidades correspondientes.
+- `supabase/perfil_usuario_ext.sql` nuevo: crea bucket `avatars` (público) + 4 políticas RLS (lectura pública; insert/update/delete sólo si la primera carpeta del path coincide con `auth.uid()`).
+
+**Productos — imagen, scanner y formulario simplificado**
+- `src/components/productos/BarcodeScanModal.tsx` nuevo: modal con input autofocus optimizado para pistola HID (emite caracteres + Enter). Busca por `productos.codigo`: si existe → abre la ficha; si no → abre nuevo prellenando el código.
+- `src/app/(app)/productos/page.tsx`:
+  - Botón "Escanear" (cyan) junto a "Nuevo producto" abre el `BarcodeScanModal`.
+  - La lista muestra **miniatura** (`imagen_url`) o el cuadrado coloreado tradicional si no hay imagen.
+  - El modal ahora tiene una zona superior con preview de imagen + botones Subir/Cambiar/Quitar (usa bucket `producto-imagenes`).
+  - Los campos no obligatorios (unidad, precio coste, color, stocks, descripción, activo) se encapsulan en **"Información adicional"** colapsable, dejando arriba sólo nombre, código, tipo, categoría, precio venta e IVA.
+- `supabase/inventario_imagenes_ext.sql` nuevo: bucket `producto-imagenes` (público) + RLS por tenant (escritura sólo cuando la primera carpeta del path coincide con `current_negocio_id()`).
+
+**Módulo Proveedores** — `/proveedores`
+- `supabase/proveedores_ext.sql` nuevo: tablas `proveedores` y `gastos_proveedor` (polimórfica, `tipo` ∈ {general, previsto, suscripcion}; campos `recurrencia` y `proximo_cobro` sólo en suscripciones). RLS tenant + trigger `fill_negocio_id`. Estado del gasto ∈ {pendiente, pagado, cancelado}.
+- `supabase/fix_tenant_defaults.sql`: añadidas `proveedores` y `gastos_proveedor` al array de tablas con trigger fill.
+- `src/lib/proveedores.ts` nuevo: tipos `Proveedor`, `GastoProveedor`, etiquetas, badges, y `gastoMensualizado()` para normalizar recurrencias (anual /12, trimestral /3).
+- `src/app/(app)/proveedores/page.tsx`: layout con tabs verticales [Proveedores, Gastos generales, Gastos previstos, Suscripciones]. Cada tab con CRUD: lista + modal. Suscripciones muestra el total mensualizado.
+
+**Ajustes › Suscripción — método de pago + scaffold Stripe**
+- `src/app/api/billing/setup-checkout/route.ts` nuevo: crea Stripe Checkout en modo `setup` (alta de tarjeta sin cobrar nada). Si el negocio no tiene `stripe_customer_id`, lo crea al vuelo.
+- `src/app/api/billing/payment-methods/route.ts` nuevo: devuelve `{configured, methods[]}`. Si falta `STRIPE_SECRET_KEY` o el negocio no tiene customer, devuelve lista vacía con `configured:false` para que el cliente muestre estado adecuado.
+- `SuscripcionTab.tsx`: nueva sección **"Métodos de pago"** entre "Plan actual" y la tabla de planes. Lista las tarjetas guardadas; botón "Añadir método" redirige a Checkout setup. Si Stripe no está configurado, muestra panel ámbar explicando qué env vars hace falta.
+- Toast "Método de pago añadido correctamente" cuando la URL contiene `?billing=metodo_anadido`.
+
+**Migraciones SQL pendientes en BD productiva**
+- `supabase/perfil_usuario_ext.sql`
+- `supabase/inventario_imagenes_ext.sql`
+- `supabase/proveedores_ext.sql`
+- (Y `supabase/theme_ext.sql` de iter 38 si no se aplicó antes.)
+
+**Verificación**
+- `npx tsc --noEmit` → cero errores.
+- `npm run build` → ✓ compila. Rutas nuevas: `/perfil`, `/proveedores`, `/api/billing/setup-checkout`, `/api/billing/payment-methods`.
+- `npm run test:run` → **131/131 verdes** (sin regresiones).
+
+---
+
 ### Iteración 39 — *2026-05-11* — Fix: paleta de tema fluye a clases Tailwind con alpha + mensaje guía si falta la tabla
 
 **Problema reportado**
