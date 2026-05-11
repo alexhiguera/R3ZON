@@ -37,6 +37,13 @@ describe("estadoStock", () => {
     // Sin mínimo configurado y con stock positivo → ok (no bajo).
     expect(estadoStock({ stock_tracking: true, stock_actual: 1,  stock_minimo: 0 })).toBe("ok");
   });
+
+  it("trata stock_actual o stock_minimo null como 0 (defensivo)", () => {
+    // @ts-expect-error — simula fila de BD con campo null
+    expect(estadoStock({ stock_tracking: true, stock_actual: null, stock_minimo: 5 })).toBe("agotado");
+    // @ts-expect-error
+    expect(estadoStock({ stock_tracking: true, stock_actual: 10,   stock_minimo: null })).toBe("ok");
+  });
 });
 
 // ── aplicarMovimiento ──────────────────────────────────────────────────────
@@ -120,6 +127,16 @@ describe("añadirItem", () => {
     ];
     const r = añadirItem(inicio, prod());
     expect(r).toHaveLength(2);
+  });
+
+  it("agrupa cuando la existente tiene descuento_pct null/undefined (defensivo)", () => {
+    const inicio: ItemTPV[] = [
+      // @ts-expect-error — simula entrada cruda con descuento_pct null
+      { producto_id: "p1", nombre: "Café", cantidad: 1, precio_unit: 1.5, iva_pct: 10, descuento_pct: null },
+    ];
+    const r = añadirItem(inicio, prod());
+    expect(r).toHaveLength(1);
+    expect(r[0].cantidad).toBe(2);
   });
 });
 

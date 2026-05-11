@@ -158,8 +158,39 @@ describe("formatearDuracion", () => {
     expect(formatearDuracion(-500_000)).toBe("0h 00m");
   });
 
+  it("trata NaN e Infinity como cero (no devuelve 'NaNh NaNm')", () => {
+    expect(formatearDuracion(NaN)).toBe("0h 00m");
+    expect(formatearDuracion(Infinity)).toBe("0h 00m");
+    expect(formatearDuracion(-Infinity)).toBe("0h 00m");
+  });
+
   it("trunca segundos (no redondea hacia arriba)", () => {
     expect(formatearDuracion(3600_000 + 59_000)).toBe("1h 00m");
+  });
+});
+
+// ── Jornada nocturna que cruza medianoche ─────────────────────────────────────
+describe("calcularJornada — jornada nocturna", () => {
+  it("suma correctamente cuando entrada y salida son de días distintos", () => {
+    const r = calcularJornada([
+      f("entrada", "2026-05-04T22:00:00Z"),
+      f("salida",  "2026-05-05T06:00:00Z"),
+    ]);
+    expect(r.trabajado_ms).toBe(8 * 3600_000);
+    expect(r.cerrada).toBe(true);
+  });
+
+  it("descuenta descanso que también cruza medianoche", () => {
+    const r = calcularJornada([
+      f("entrada",         "2026-05-04T22:00:00Z"),
+      f("inicio_descanso", "2026-05-04T23:30:00Z"),
+      f("fin_descanso",    "2026-05-05T00:00:00Z"),
+      f("salida",          "2026-05-05T06:00:00Z"),
+    ]);
+    // Trabajado: 1h30m + 6h = 7h30m
+    expect(r.trabajado_ms).toBe((7 * 60 + 30) * 60_000);
+    expect(r.descanso_ms).toBe(30 * 60_000);
+    expect(r.cerrada).toBe(true);
   });
 });
 

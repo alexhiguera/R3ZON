@@ -142,8 +142,9 @@ export function calcularJornada(
   return { trabajado_ms: trabajado, descanso_ms: descanso, cerrada, primera_entrada, ultima_salida };
 }
 
-/** Formatea milisegundos como "Xh YYm". Negativos → "0h 00m". */
+/** Formatea milisegundos como "Xh YYm". Negativos, NaN o Infinity → "0h 00m". */
 export function formatearDuracion(ms: number): string {
+  if (!Number.isFinite(ms)) return "0h 00m";
   const safe = Math.max(0, Math.floor(ms / 1000));
   const horas = Math.floor(safe / 3600);
   const minutos = Math.floor((safe % 3600) / 60);

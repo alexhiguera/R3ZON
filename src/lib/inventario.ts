@@ -89,12 +89,14 @@ export type VentaTPV = {
  */
 export function estadoStock(p: {
   stock_tracking: boolean;
-  stock_actual: number;
-  stock_minimo: number;
+  stock_actual: number | null;
+  stock_minimo: number | null;
 }): EstadoStock {
   if (!p.stock_tracking) return "sin_stock";
-  if (p.stock_actual <= 0) return "agotado";
-  if (p.stock_minimo > 0 && p.stock_actual <= p.stock_minimo) return "bajo";
+  const actual = Number(p.stock_actual ?? 0);
+  const minimo = Number(p.stock_minimo ?? 0);
+  if (actual <= 0) return "agotado";
+  if (minimo > 0 && actual <= minimo) return "bajo";
   return "ok";
 }
 
@@ -151,7 +153,7 @@ export function añadirItem(items: ItemTPV[], producto: {
   iva_pct: number;
 }): ItemTPV[] {
   const idx = items.findIndex(
-    (it) => it.producto_id === producto.id && it.descuento_pct === 0,
+    (it) => it.producto_id === producto.id && (it.descuento_pct ?? 0) === 0,
   );
   if (idx >= 0) {
     return items.map((it, i) =>

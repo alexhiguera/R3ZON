@@ -89,15 +89,9 @@ export function FacturacionTab() {
   async function marcarPredeterminado(id: string) {
     const prev = items;
     setItems((p) => p.map((x) => ({ ...x, predeterminado: x.id === id })));
-    // Quitamos primero todos los predeterminados (índice único lo exige)
-    await supabase
-      .from("metodos_pago")
-      .update({ predeterminado: false })
-      .neq("id", id);
-    const { error } = await supabase
-      .from("metodos_pago")
-      .update({ predeterminado: true })
-      .eq("id", id);
+    // RPC atómica: ambos UPDATE en la misma transacción → no hay ventana
+    // sin predeterminado y respeta el índice único parcial.
+    const { error } = await supabase.rpc("set_metodo_pago_predeterminado", { p_id: id });
     if (error) {
       setItems(prev);
       toast.err(error.message);

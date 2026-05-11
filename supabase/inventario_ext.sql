@@ -65,7 +65,9 @@ create trigger set_updated_at before update on public.productos
 create table if not exists public.stock_movimientos (
   id           uuid primary key default uuid_generate_v4(),
   negocio_id   uuid not null references public.perfiles_negocio(id) on delete cascade,
-  producto_id  uuid not null references public.productos(id) on delete cascade,
+  -- ON DELETE RESTRICT preserva la auditoría: para retirar un producto del
+  -- catálogo márcalo como `activo = false` en lugar de borrarlo.
+  producto_id  uuid not null references public.productos(id) on delete restrict,
 
   tipo         text not null,                    -- entrada|salida|ajuste|venta_tpv|devolucion
   cantidad     numeric(12,3) not null,           -- firmado: + entra, − sale
@@ -75,7 +77,8 @@ create table if not exists public.stock_movimientos (
   ts           timestamptz not null default now(),
   user_id      uuid references auth.users(id) on delete set null,
 
-  check (tipo in ('entrada','salida','ajuste','venta_tpv','devolucion'))
+  check (tipo in ('entrada','salida','ajuste','venta_tpv','devolucion')),
+  check (cantidad <> 0)
 );
 
 create index if not exists idx_stock_mov_producto on public.stock_movimientos(producto_id, ts desc);

@@ -221,6 +221,41 @@ npx cap sync
 
 > Resumen de todo lo construido en orden de iteraciones (más reciente → más antiguo).
 
+### Iteración 35 — *2026-05-11* — Auditoría de lógica de negocio: integridad atómica y validaciones reforzadas
+
+Tras auditar exhaustivamente la lógica de negocio (TS puro + RPCs SQL), corrijo los **bugs reales** y refuerzo la integridad. Los hallazgos triviales/falsos del agente quedan descartados (documentados en `/Users/alex/.claude/plans/encapsulated-spinning-alpaca.md`).
+
+**Lógica pura TS** ([src/lib/](src/lib/)):
+- `formatearDuracion(NaN)` ya no devuelve `"NaNh NaNm"` — ahora `"0h 00m"` para NaN, ±Infinity y valores no finitos.
+- `estadoStock` defensivo: trata `stock_actual`/`stock_minimo` `null` como 0 en lugar de comparar contra `null` (`null > 0` es `false`, falso negativo).
+- `añadirItem` defensivo: `(it.descuento_pct ?? 0) === 0` para no duplicar líneas si llega un descuento `null` desde la BD.
+- `validarParaGenerar` rechaza ahora **precio_unit < 0**, **IVA fuera de [0,100]** y **descuento fuera de [0,100]**. Antes solo se validaba cantidad y descripción.
+
+**RPCs atómicas nuevas en SQL** (eliminan dos race conditions reales):
+
+1. [`crear_documento_generado(p_doc, p_serie, p_anio)`](supabase/documentos_ext.sql) en `documentos_ext.sql`. Sustituye al patrón antiguo `siguiente_numero_documento + INSERT cliente` que dejaba **gaps de numeración** si el INSERT fallaba (problema **normativo**: la AEAT exige facturas correlativas sin huecos). La nueva RPC reserva el número con `pg_advisory_xact_lock` y hace el INSERT en la **misma transacción** — si algo falla, ROLLBACK total y el número queda libre. También elimina la ventana de carrera donde dos usuarios podían reservar el mismo número y chocar contra el índice único.
+2. [`set_metodo_pago_predeterminado(p_id)`](supabase/metodos_pago_ext.sql). Antes el cliente hacía 2 UPDATEs separados (`predeterminado=false WHERE id<>X` + `predeterminado=true WHERE id=X`) → ventana sin predeterminado. Ahora atómico.
+
+**Integridad de datos en SQL** ([inventario_ext.sql](supabase/inventario_ext.sql)):
+- `stock_movimientos.cantidad`: añadido `CHECK (cantidad <> 0)` — un movimiento con cantidad 0 es ruido sin sentido.
+- `stock_movimientos.producto_id`: cambio de `ON DELETE CASCADE` → `ON DELETE RESTRICT` — preserva la auditoría histórica. Para retirar un producto márcalo como `activo = false` en lugar de borrarlo.
+
+**Cliente migrado**:
+- [`/documentos/nuevo`](src/app/\(app\)/documentos/nuevo/page.tsx): una sola llamada `rpc("crear_documento_generado", { p_doc, p_serie, p_anio })` en lugar de dos llamadas separadas.
+- [`FacturacionTab`](src/components/ajustes/FacturacionTab.tsx): `rpc("set_metodo_pago_predeterminado", { p_id })` en lugar de 2 UPDATEs.
+
+**Tests añadidos (8)**: jornada nocturna que cruza medianoche (con y sin descanso), `formatearDuracion` con `NaN`/`±Infinity`, `estadoStock` con `null`, `añadirItem` con `descuento_pct null`, validación de precio negativo, IVA fuera de rango, descuento fuera de rango.
+
+**Falsos positivos descartados** (verificados en código, no son bugs):
+- `cerrar_venta_tpv` con items pre-insertados: el `RAISE EXCEPTION` revierte la transacción completa (incluyendo INSERTs previos) — el agente leyó mal.
+- `fichajesDelDia` y zonas horarias: la lógica filtra correctamente por día local. El test ya lo cubre.
+- `siguiente_numero_documento` con año incorrecto: el cliente ya pasaba `p_anio` explícito derivado de `fecha_emision`.
+- División por cero en parser OCR (regex no captura negativos).
+
+**Verificación**: 9 archivos · **109/109 tests verdes** (8 nuevos), `npm run build` ✓ Compiled successfully en 9.7s, cero errores TypeScript.
+
+**Para activar en BD**: re-ejecutar `documentos_ext.sql`, `metodos_pago_ext.sql` e `inventario_ext.sql` en el SQL Editor de Supabase. La FK con `RESTRICT` requiere que no haya productos sin movimientos (en práctica solo afecta a borrados manuales).
+
 ### Iteración 34 — *2026-05-11* — Refactor integral: utilidades centralizadas, UI reutilizable, hook Supabase, fix de re-renders y limpieza SQL
 
 Pase de refactor *alto impacto, bajo riesgo* tras auditoría de 3 agentes (frontend, base de datos, rendimiento). Sin cambios funcionales aparentes para el usuario, pero la base es más rápida, barata y mantenible.

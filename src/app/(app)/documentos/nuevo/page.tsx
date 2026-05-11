@@ -282,26 +282,12 @@ export default function NuevoDocumentoPage() {
 
     const anio = new Date(fechaEmision).getFullYear();
 
-    const { data: numero, error: errNum } = await supabase.rpc(
-      "siguiente_numero_documento",
-      { p_tipo: tipo, p_serie: serie, p_anio: anio },
-    );
-
-    if (errNum || typeof numero !== "number") {
-      setGenerando(false);
-      toast.err(`No se pudo reservar el número: ${errNum?.message ?? "desconocido"}`);
-      return;
-    }
-
-    const { data, error } = await supabase
-      .from("documentos")
-      .insert({
-        negocio_id: negocioId,
-        cliente_id: clienteIdFinal,
+    // Atómico: reserva número + INSERT en la misma transacción → evita gaps
+    // de numeración (requisito legal) y race conditions entre dos usuarios.
+    const { data, error } = await supabase.rpc("crear_documento_generado", {
+      p_doc: {
         tipo,
-        serie,
-        numero,
-        anio,
+        cliente_id: clienteIdFinal,
         fecha_emision: fechaEmision,
         fecha_vencimiento: fechaVencimiento || null,
         emisor_snapshot: emisor,
@@ -314,13 +300,13 @@ export default function NuevoDocumentoPage() {
         irpf_pct:        irpfPct,
         irpf_total:      totales.irpf_total,
         total:           totales.total,
-        estado:          "generado",
-        notas:           notas || null,
-        condiciones_pago: condicionesPago || null,
-        metodo_pago:     metodoPago || null,
-      })
-      .select("id,referencia,numero,pdf_url")
-      .single();
+        notas:           notas || "",
+        condiciones_pago: condicionesPago || "",
+        metodo_pago:     metodoPago || "",
+      },
+      p_serie: serie,
+      p_anio:  anio,
+    });
 
     setGenerando(false);
 
@@ -329,8 +315,9 @@ export default function NuevoDocumentoPage() {
       return;
     }
 
-    setGenerado(data as DocumentoGenerado);
-    toast.ok(`${ETIQUETA_TIPO[tipo]} ${data.referencia} generada.`);
+    const doc = data as { id: string; referencia: string; numero: number; pdf_url: string | null };
+    setGenerado(doc);
+    toast.ok(`${ETIQUETA_TIPO[tipo]} ${doc.referencia} generada.`);
   }
 
   // ── Acciones post-generación ───────────────────────────────────────────

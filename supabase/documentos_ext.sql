@@ -130,6 +130,79 @@ begin
   return v_max + 1;
 end $$;
 
+-- 3b. RPC: crear documento generado (atómico) -------------------------------
+-- Reserva el correlativo + INSERT en la misma transacción → cero gaps.
+-- Sustituye al patrón "siguiente_numero_documento + INSERT" que dejaba
+-- huecos si el INSERT del cliente fallaba (problema normativo).
+create or replace function public.crear_documento_generado(
+  p_doc           jsonb,
+  p_serie         text default 'A',
+  p_anio          integer default null
+) returns public.documentos
+language plpgsql security definer set search_path = public as $$
+declare
+  v_negocio uuid := public.current_negocio_id();
+  v_tipo    text := p_doc->>'tipo';
+  v_anio    integer := coalesce(
+    p_anio,
+    extract(year from coalesce((p_doc->>'fecha_emision')::date, current_date))::int
+  );
+  v_max     integer;
+  v_lock    bigint;
+  v_doc     public.documentos;
+begin
+  if v_negocio is null then raise exception 'NO_TENANT'; end if;
+  if v_tipo not in ('factura','ticket','presupuesto','albaran','proforma') then
+    raise exception 'TIPO_INVALIDO: %', v_tipo;
+  end if;
+
+  -- Lock por (negocio, tipo, serie, año) — atómico hasta el COMMIT del INSERT
+  v_lock := hashtextextended(v_negocio::text || v_tipo || p_serie || v_anio::text, 0);
+  perform pg_advisory_xact_lock(v_lock);
+
+  select coalesce(max(numero), 0) into v_max
+    from public.documentos
+   where negocio_id = v_negocio
+     and tipo = v_tipo
+     and serie = p_serie
+     and anio = v_anio;
+
+  insert into public.documentos (
+    negocio_id, cliente_id, tipo, serie, numero, anio,
+    fecha_emision, fecha_vencimiento,
+    emisor_snapshot, cliente_snapshot, lineas,
+    subtotal, descuento_total, base_imponible,
+    iva_total, irpf_pct, irpf_total, total,
+    estado, notas, condiciones_pago, metodo_pago
+  ) values (
+    v_negocio,
+    nullif(p_doc->>'cliente_id','')::uuid,
+    v_tipo,
+    p_serie,
+    v_max + 1,
+    v_anio,
+    coalesce((p_doc->>'fecha_emision')::date, current_date),
+    nullif(p_doc->>'fecha_vencimiento','')::date,
+    coalesce(p_doc->'emisor_snapshot',  '{}'::jsonb),
+    coalesce(p_doc->'cliente_snapshot', '{}'::jsonb),
+    coalesce(p_doc->'lineas',           '[]'::jsonb),
+    coalesce((p_doc->>'subtotal')::numeric,        0),
+    coalesce((p_doc->>'descuento_total')::numeric, 0),
+    coalesce((p_doc->>'base_imponible')::numeric,  0),
+    coalesce((p_doc->>'iva_total')::numeric,       0),
+    coalesce((p_doc->>'irpf_pct')::numeric,        0),
+    coalesce((p_doc->>'irpf_total')::numeric,      0),
+    coalesce((p_doc->>'total')::numeric,           0),
+    'generado',
+    nullif(p_doc->>'notas',''),
+    nullif(p_doc->>'condiciones_pago',''),
+    nullif(p_doc->>'metodo_pago','')
+  )
+  returning * into v_doc;
+
+  return v_doc;
+end $$;
+
 -- 4. RLS ----------------------------------------------------------------------
 alter table public.documentos enable row level security;
 

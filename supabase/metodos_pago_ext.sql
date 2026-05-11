@@ -39,3 +39,32 @@ create policy tenant_isolation on public.metodos_pago
   for all
   using      (negocio_id = public.current_negocio_id())
   with check (negocio_id = public.current_negocio_id());
+
+-- RPC atómica para cambiar el método predeterminado.
+-- Antes el cliente hacía 2 UPDATEs separados → ventana sin predeterminado.
+create or replace function public.set_metodo_pago_predeterminado(p_id uuid)
+returns void language plpgsql security definer set search_path = public as $$
+declare
+  v_negocio uuid := public.current_negocio_id();
+begin
+  if v_negocio is null then raise exception 'NO_TENANT'; end if;
+  -- Verifica pertenencia antes de actuar
+  if not exists (
+    select 1 from public.metodos_pago
+     where id = p_id and negocio_id = v_negocio
+  ) then
+    raise exception 'METODO_PAGO_NO_ENCONTRADO';
+  end if;
+
+  -- Atómico: ambos UPDATE en la misma transacción, con el índice único parcial
+  -- garantizando que no se rompe la invariante de un solo predeterminado.
+  update public.metodos_pago
+     set predeterminado = false
+   where negocio_id = v_negocio
+     and predeterminado
+     and id <> p_id;
+
+  update public.metodos_pago
+     set predeterminado = true
+   where id = p_id;
+end $$;

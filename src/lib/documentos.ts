@@ -204,5 +204,17 @@ export function validarParaGenerar(d: {
     errores.push("Todas las líneas necesitan descripción.");
   if (d.lineas.some((l) => (Number(l.cantidad) || 0) <= 0))
     errores.push("Las cantidades deben ser mayores que cero.");
+  if (d.lineas.some((l) => (Number(l.precio_unit) || 0) < 0))
+    errores.push("Los precios unitarios no pueden ser negativos.");
+  if (d.lineas.some((l) => {
+    const iva = Number(l.iva_pct) || 0;
+    return iva < 0 || iva > 100;
+  }))
+    errores.push("El IVA debe estar entre 0 % y 100 %.");
+  if (d.lineas.some((l) => {
+    const dto = Number(l.descuento_pct) || 0;
+    return dto < 0 || dto > 100;
+  }))
+    errores.push("El descuento debe estar entre 0 % y 100 %.");
   return errores;
 }

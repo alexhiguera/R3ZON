@@ -144,4 +144,34 @@ describe("validarParaGenerar", () => {
     const r = validarParaGenerar({ ...baseValido, lineas: [] });
     expect(r).toContain("Añade al menos una línea.");
   });
+
+  it("rechaza precio_unit negativo", () => {
+    const r = validarParaGenerar({
+      ...baseValido,
+      lineas: [linea({ descripcion: "X", cantidad: 1, precio_unit: -10 })],
+    });
+    expect(r).toContain("Los precios unitarios no pueden ser negativos.");
+  });
+
+  it("rechaza IVA fuera de [0,100]", () => {
+    const r1 = validarParaGenerar({
+      ...baseValido,
+      lineas: [linea({ descripcion: "X", iva_pct: -5 })],
+    });
+    expect(r1).toContain("El IVA debe estar entre 0 % y 100 %.");
+
+    const r2 = validarParaGenerar({
+      ...baseValido,
+      lineas: [linea({ descripcion: "X", iva_pct: 200 })],
+    });
+    expect(r2).toContain("El IVA debe estar entre 0 % y 100 %.");
+  });
+
+  it("rechaza descuento fuera de [0,100]", () => {
+    const r = validarParaGenerar({
+      ...baseValido,
+      lineas: [linea({ descripcion: "X", descuento_pct: 150 })],
+    });
+    expect(r).toContain("El descuento debe estar entre 0 % y 100 %.");
+  });
 });
