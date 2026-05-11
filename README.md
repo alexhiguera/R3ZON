@@ -221,6 +221,35 @@ npx cap sync
 
 > Resumen de todo lo construido en orden de iteraciones (más reciente → más antiguo).
 
+### Iteración 37 — *2026-05-11* — Aplicar trigger en BD productiva, tipos generados, error handling en API y más tests UI
+
+**Aplicado al servidor (vía Supabase MCP)**
+- Migración `add_fill_negocio_id_trigger`: aplicada en BD productiva. El trigger `fill_negocio_id` ahora cubre **20 tablas** con columna `negocio_id` (verificado con `select … from information_schema.triggers`). La auditoría descubrió que `google_connections` también necesitaba el trigger (no estaba en el script local) — se añadió tanto en la BD como en `supabase/fix_tenant_defaults.sql`. Las 4 tablas `*_archivo` quedan sin trigger por diseño (las inserta solo el RPC de retención que ya pasa `negocio_id`).
+- `src/lib/database.types.ts` (1965 líneas): generado vía `mcp__supabase__generate_typescript_types`. Cubre 28 tablas/vistas, 11 RPCs, todos los enums.
+
+**Migración inicial de tipos**
+- `src/lib/finanzas.ts`: `MovimientoFila` ahora deriva de `Pick<Database["…"]["finanzas"]["Row"], "fecha"|"base_imponible">` + extensiones explícitas (`tipo` narrowed al union real porque la BD lo guarda como `text` con CHECK; importes `number | null` siguiendo la BD — `Number(null)` ya da 0).
+- `src/lib/inventario.ts`, `src/lib/documentos.ts`: TODO actualizado a `post-iter37` con razón concreta (consumidores asumen no-nullables / extensiones derivadas).
+
+**Error handling consistente en API routes**
+- `src/lib/api-handler.ts` nuevo: `withApiHandler(name, handler)` envuelve, captura excepciones no manejadas, registra con prefijo `[api:<name>]` y devuelve JSON `{ error: "Error interno" }` + 500. Las rutas siguen devolviendo `NextResponse` para errores esperados (401/400/403/409).
+- `team/revoke`, `team/invite`, `billing/portal`, `billing/checkout`: envueltas con `withApiHandler`. Los `error.message` de Supabase/Stripe se loguean en servidor pero el cliente recibe mensajes genéricos ("No se pudo revocar el miembro", "No se pudo enviar la invitación", "Email enviado, pero el registro local falló") — sin filtrado de stacks o detalles internos.
+- `team/invite`: eliminado el try/catch innecesario alrededor de `createAdminClient()` — ahora lo captura el wrapper.
+- `billing/webhook`, `cron/refresh-google-channels`, `integrations/google/{webhook,callback,connect}`: ya tenían patrones correctos (try/catch + redirect codes), no se tocan.
+
+**Más tests UI**
+- `tests/components/ErrorBoundary.test.tsx` (4 casos): renderiza hijos sin error, fallback con mensaje, fallback custom, botón Reintentar llama a `location.reload`.
+- `tests/components/Input.test.tsx` (8 casos): clases base, props HTML, onChange controlado, override className; `<Select>` value/onChange; `<Textarea>` rows default y override; `INPUT_CLS` exportado.
+
+**Verificación**
+- `npm run test:run` → **131/131 verdes** (119 previos + 12 nuevos).
+- `npx tsc --noEmit` → cero errores en código del proyecto.
+- `npm run build` → ✓ Compiled in 9.1s.
+
+**Lo que NO se tocó por decisión**: paginación cursor en más vistas (productos/documentos/finanzas/fichajes — las queries actuales no devuelven volúmenes que justifiquen el cambio en este pase; queda como post-iter37 si crece el dataset). Migración completa de `Producto`/`Documento`/`StockMovimiento` a Row types (alto riesgo de cascada en consumidores que asumen no-nullables; queda en TODO).
+
+---
+
 ### Iteración 36 — *2026-05-11* — Auditoría integral: triggers, error boundary, paginación, lazy load y tests UI
 
 **Fase 1 — críticos**

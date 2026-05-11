@@ -3,12 +3,13 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getStripe, PLANS, type PlanId } from "@/lib/stripe";
+import { withApiHandler } from "@/lib/api-handler";
 
 const Body = z.object({
   plan: z.enum(["pro", "business"]),
 });
 
-export async function POST(request: NextRequest) {
+export const POST = withApiHandler("billing/checkout", async (request: NextRequest) => {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
@@ -71,4 +72,4 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Stripe no devolvió URL" }, { status: 500 });
   }
   return NextResponse.json({ url: session.url });
-}
+});

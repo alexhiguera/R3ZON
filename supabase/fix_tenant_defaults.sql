@@ -25,24 +25,26 @@ do $$
 declare t text;
 begin
   foreach t in array array[
-    'clientes',
-    'contactos_cliente',
-    'citas',
-    'tareas_kanban',
-    'kanban_columnas',
-    'comunicaciones',
-    'finanzas',
-    'consentimientos_rgpd',
     'agenda_eventos',
+    'citas',
+    'clientes',
+    'comunicaciones',
     'config_keys',
+    'consentimientos_rgpd',
+    'contactos_cliente',
+    'documentos',
+    'fichajes',
+    'finanzas',
+    'google_connections',
+    'kanban_columnas',
+    'metodos_pago',
     'miembros_negocio',
     'pagos_stripe',
     'productos',
     'stock_movimientos',
-    'tpv_ventas',
+    'tareas_kanban',
     'tpv_venta_items',
-    'documentos',
-    'metodos_pago'
+    'tpv_ventas'
   ] loop
     -- Sólo aplicamos si la tabla existe (algunas son extensiones opcionales).
     if exists (

@@ -5,8 +5,9 @@ import { eur, round2 } from "./formato";
 
 export { eur };
 
-// TODO(post-iter36): migrar a Database["public"]["Tables"]["documentos"]["Row"]
-// (generar `src/lib/database.types.ts` con `supabase login && npx supabase gen types ...`)
+// TODO(post-iter37): migrar a `Database["public"]["Tables"]["documentos"]["Row"]`
+// (`src/lib/database.types.ts` ya existe). Atención: el editor extiende el tipo
+// con campos derivados (totales, snapshots) — refactor mayor.
 export type TipoDocumento =
   | "factura"
   | "ticket"

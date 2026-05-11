@@ -7,8 +7,9 @@ export { eur };
 
 export type TipoProducto = "producto" | "servicio";
 
-// TODO(post-iter36): migrar a Database["public"]["Tables"]["productos"|"stock_movimientos"|"tpv_ventas"]["Row"]
-// (generar `src/lib/database.types.ts` con `supabase login && npx supabase gen types ...`)
+// TODO(post-iter37): migrar a `Database["public"]["Tables"]["productos"]["Row"]`
+// (`src/lib/database.types.ts` ya existe). El cambio toca consumidores que asumen
+// `precio_*` y `iva_pct` como no-nullable; revisar página por página al hacerlo.
 export type Producto = {
   id: string;
   negocio_id: string;

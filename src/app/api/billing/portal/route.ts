@@ -1,8 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getStripe } from "@/lib/stripe";
+import { withApiHandler } from "@/lib/api-handler";
 
-export async function POST(request: NextRequest) {
+export const POST = withApiHandler("billing/portal", async (request: NextRequest) => {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
@@ -28,4 +29,4 @@ export async function POST(request: NextRequest) {
     return_url:  `${origin}/ajustes`,
   });
   return NextResponse.json({ url: session.url });
-}
+});

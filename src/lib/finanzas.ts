@@ -1,17 +1,18 @@
 import { eur, round2 } from "./formato";
+import type { Database } from "./database.types";
 
 export { eur };
 
-// TODO(post-iter36): generar `src/lib/database.types.ts` con
-//   `supabase login && npx supabase gen types typescript --project-id htsryzrwdgllqnzbreyq > src/lib/database.types.ts`
-// y sustituir por: type MovimientoFila = Pick<Database["public"]["Tables"]["finanzas"]["Row"], "tipo"|"fecha"|"base_imponible"|"iva_importe"|"irpf_importe"|"total">;
-export type MovimientoFila = {
+type FinanzaRow = Database["public"]["Tables"]["finanzas"]["Row"];
+
+// `tipo` es `text` con CHECK constraint en la BD → Supabase lo genera como
+// `string`. Lo estrechamos al union real. Los importes son `number | null`
+// en BD, pero los consumidores siempre los normalizan con `Number(... ?? 0)`.
+export type MovimientoFila = Pick<FinanzaRow, "fecha" | "base_imponible"> & {
   tipo: "ingreso" | "gasto";
-  fecha: string;
-  base_imponible: number;
-  iva_importe: number;
-  irpf_importe: number;
-  total: number;
+  iva_importe: number | null;
+  irpf_importe: number | null;
+  total: number | null;
 };
 
 const MESES = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];

@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { withApiHandler } from "@/lib/api-handler";
 
 const PRIVACIDAD_VERSION = "2026-04-28";
 const TERMINOS_VERSION   = "2026-04-28";
@@ -15,7 +16,7 @@ const Body = z.object({
   }),
 });
 
-export async function POST(request: NextRequest) {
+export const POST = withApiHandler("team/invite", async (request: NextRequest) => {
   // 1. Auth + tenant del solicitante.
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -54,12 +55,9 @@ export async function POST(request: NextRequest) {
   }
 
   // 4. Enviar invitación con SERVICE_ROLE_KEY.
-  let admin;
-  try {
-    admin = createAdminClient();
-  } catch (err) {
-    return NextResponse.json({ error: (err as Error).message }, { status: 500 });
-  }
+  // Si createAdminClient lanza (SERVICE_ROLE_KEY ausente) lo captura el
+  // wrapper `withApiHandler` y devuelve un 500 genérico al cliente.
+  const admin = createAdminClient();
 
   const origin = new URL(request.url).origin;
   const { data: invited, error: eInvite } = await admin.auth.admin.inviteUserByEmail(
@@ -76,8 +74,9 @@ export async function POST(request: NextRequest) {
   );
 
   if (eInvite) {
+    console.error("[api:team/invite] inviteUserByEmail", eInvite.message);
     return NextResponse.json(
-      { error: `Supabase: ${eInvite.message}` },
+      { error: "No se pudo enviar la invitación" },
       { status: 500 }
     );
   }
@@ -96,14 +95,13 @@ export async function POST(request: NextRequest) {
   });
 
   if (eInsert) {
+    console.error("[api:team/invite] insert miembros_negocio", eInsert.message);
     // El email ya se envió. Devolvemos 207-ish: invitación enviada pero no persistida.
     return NextResponse.json(
-      {
-        warning: "Email enviado, pero el registro local falló: " + eInsert.message,
-      },
+      { warning: "Email enviado, pero el registro local falló" },
       { status: 207 }
     );
   }
 
   return NextResponse.json({ ok: true, email: body.email });
-}
+});

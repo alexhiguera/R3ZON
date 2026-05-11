@@ -1,10 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { withApiHandler } from "@/lib/api-handler";
 
 const Body = z.object({ id: z.string().uuid() });
 
-export async function POST(request: NextRequest) {
+export const POST = withApiHandler("team/revoke", async (request: NextRequest) => {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
@@ -19,6 +20,9 @@ export async function POST(request: NextRequest) {
     .update({ estado: "revocado", revoked_at: new Date().toISOString() })
     .eq("id", body.id);
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error("[api:team/revoke] supabase update", error.message);
+    return NextResponse.json({ error: "No se pudo revocar el miembro" }, { status: 500 });
+  }
   return NextResponse.json({ ok: true });
-}
+});
