@@ -221,6 +221,30 @@ npx cap sync
 
 > Resumen de todo lo construido en orden de iteraciones (más reciente → más antiguo).
 
+### Iteración 33 — *2026-05-11* — Productos · Stock · TPV (3 módulos conectados)
+
+Nuevo eje vertical de "comercio": catálogo único + inventario + punto de venta. Diseñado genérico para cubrir restaurante (con `mesa`, IVA mixto bebida/comida, color por categoría) y tienda (con `codigo`/SKU, `stock_minimo`, `unidad` flexible).
+
+- **Esquema** [`supabase/inventario_ext.sql`](supabase/inventario_ext.sql):
+  - `productos` (catálogo único): SKU opcional, `tipo` (producto/servicio), `unidad` (ud/kg/l/ración/hora), `iva_pct`, `stock_tracking` (servicios y comida sin inventario lo desactivan), `stock_minimo` para alertas, `color` para botones TPV.
+  - `stock_movimientos` (log inmutable, fuente de la verdad): `cantidad` firmada (+ entra, − sale), `tipo` (entrada/salida/ajuste/venta_tpv/devolucion). Trigger `tg_aplicar_stock_movimiento` mantiene `productos.stock_actual` actualizado automáticamente.
+  - `tpv_ventas` + `tpv_venta_items` (con `importe_linea` como columna generada).
+  - **RPC `cerrar_venta_tpv(p_venta_id, p_metodo_pago)`**: pieza clave de integración. Bloquea la venta con `FOR UPDATE`, recalcula totales desde los items (fuente de la verdad), genera un `stock_movimientos` tipo `venta_tpv` por cada item con `stock_tracking=true`, y marca la venta como `cerrada`. Atómico — si falla algo, no se cobra ni se descuenta stock.
+  - RLS multi-tenant en las cuatro tablas vía `current_negocio_id()`.
+
+- **Lógica pura** [`src/lib/inventario.ts`](src/lib/inventario.ts): `estadoStock()` (ok/bajo/agotado/sin_stock), `calcularTotalVenta()` con desglose, `añadirItem/cambiarCantidad/eliminarItem` inmutables, `colorCategoria()` (hash determinístico de la categoría a HSL).
+
+- **UIs**:
+  - [`/productos`](src/app/\(app\)/productos/page.tsx): listado con búsqueda + filtro por categoría + modal CRUD que incluye color picker para los botones del TPV. Servicios fuerzan `stock_tracking=false`.
+  - [`/stock`](src/app/\(app\)/stock/page.tsx): KPIs (con stock / bajo / agotados), filtro por estado y modal "Movimiento" para registrar entradas/salidas/ajustes manuales. Aside con últimos 50 movimientos (incluyendo los generados por TPV).
+  - [`/tpv`](src/app/\(app\)/tpv/page.tsx): layout split optimizado táctil — rejilla de productos coloreados con badge de "Bajo"/"Agotado" + ticket en curso a la derecha con totales en vivo, soporte de mesa para restaurante, y modal de cobro con 4 métodos (efectivo/tarjeta/Bizum/otro). Al cobrar invoca el RPC y refresca el stock visible.
+
+- **Tests** [`tests/inventario.test.ts`](tests/inventario.test.ts): 19 casos (estado de stock, cálculo de totales con IVA mixto restaurante, agrupación al añadir item, cantidad cero como eliminación, etc.). Suite global verde **9 archivos · 101 tests**.
+
+- **Sidebar**: 3 entradas nuevas entre Fichajes y Documentos (Productos · Stock · TPV).
+
+**Para activar**: ejecuta `supabase/inventario_ext.sql` en el SQL Editor de Supabase.
+
 ### Iteración 32 — *2026-05-11* — Editor de documentos: simplificación UX + métodos de pago guardados
 
 Reorganización del editor `/documentos/nuevo` para reducir fricción y un nuevo tab en Ajustes.
