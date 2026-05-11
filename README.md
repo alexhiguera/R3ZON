@@ -259,11 +259,14 @@ npx cap sync
 - `SuscripcionTab.tsx`: nueva sección **"Métodos de pago"** entre "Plan actual" y la tabla de planes. Lista las tarjetas guardadas; botón "Añadir método" redirige a Checkout setup. Si Stripe no está configurado, muestra panel ámbar explicando qué env vars hace falta.
 - Toast "Método de pago añadido correctamente" cuando la URL contiene `?billing=metodo_anadido`.
 
-**Migraciones SQL pendientes en BD productiva**
-- `supabase/perfil_usuario_ext.sql`
-- `supabase/inventario_imagenes_ext.sql`
-- `supabase/proveedores_ext.sql`
-- (Y `supabase/theme_ext.sql` de iter 38 si no se aplicó antes.)
+**Migraciones SQL aplicadas a BD productiva** (script `scripts/apply-pending-migrations.mjs`, conectado vía pooler `aws-1-eu-central-1`):
+- `supabase/theme_ext.sql` → tabla `user_preferences` + RPC `save_user_theme(jsonb)` (iter 38).
+- `supabase/perfil_usuario_ext.sql` → bucket `avatars` + 4 políticas RLS.
+- `supabase/inventario_imagenes_ext.sql` → bucket `producto-imagenes` + 4 políticas RLS.
+- `supabase/proveedores_ext.sql` → tablas `proveedores` y `gastos_proveedor` + RLS tenant + trigger fill.
+- `supabase/fix_tenant_defaults.sql` re-aplicado para registrar los triggers `fill_negocio_id` en las dos tablas nuevas.
+
+Pendiente opcional: regenerar `src/lib/database.types.ts` (las nuevas tablas quedan untyped en cliente pero runtime funciona).
 
 **Verificación**
 - `npx tsc --noEmit` → cero errores.
