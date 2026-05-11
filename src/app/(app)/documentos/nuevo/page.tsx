@@ -23,13 +23,17 @@ import {
   UserPlus,
   Pencil,
   Maximize2,
-  X,
   ChevronDown,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useNegocioId } from "@/lib/useNegocioId";
 import { useToast } from "@/components/ui/Toast";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { Field } from "@/components/ui/Field";
+import { Input, Select, Textarea, INPUT_CLS } from "@/components/ui/Input";
+import { Modal } from "@/components/ui/Modal";
+import { ActionButton } from "@/components/ui/ActionButton";
+import { hoyISO, hoyMas, formatearFechaCorta } from "@/lib/formato";
 import { PlantillaDocumento } from "@/components/documentos/PlantillaDocumento";
 import {
   DESCRIPCION_TIPO,
@@ -77,15 +81,8 @@ const ICONO_TIPO: Record<TipoDocumento, typeof FileText> = {
   proforma:    FileSignature,
 };
 
-const hoyISO = () => new Date().toISOString().slice(0, 10);
-const hoyMas15 = () => {
-  const d = new Date();
-  d.setDate(d.getDate() + 15);
-  return d.toISOString().slice(0, 10);
-};
-
 export default function NuevoDocumentoPage() {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
   const negocioId = useNegocioId();
   const toast = useToast();
@@ -111,7 +108,7 @@ export default function NuevoDocumentoPage() {
   // ── Cabecera (con valores por defecto) ──────────────────────────────────
   const [serie, setSerie] = useState("A");
   const [fechaEmision, setFechaEmision] = useState(hoyISO);
-  const [fechaVencimiento, setFechaVencimiento] = useState(hoyMas15);
+  const [fechaVencimiento, setFechaVencimiento] = useState(() => hoyMas(15));
   const [irpfPct, setIrpfPct] = useState<number>(0);
   const [cabeceraAbierta, setCabeceraAbierta] = useState(false);
 
@@ -940,59 +937,72 @@ export default function NuevoDocumentoPage() {
         </div>
       </div>
 
-      {/* MODAL FULLSCREEN */}
-      {fullscreen && (
-        <div
-          className="fixed inset-0 z-50 flex flex-col bg-black/70 backdrop-blur-sm"
-          onClick={() => setFullscreen(false)}
-        >
-          <div className="flex items-center justify-end gap-2 p-3">
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); abrirVentanaImpresion("vista"); }}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-cyan/30 bg-cyan/10 px-3 py-1.5 text-xs font-semibold text-cyan hover:bg-cyan/20"
-            >
-              <Download size={12} /> Abrir en pestaña
-            </button>
-            <button
-              type="button"
-              onClick={() => setFullscreen(false)}
-              aria-label="Cerrar"
-              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-indigo-400/30 bg-indigo-900/40 text-text-hi hover:bg-indigo-900/60"
-            >
-              <X size={16} />
-            </button>
-          </div>
-          <div
-            className="mx-auto mb-6 w-full max-w-4xl flex-1 overflow-auto rounded-t-2xl bg-white shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
+      <Modal
+        open={fullscreen}
+        onClose={() => setFullscreen(false)}
+        size="xl"
+        title={
+          <button
+            type="button"
+            onClick={() => abrirVentanaImpresion("vista")}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-cyan/30 bg-cyan/10 px-3 py-1.5 text-xs font-semibold text-cyan hover:bg-cyan/20"
           >
-            <PlantillaDocumento
-              tipo={tipo}
-              serie={serie}
-              numero={generado?.numero ?? null}
-              anio={new Date(fechaEmision).getFullYear()}
-              fecha_emision={fechaEmision}
-              fecha_vencimiento={fechaVencimiento || null}
-              emisor={emisor}
-              cliente={cliente}
-              lineas={lineas}
-              irpf_pct={irpfPct}
-              notas={notas || null}
-              condiciones_pago={condicionesPago || null}
-              metodo_pago={metodoPago || null}
-            />
-          </div>
-        </div>
-      )}
+            <Download size={12} /> Abrir en pestaña
+          </button>
+        }
+        className="bg-white p-0"
+      >
+        <PlantillaDocumento
+          tipo={tipo}
+          serie={serie}
+          numero={generado?.numero ?? null}
+          anio={new Date(fechaEmision).getFullYear()}
+          fecha_emision={fechaEmision}
+          fecha_vencimiento={fechaVencimiento || null}
+          emisor={emisor}
+          cliente={cliente}
+          lineas={lineas}
+          irpf_pct={irpfPct}
+          notas={notas || null}
+          condiciones_pago={condicionesPago || null}
+          metodo_pago={metodoPago || null}
+        />
+      </Modal>
     </div>
   );
 }
 
-// ── Subcomponentes ────────────────────────────────────────────────────────────
+// ── Subcomponentes locales (los reutilizables están en `@/components/ui/*`) ─
 
-const inputCls =
-  "h-10 w-full rounded-lg border border-indigo-400/20 bg-indigo-900/30 px-3 text-sm text-text-hi placeholder:text-text-lo focus:border-cyan/50 focus:outline-none focus:ring-2 focus:ring-cyan/20";
+// Alias para no reescribir las decenas de `className={inputCls}` que ya
+// existen — la cadena real vive en `@/components/ui/Input` (INPUT_CLS).
+const inputCls = `h-10 ${INPUT_CLS}`;
+
+// Wrapper para preservar la API existente usando el nuevo `<ActionButton>`.
+function AccionBtn({
+  onClick,
+  Icono,
+  label,
+  tono,
+  yaHecho,
+}: {
+  onClick: () => void;
+  Icono: typeof Download;
+  label: string;
+  tono: "cyan" | "fuchsia" | "ok" | "warn";
+  yaHecho?: boolean;
+}) {
+  return (
+    <ActionButton
+      Icono={Icono}
+      label={label}
+      tono={tono}
+      yaHecho={yaHecho}
+      onClick={onClick}
+      disabled={yaHecho && tono !== "ok"}
+    />
+  );
+}
 
 function Card({
   title,
@@ -1045,25 +1055,6 @@ function ResumenColapsable({
   );
 }
 
-function Field({
-  label,
-  children,
-  full,
-}: {
-  label: string;
-  children: React.ReactNode;
-  full?: boolean;
-}) {
-  return (
-    <label className={`flex flex-col gap-1 ${full ? "col-span-2" : ""}`}>
-      <span className="text-[0.65rem] font-medium uppercase tracking-wider text-text-lo">
-        {label}
-      </span>
-      {children}
-    </label>
-  );
-}
-
 function NumInput({
   label,
   value,
@@ -1082,51 +1073,12 @@ function NumInput({
       <span className="text-[0.6rem] font-medium uppercase tracking-wider text-text-lo">
         {label}
       </span>
-      <input
+      <Input
         type="number"
         step={step}
         value={value}
         onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
-        className={inputCls}
       />
     </label>
   );
-}
-
-function AccionBtn({
-  onClick,
-  Icono,
-  label,
-  tono,
-  yaHecho,
-}: {
-  onClick: () => void;
-  Icono: typeof Download;
-  label: string;
-  tono: "cyan" | "fuchsia" | "ok" | "warn";
-  yaHecho?: boolean;
-}) {
-  const map = {
-    cyan:    "border-cyan/40 bg-cyan/10 text-cyan hover:bg-cyan/20",
-    fuchsia: "border-fuchsia/40 bg-fuchsia/10 text-fuchsia hover:bg-fuchsia/20",
-    ok:      "border-ok/40 bg-ok/10 text-ok hover:bg-ok/20",
-    warn:    "border-warn/40 bg-warn/10 text-warn hover:bg-warn/20",
-  };
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={yaHecho && tono !== "ok"}
-      className={`flex h-12 items-center justify-center gap-2 rounded-xl border text-sm font-bold transition-colors ${map[tono]} ${yaHecho ? "opacity-70" : ""}`}
-    >
-      <Icono size={15} /> {label}
-    </button>
-  );
-}
-
-function formatearFechaCorta(iso: string): string {
-  if (!iso) return "—";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "2-digit" });
 }

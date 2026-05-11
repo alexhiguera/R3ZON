@@ -8,10 +8,16 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { Help, Tooltip } from "@/components/ui/Tooltip";
 
+type ClienteAutomatizacion = {
+  webhook_url?: string | null;
+  webhook_activo?: boolean | null;
+  [k: string]: unknown;
+};
+
 type Props = {
   clienteId: string;
-  cliente: any;
-  onUpdate: (c: any) => void;
+  cliente: ClienteAutomatizacion;
+  onUpdate: (c: ClienteAutomatizacion) => void;
 };
 
 export function TabAutomatizacion({ clienteId, cliente, onUpdate }: Props) {

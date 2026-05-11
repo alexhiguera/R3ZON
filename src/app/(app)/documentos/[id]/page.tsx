@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Download, Send, Loader2 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/ui/Toast";
+import { useSupabaseQuery } from "@/lib/useSupabaseQuery";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { PlantillaDocumento } from "@/components/documentos/PlantillaDocumento";
 import {
@@ -15,30 +15,15 @@ import {
 } from "@/lib/documentos";
 
 export default function DocumentoDetallePage() {
-  const supabase = createClient();
   const toast = useToast();
   const params = useParams<{ id: string }>();
   const previewRef = useRef<HTMLDivElement>(null);
+  const id = params?.id;
 
-  const [doc, setDoc] = useState<Documento | null>(null);
-  const [cargando, setCargando] = useState(true);
-
-  useEffect(() => {
-    if (!params?.id) return;
-    (async () => {
-      const { data, error } = await supabase
-        .from("documentos")
-        .select("*")
-        .eq("id", params.id)
-        .single();
-      if (error) {
-        toast.err(`No se encontró el documento: ${error.message}`);
-      } else {
-        setDoc(data as Documento);
-      }
-      setCargando(false);
-    })();
-  }, [params?.id, supabase, toast]);
+  const { data: doc, loading: cargando } = useSupabaseQuery<Documento>(
+    (sb) => sb.from("documentos").select("*").eq("id", id ?? "").single(),
+    { context: "documento", deps: [id], enabled: !!id },
+  );
 
   function descargarPDF() {
     if (!previewRef.current || !doc) return;

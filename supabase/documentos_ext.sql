@@ -138,3 +138,14 @@ create policy tenant_isolation on public.documentos
   for all
   using      (negocio_id = public.current_negocio_id())
   with check (negocio_id = public.current_negocio_id());
+
+-- ─────────────────────────────────────────────────────────────────────────
+-- Relación con `finanzas`:
+--   `documentos` registra documentos comerciales emitidos POR ti
+--   (facturas, tickets, presupuestos…). `finanzas` registra cualquier
+--   movimiento monetario (incluyendo gastos de proveedores vía OCR).
+--   La integración es opcional: documentos.finanza_id apunta al ingreso
+--   creado al pulsar "Añadir a Finanzas" desde el editor de documentos.
+--   Mantener separados es intencional: un mismo movimiento de finanzas
+--   puede no provenir de un documento emitido (p. ej. gasto OCR).
+-- ─────────────────────────────────────────────────────────────────────────

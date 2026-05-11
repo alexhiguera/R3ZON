@@ -1,3 +1,7 @@
+import { eur, round2 } from "./formato";
+
+export { eur };
+
 export type MovimientoFila = {
   tipo: "ingreso" | "gasto";
   fecha: string;
@@ -28,10 +32,10 @@ export function agregarPorMes(filas: MovimientoFila[], anio = new Date().getFull
 
   return buckets.map((b) => ({
     ...b,
-    ganado: round(b.ganado),
-    gastado: round(b.gastado),
-    iva: round(b.iva),
-    irpf: round(b.irpf),
+    ganado: round2(b.ganado),
+    gastado: round2(b.gastado),
+    iva: round2(b.iva),
+    irpf: round2(b.irpf),
   }));
 }
 
@@ -48,14 +52,10 @@ export function totales(filas: MovimientoFila[]) {
     }
   }
   return {
-    ganado: round(ganado),
-    gastado: round(gastado),
-    beneficio: round(ganado - gastado),
-    ivaAPagar: round(ivaRep - ivaSop), // si negativo → Hacienda te devuelve
-    irpfRetenido: round(irpf),
+    ganado: round2(ganado),
+    gastado: round2(gastado),
+    beneficio: round2(ganado - gastado),
+    ivaAPagar: round2(ivaRep - ivaSop), // si negativo → Hacienda te devuelve
+    irpfRetenido: round2(irpf),
   };
 }
-
-const round = (n: number) => Math.round(n * 100) / 100;
-export const eur = (n: number) =>
-  new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR" }).format(n);

@@ -221,6 +221,48 @@ npx cap sync
 
 > Resumen de todo lo construido en orden de iteraciones (más reciente → más antiguo).
 
+### Iteración 34 — *2026-05-11* — Refactor integral: utilidades centralizadas, UI reutilizable, hook Supabase, fix de re-renders y limpieza SQL
+
+Pase de refactor *alto impacto, bajo riesgo* tras auditoría de 3 agentes (frontend, base de datos, rendimiento). Sin cambios funcionales aparentes para el usuario, pero la base es más rápida, barata y mantenible.
+
+**Centralización de utilidades** ([src/lib/formato.ts](src/lib/formato.ts)):
+- `eur()` — antes definido 3 veces en `finanzas.ts`, `documentos.ts`, `inventario.ts` → ahora único.
+- `round2()`, `round3()` — antes 4 definiciones → única.
+- `hoyISO()`, `hoyMas(dias)`, `formatearFechaCorta()`, `formatearFechaLarga()` — antes inlineadas en cada página.
+- Los 3 lib del dominio re-exportan `eur` desde aquí (API pública estable).
+
+**Componentes UI reutilizables** ([src/components/ui/](src/components/ui/)):
+- `Field`, `Input`, `Select`, `Textarea` (con `INPUT_CLS` único), `Modal` (backdrop + ESC + click-outside + bloqueo de scroll), `ActionButton` (5 tonos semánticos).
+- Sustituyen `Field`/`inputCls`/`AccionBtn` repetidos en TPV, Productos, Stock, Documentos. `inputCls` ya no es la fuente: en `documentos/nuevo` queda como alias del nuevo `INPUT_CLS`.
+
+**Hook unificado [`useSupabaseQuery`](src/lib/useSupabaseQuery.ts)**:
+- Memoiza `createClient` internamente (corrige el bug donde el cliente entraba en `useEffect` deps y reejecutaba la query en cada render).
+- AbortController interno via flag `alive`, cleanup automático al desmontar.
+- Toast de error con contexto: `"Error al cargar productos: …"`.
+- Aplicado en TPV, Productos, Stock, Documentos (lista y detalle). Eliminados los `eslint-disable react-hooks/exhaustive-deps`.
+
+**Optimización de queries** (egress reducido):
+- TPV: `select("*")` → 12 columnas explícitas (`descripcion`, `precio_coste`, `imagen_url`, `created_at/updated_at` ya no viajan).
+- TPV tras cobrar: **eliminado el refetch completo**. Ahora el stock se actualiza localmente con un `Map` desde el ticket recién cobrado. Antes: 1 query de N filas por venta. Ahora: 0.
+- Productos / Stock / Documentos: `select` selectivos en la lista, `select("*")` solo al abrir modal de edición.
+- Logos en Storage: `cacheControl: "3600"` → `"86400"` (24h).
+
+**Bundle size**:
+- `/citas` ahora carga `CalendarView` con `dynamic({ ssr: false })` con loading skeleton — `@fullcalendar/*` (~450 KB) se difiere y la página muestra el shell inmediatamente.
+- Eliminado `src/components/clientes/HierarchyChart.tsx` (huérfano tras borrar `page 2.tsx`) → `@xyflow/react` (~280 KB) deja de empaquetarse en producción.
+
+**Capa SQL**:
+- [`supabase/setup.sql`](supabase/setup.sql) **completado**: faltaban `documentos_ext`, `metodos_pago_ext`, `inventario_ext`, `fichajes_ext`. Ahora incluidos en orden de dependencia, con sus `drop table` correspondientes en la sección WIPE.
+- Nuevo índice compuesto en [`inventario_ext.sql`](supabase/inventario_ext.sql): `idx_productos_activo_categoria_nombre` cubre la query principal del TPV (`WHERE activo = true ORDER BY categoria, nombre`).
+- Comentario explicativo en [`documentos_ext.sql`](supabase/documentos_ext.sql) sobre la relación intencionalmente separada con `finanzas` (una factura emitida es ingreso opcional; un OCR de proveedor no tiene documento).
+- Nuevo [`supabase/retention_ext.sql`](supabase/retention_ext.sql) (no incluido en `setup`, ejecución manual): tablas `*_archivo` y funciones `archive_fichajes_antiguos(meses)`, `archive_stock_movimientos_antiguos(meses)`, `archive_tpv_ventas_cerradas(meses)` para mover filas viejas y liberar storage. Sin scheduling — invocar a mano o con `pg_cron` (plan Pro+).
+
+**Cleanup**:
+- Eliminados 3 archivos backup `src/app/(app)/clientes/**/page 2.tsx` (commiteados en histórico).
+- Tipos `any` corregidos en `ocr/page.tsx`, `Charts.tsx`, `TabAutomatizacion.tsx`, `TabComunicaciones.tsx`.
+
+**Verificación**: 9 archivos · **101/101 tests verdes**, cero errores TypeScript en archivos del proyecto. Fuentes únicas confirmadas (`eur`, `round*`, `INPUT_CLS`, `Field`, `Modal`).
+
 ### Iteración 33 — *2026-05-11* — Productos · Stock · TPV (3 módulos conectados)
 
 Nuevo eje vertical de "comercio": catálogo único + inventario + punto de venta. Diseñado genérico para cubrir restaurante (con `mesa`, IVA mixto bebida/comida, color por categoría) y tienda (con `codigo`/SKU, `stock_minimo`, `unidad` flexible).

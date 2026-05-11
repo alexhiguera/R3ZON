@@ -1,6 +1,10 @@
 // Lógica pura para Productos / Stock / TPV. Sin red ni Supabase: determinístico
 // y testeable.
 
+import { eur, round2, round3 } from "./formato";
+
+export { eur };
+
 export type TipoProducto = "producto" | "servicio";
 
 export type Producto = {
@@ -180,17 +184,6 @@ export function eliminarItem(items: ItemTPV[], idx: number): ItemTPV[] {
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
-
-export const eur = (n: number): string =>
-  new Intl.NumberFormat("es-ES", {
-    style: "currency",
-    currency: "EUR",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(Number.isFinite(n) ? n : 0);
-
-const round2 = (n: number) => Math.round(n * 100) / 100;
-const round3 = (n: number) => Math.round(n * 1000) / 1000;
 
 export const ETIQUETA_MOVIMIENTO: Record<TipoMovimientoStock, string> = {
   entrada:    "Entrada",

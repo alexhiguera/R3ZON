@@ -1,5 +1,5 @@
 import { PageHeader } from "@/components/ui/PageHeader";
-import CalendarView from "@/components/agenda/CalendarView";
+import CalendarViewLazy from "@/components/agenda/CalendarViewLazy";
 
 export default function Page() {
   return (
@@ -9,7 +9,7 @@ export default function Page() {
         title="Tu calendario"
         description="Arrastra una cita para moverla. Estira el borde para cambiar la duración. Pulsa Sincronizar para traer tus eventos de Google."
       />
-      <CalendarView />
+      <CalendarViewLazy />
     </div>
   );
 }

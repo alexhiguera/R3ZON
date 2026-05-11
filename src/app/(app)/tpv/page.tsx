@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   ShoppingCart,
   Search,
@@ -8,8 +8,6 @@ import {
   Minus,
   Trash2,
   Loader2,
-  CheckCircle2,
-  X,
   Banknote,
   CreditCard,
   Smartphone,
@@ -20,6 +18,10 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { useNegocioId } from "@/lib/useNegocioId";
 import { useToast } from "@/components/ui/Toast";
+import { useSupabaseQuery } from "@/lib/useSupabaseQuery";
+import { Modal } from "@/components/ui/Modal";
+import { ActionButton } from "@/components/ui/ActionButton";
+import { Input } from "@/components/ui/Input";
 import {
   añadirItem,
   calcularTotalVenta,
@@ -41,34 +43,39 @@ const METODOS: { id: MetodoPagoTPV; label: string; Icon: typeof Banknote }[] = [
   { id: "otro",     label: "Otro",     Icon: Wallet },
 ];
 
+// Solo las columnas que la UI consume — evitamos `descripcion`, `precio_coste`,
+// `imagen_url` y `created_at/updated_at` que son egress innecesario.
+const COLUMNAS_TPV =
+  "id,nombre,categoria,precio_venta,iva_pct,stock_tracking," +
+  "stock_actual,stock_minimo,color,activo,unidad,codigo";
+
 export default function TPVPage() {
-  const supabase = createClient();
   const negocioId = useNegocioId();
   const toast = useToast();
+  const supabase = useMemo(() => createClient(), []);
 
-  const [productos, setProductos] = useState<Producto[]>([]);
-  const [cargando, setCargando] = useState(true);
+  const {
+    data: productosData,
+    loading: cargando,
+    setData: setProductos,
+  } = useSupabaseQuery<Producto[]>(
+    (sb) =>
+      sb
+        .from("productos")
+        .select(COLUMNAS_TPV)
+        .eq("activo", true)
+        .order("categoria")
+        .order("nombre"),
+    { context: "productos del TPV" },
+  );
+  const productos: Producto[] = productosData ?? [];
+
   const [busqueda, setBusqueda] = useState("");
   const [categoria, setCategoria] = useState<string>("todas");
-
   const [items, setItems] = useState<ItemTPV[]>([]);
   const [mesa, setMesa] = useState("");
   const [cobrando, setCobrando] = useState(false);
   const [modalCobro, setModalCobro] = useState(false);
-
-  useEffect(() => {
-    (async () => {
-      const { data, error } = await supabase
-        .from("productos")
-        .select("*")
-        .eq("activo", true)
-        .order("categoria")
-        .order("nombre");
-      if (error) toast.err(error.message);
-      else setProductos((data ?? []) as Producto[]);
-      setCargando(false);
-    })();
-  }, [supabase, toast]);
 
   const categorias = useMemo(() => {
     const s = new Set<string>();
@@ -109,11 +116,7 @@ export default function TPVPage() {
     // 1. Crear venta abierta
     const { data: venta, error: errV } = await supabase
       .from("tpv_ventas")
-      .insert({
-        negocio_id: negocioId,
-        mesa: mesa || null,
-        estado: "abierta",
-      })
+      .insert({ negocio_id: negocioId, mesa: mesa || null, estado: "abierta" })
       .select("id")
       .single();
     if (errV || !venta) {
@@ -152,15 +155,24 @@ export default function TPVPage() {
       return;
     }
 
+    // 4. Actualización LOCAL de stock (ya descontado en BD por la RPC).
+    //    Antes: refetch completo de N filas. Ahora: solo restamos en memoria
+    //    los productos que se vendieron y rastrean stock.
+    const restas = new Map<string, number>();
+    for (const it of items) {
+      restas.set(it.producto_id, (restas.get(it.producto_id) ?? 0) + it.cantidad);
+    }
+    setProductos((prev) =>
+      prev?.map((p) =>
+        p.stock_tracking && restas.has(p.id)
+          ? { ...p, stock_actual: Number(p.stock_actual) - (restas.get(p.id) ?? 0) }
+          : p,
+      ) ?? prev,
+    );
+
     toast.ok(`Cobrado ${eur(totales.total)} (${metodo})`);
     setItems([]);
     setMesa("");
-
-    // Refrescar productos para mostrar stock actualizado
-    const { data } = await supabase
-      .from("productos").select("*").eq("activo", true)
-      .order("categoria").order("nombre");
-    setProductos((data ?? []) as Producto[]);
   }
 
   return (
@@ -173,13 +185,19 @@ export default function TPVPage() {
         </div>
         <div className="relative flex-1 min-w-[220px]">
           <Search className="pointer-events-none absolute left-3 top-3 text-text-lo" size={14} />
-          <input value={busqueda} onChange={(e) => setBusqueda(e.target.value)}
+          <Input
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
             placeholder="Buscar producto o código…"
-            className="h-10 w-full rounded-lg border border-indigo-400/20 bg-indigo-900/30 pl-9 pr-3 text-sm text-text-hi" />
+            className="pl-9"
+          />
         </div>
-        <input value={mesa} onChange={(e) => setMesa(e.target.value)}
+        <Input
+          value={mesa}
+          onChange={(e) => setMesa(e.target.value)}
           placeholder="Mesa / cuenta"
-          className="h-10 w-32 rounded-lg border border-indigo-400/20 bg-indigo-900/30 px-3 text-sm text-text-hi" />
+          className="w-32"
+        />
       </div>
 
       <div className="grid flex-1 min-h-0 gap-3 lg:grid-cols-[1fr,420px]">
@@ -295,9 +313,15 @@ export default function TPVPage() {
                         className="flex h-7 w-7 items-center justify-center rounded-lg border border-indigo-400/20 bg-indigo-900/30 text-text-mid">
                         <Minus size={11} />
                       </button>
-                      <input type="number" step="0.001" value={it.cantidad}
-                        onChange={(e) => setItems(cambiarCantidad(items, i, parseFloat(e.target.value) || 0))}
-                        className="h-7 w-16 rounded-lg border border-indigo-400/20 bg-indigo-900/30 px-2 text-center text-xs text-text-hi" />
+                      <Input
+                        type="number"
+                        step="0.001"
+                        value={it.cantidad}
+                        onChange={(e) =>
+                          setItems(cambiarCantidad(items, i, parseFloat(e.target.value) || 0))
+                        }
+                        className="h-7 w-16 px-2 text-center text-xs"
+                      />
                       <button onClick={() => setItems(cambiarCantidad(items, i, it.cantidad + 1))}
                         className="flex h-7 w-7 items-center justify-center rounded-lg border border-indigo-400/20 bg-indigo-900/30 text-text-mid">
                         <Plus size={11} />
@@ -332,40 +356,35 @@ export default function TPVPage() {
         </aside>
       </div>
 
-      {modalCobro && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
-          onClick={() => !cobrando && setModalCobro(false)}>
-          <div onClick={(e) => e.stopPropagation()}
-            className="card-glass w-full max-w-md p-5">
-            <div className="mb-4 flex items-center justify-between">
-              <div>
-                <div className="section-label">Cobrar</div>
-                <div className="font-display text-3xl font-extrabold text-text-hi">{eur(totales.total)}</div>
-              </div>
-              {!cobrando && (
-                <button onClick={() => setModalCobro(false)} className="text-text-mid hover:text-text-hi">
-                  <X size={16} />
-                </button>
-              )}
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              {METODOS.map(({ id, label, Icon }) => (
-                <button key={id} disabled={cobrando}
-                  onClick={() => cobrar(id)}
-                  className="flex flex-col items-center gap-2 rounded-xl border border-cyan/30 bg-cyan/10 py-5 text-cyan transition-transform hover:-translate-y-0.5 disabled:opacity-50">
-                  {cobrando ? <Loader2 size={20} className="animate-spin" /> : <Icon size={20} />}
-                  <span className="text-sm font-bold">{label}</span>
-                </button>
-              ))}
-            </div>
-
-            <p className="mt-3 text-center text-[0.7rem] text-text-lo">
-              Al cobrar, el stock se descuenta automáticamente para los productos rastreados.
-            </p>
+      <Modal
+        open={modalCobro}
+        onClose={() => setModalCobro(false)}
+        dismissable={!cobrando}
+        size="sm"
+        title={
+          <div>
+            <div className="section-label">Cobrar</div>
+            <div className="font-display text-3xl font-extrabold text-text-hi">{eur(totales.total)}</div>
           </div>
+        }
+      >
+        <div className="grid grid-cols-2 gap-2">
+          {METODOS.map(({ id, label, Icon }) => (
+            <ActionButton
+              key={id}
+              Icono={cobrando ? Loader2 : Icon}
+              label={label}
+              tono="cyan"
+              disabled={cobrando}
+              onClick={() => cobrar(id)}
+              className="h-20 flex-col gap-2 text-base"
+            />
+          ))}
         </div>
-      )}
+        <p className="mt-3 text-center text-[0.7rem] text-text-lo">
+          Al cobrar, el stock se descuenta automáticamente para los productos rastreados.
+        </p>
+      </Modal>
     </div>
   );
 }

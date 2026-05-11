@@ -1,13 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Boxes,
   Plus,
   Minus,
   Sliders,
   Loader2,
-  X,
   Search,
   ArrowDownLeft,
   ArrowUpRight,
@@ -18,7 +17,11 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { useNegocioId } from "@/lib/useNegocioId";
 import { useToast } from "@/components/ui/Toast";
+import { useSupabaseQuery } from "@/lib/useSupabaseQuery";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { Field } from "@/components/ui/Field";
+import { Input, Select } from "@/components/ui/Input";
+import { Modal } from "@/components/ui/Modal";
 import {
   ETIQUETA_MOVIMIENTO,
   estadoStock,
@@ -51,39 +54,54 @@ const COLOR_ESTADO: Record<EstadoStock, string> = {
   sin_stock: "border-text-lo/30 bg-text-lo/10 text-text-mid",
 };
 
-export default function StockPage() {
-  const supabase = createClient();
-  const negocioId = useNegocioId();
-  const toast = useToast();
+// `descripcion`, `precio_*`, `imagen_url` no se usan aquí.
+const COLUMNAS_STOCK =
+  "id,nombre,codigo,categoria,unidad,iva_pct,stock_actual,stock_minimo," +
+  "stock_tracking,color,activo,tipo,negocio_id,created_at,updated_at";
 
-  const [productos, setProductos] = useState<Producto[]>([]);
-  const [movimientos, setMovimientos] = useState<(StockMovimiento & { nombre?: string })[]>([]);
-  const [cargando, setCargando] = useState(true);
+type MovimientoConNombre = StockMovimiento & {
+  productos: { nombre: string } | null;
+};
+
+export default function StockPage() {
+  const negocioId = useNegocioId();
+
+  const {
+    data: productosData,
+    loading: cargandoProd,
+    refresh: refreshProd,
+  } = useSupabaseQuery<Producto[]>(
+    (sb) => sb.from("productos").select(COLUMNAS_STOCK).order("nombre"),
+    { context: "productos" },
+  );
+  const productos: Producto[] = productosData ?? [];
+
+  const {
+    data: movimientosData,
+    refresh: refreshMov,
+  } = useSupabaseQuery<MovimientoConNombre[]>(
+    (sb) =>
+      sb
+        .from("stock_movimientos")
+        .select("id,producto_id,tipo,cantidad,motivo,ts,user_id,negocio_id,referencia,productos(nombre)")
+        .order("ts", { ascending: false })
+        .limit(50),
+    { context: "movimientos" },
+  );
+  const movimientos = useMemo(
+    () =>
+      (movimientosData ?? []).map((m) => ({
+        ...m,
+        nombre: m.productos?.nombre ?? "—",
+      })),
+    [movimientosData],
+  );
+
+  const cargando = cargandoProd;
+
   const [busqueda, setBusqueda] = useState("");
   const [filtro, setFiltro] = useState<"todos" | EstadoStock>("todos");
   const [editando, setEditando] = useState<Producto | null>(null);
-
-  async function cargar() {
-    setCargando(true);
-    const [{ data: p }, { data: m }] = await Promise.all([
-      supabase.from("productos").select("*").order("nombre"),
-      supabase
-        .from("stock_movimientos")
-        .select("*, productos(nombre)")
-        .order("ts", { ascending: false })
-        .limit(50),
-    ]);
-    setProductos((p ?? []) as Producto[]);
-    setMovimientos(
-      ((m ?? []) as (StockMovimiento & { productos: { nombre: string } | null })[]).map((x) => ({
-        ...x,
-        nombre: x.productos?.nombre ?? "—",
-      })),
-    );
-    setCargando(false);
-  }
-
-  useEffect(() => { cargar(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
 
   const visibles = useMemo(() => {
     const q = busqueda.trim().toLowerCase();
@@ -119,18 +137,24 @@ export default function StockPage() {
           <div className="card-glass flex flex-wrap items-center gap-3 p-4">
             <div className="relative flex-1 min-w-[220px]">
               <Search className="pointer-events-none absolute left-3 top-3 text-text-lo" size={14} />
-              <input value={busqueda} onChange={(e) => setBusqueda(e.target.value)}
+              <Input
+                value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value)}
                 placeholder="Buscar producto…"
-                className="h-10 w-full rounded-lg border border-indigo-400/20 bg-indigo-900/30 pl-9 pr-3 text-sm text-text-hi" />
+                className="pl-9"
+              />
             </div>
-            <select value={filtro} onChange={(e) => setFiltro(e.target.value as typeof filtro)}
-              className="h-10 rounded-lg border border-indigo-400/20 bg-indigo-900/30 px-3 text-sm text-text-hi">
+            <Select
+              value={filtro}
+              onChange={(e) => setFiltro(e.target.value as typeof filtro)}
+              className="w-auto"
+            >
               <option value="todos">Todos</option>
               <option value="ok">Con stock</option>
               <option value="bajo">Stock bajo</option>
               <option value="agotado">Agotados</option>
               <option value="sin_stock">Sin inventario</option>
-            </select>
+            </Select>
           </div>
 
           {cargando ? (
@@ -217,14 +241,12 @@ export default function StockPage() {
         </aside>
       </div>
 
-      {editando && (
-        <MovimientoModal
-          producto={editando}
-          negocioId={negocioId}
-          onCerrar={() => setEditando(null)}
-          onGuardado={() => { setEditando(null); cargar(); }}
-        />
-      )}
+      <MovimientoModal
+        producto={editando}
+        negocioId={negocioId}
+        onCerrar={() => setEditando(null)}
+        onGuardado={() => { setEditando(null); refreshProd(); refreshMov(); }}
+      />
     </div>
   );
 }
@@ -254,29 +276,28 @@ function MovimientoModal({
   onCerrar,
   onGuardado,
 }: {
-  producto: Producto;
+  producto: Producto | null;
   negocioId: string | null;
   onCerrar: () => void;
   onGuardado: () => void;
 }) {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const toast = useToast();
   const [tipo, setTipo] = useState<"entrada" | "salida" | "ajuste">("entrada");
   const [cantidad, setCantidad] = useState<number>(1);
   const [motivo, setMotivo] = useState("");
   const [guardando, setGuardando] = useState(false);
 
+  if (!producto) return null;
+
   async function guardar(e: React.FormEvent) {
     e.preventDefault();
-    if (!negocioId || cantidad === 0) return;
+    if (!negocioId || cantidad === 0 || !producto) return;
     setGuardando(true);
 
-    // Para "ajuste" la cantidad es el delta absoluto (positivo o negativo).
-    // Para entrada/salida garantizamos signo +/−.
     let delta = Number(cantidad) || 0;
     if (tipo === "salida") delta = -Math.abs(delta);
     if (tipo === "entrada") delta = Math.abs(delta);
-    // ajuste: deja el signo tal cual viene
 
     const { error } = await supabase.from("stock_movimientos").insert({
       negocio_id: negocioId,
@@ -295,16 +316,8 @@ function MovimientoModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4" onClick={onCerrar}>
-      <form onSubmit={guardar} onClick={(e) => e.stopPropagation()}
-        className="card-glass w-full max-w-md p-5">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="font-display text-lg font-bold text-text-hi">Movimiento de stock</h2>
-          <button type="button" onClick={onCerrar} className="text-text-mid hover:text-text-hi">
-            <X size={16} />
-          </button>
-        </div>
-
+    <Modal open={!!producto} onClose={onCerrar} size="sm" title="Movimiento de stock">
+      <form onSubmit={guardar}>
         <div className="mb-3 rounded-xl border border-indigo-400/15 bg-indigo-900/20 p-3 text-sm">
           <div className="font-semibold text-text-hi">{producto.nombre}</div>
           <div className="text-xs text-text-mid">
@@ -328,24 +341,30 @@ function MovimientoModal({
           ))}
         </div>
 
-        <label className="mb-3 flex flex-col gap-1">
-          <span className="text-[0.65rem] font-semibold uppercase tracking-wider text-text-lo">
-            Cantidad ({producto.unidad}) {tipo === "ajuste" && "— delta firmado"}
-          </span>
-          <input type="number" step="0.001" value={cantidad}
+        <Field
+          label={`Cantidad (${producto.unidad})${tipo === "ajuste" ? " — delta firmado" : ""}`}
+        >
+          <Input
+            type="number"
+            step="0.001"
+            value={cantidad}
             onChange={(e) => setCantidad(parseFloat(e.target.value) || 0)}
-            className="h-10 rounded-lg border border-indigo-400/20 bg-indigo-900/30 px-3 text-sm text-text-hi"
-            autoFocus required />
-        </label>
+            autoFocus
+            required
+          />
+        </Field>
 
-        <label className="mb-4 flex flex-col gap-1">
-          <span className="text-[0.65rem] font-semibold uppercase tracking-wider text-text-lo">Motivo (opcional)</span>
-          <input value={motivo} onChange={(e) => setMotivo(e.target.value)}
-            placeholder="Reposición proveedor, merma, recuento físico…"
-            className="h-10 rounded-lg border border-indigo-400/20 bg-indigo-900/30 px-3 text-sm text-text-hi" />
-        </label>
+        <div className="mt-3">
+          <Field label="Motivo (opcional)">
+            <Input
+              value={motivo}
+              onChange={(e) => setMotivo(e.target.value)}
+              placeholder="Reposición proveedor, merma, recuento físico…"
+            />
+          </Field>
+        </div>
 
-        <div className="flex gap-2">
+        <div className="mt-4 flex gap-2">
           <button type="button" onClick={onCerrar}
             className="flex-1 rounded-lg border border-indigo-400/20 bg-indigo-900/20 py-2.5 text-sm font-semibold text-text-mid">
             Cancelar
@@ -357,6 +376,6 @@ function MovimientoModal({
           </button>
         </div>
       </form>
-    </div>
+    </Modal>
   );
 }

@@ -82,7 +82,22 @@ export function TaxLine({
   );
 }
 
-function CustomTooltip({ active, payload, label }: any) {
+type TooltipPayload = {
+  dataKey?: string | number;
+  name?: string;
+  value?: number | string;
+  color?: string;
+};
+
+function CustomTooltip({
+  active,
+  payload,
+  label,
+}: {
+  active?: boolean;
+  payload?: TooltipPayload[];
+  label?: string | number;
+}) {
   if (!active || !payload?.length) return null;
   return (
     <div
@@ -95,8 +110,8 @@ function CustomTooltip({ active, payload, label }: any) {
       }}
     >
       <div style={{ color: "#a5b4fc", marginBottom: 4 }}>{label}</div>
-      {payload.map((p: any) => (
-        <div key={p.dataKey} style={{ color: "#e0e7ff", fontWeight: 500 }}>
+      {payload.map((p) => (
+        <div key={String(p.dataKey)} style={{ color: "#e0e7ff", fontWeight: 500 }}>
           <span style={{ color: p.color, fontWeight: 700 }}>● </span>
           {p.name}: <b>{Number(p.value).toFixed(2)} €</b>
         </div>

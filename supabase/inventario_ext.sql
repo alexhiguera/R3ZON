@@ -53,6 +53,9 @@ create index if not exists idx_productos_negocio_activo
   on public.productos(negocio_id, activo);
 create index if not exists idx_productos_categoria
   on public.productos(negocio_id, categoria);
+-- Cubre la query principal del TPV: WHERE activo = true ORDER BY categoria, nombre
+create index if not exists idx_productos_activo_categoria_nombre
+  on public.productos(negocio_id, activo, categoria, nombre);
 
 drop trigger if exists set_updated_at on public.productos;
 create trigger set_updated_at before update on public.productos

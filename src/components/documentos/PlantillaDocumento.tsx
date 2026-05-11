@@ -10,6 +10,7 @@ import {
   type LineaDocumento,
   type TipoDocumento,
 } from "@/lib/documentos";
+import { formatearFechaLarga } from "@/lib/formato";
 
 export type PlantillaProps = {
   tipo: TipoDocumento;
@@ -69,14 +70,14 @@ export function PlantillaDocumento(props: PlantillaProps) {
         </div>
         <div>
           <div style={DOC_STYLE.label}>Fecha de emisión</div>
-          <div style={DOC_STYLE.metaValor}>{formatearFecha(props.fecha_emision)}</div>
+          <div style={DOC_STYLE.metaValor}>{formatearFechaLarga(props.fecha_emision)}</div>
           {props.fecha_vencimiento && (
             <>
               <div style={{ ...DOC_STYLE.label, marginTop: 8 }}>
                 {props.tipo === "presupuesto" ? "Válido hasta" : "Vencimiento"}
               </div>
               <div style={DOC_STYLE.metaValor}>
-                {formatearFecha(props.fecha_vencimiento)}
+                {formatearFechaLarga(props.fecha_vencimiento)}
               </div>
             </>
           )}
@@ -198,13 +199,6 @@ function FilaTotal({ label, valor }: { label: string; valor: string }) {
       <span>{valor}</span>
     </div>
   );
-}
-
-function formatearFecha(iso: string): string {
-  if (!iso) return "—";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleDateString("es-ES", { day: "2-digit", month: "long", year: "numeric" });
 }
 
 // Estilos en línea (no Tailwind) para que sirvan tanto en preview como en PDF.

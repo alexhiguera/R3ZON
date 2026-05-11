@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import {
   Mail, MessageCircle, StickyNote, Send,
   Loader2, MessageSquare,
+  type LucideIcon,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Tooltip } from "@/components/ui/Tooltip";
@@ -16,7 +17,7 @@ type Com = {
   created_at: string;
 };
 
-const TIPO_META: Record<string, { icon: any; label: string; color: string }> = {
+const TIPO_META: Record<string, { icon: LucideIcon; label: string; color: string }> = {
   nota:            { icon: StickyNote,     label: "Nota",          color: "text-indigo-300" },
   email_click:     { icon: Mail,           label: "Email enviado", color: "text-cyan" },
   whatsapp_click:  { icon: MessageCircle,  label: "WhatsApp",      color: "text-ok" },

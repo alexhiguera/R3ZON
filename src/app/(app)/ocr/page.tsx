@@ -41,8 +41,9 @@ export default function OCRPage() {
       const parsed = parseSpanishReceipt(texto);
       setDatos(parsed);
       setEstado("revisar");
-    } catch (e: any) {
-      setError(e.message ?? "Error al procesar la imagen");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setError(msg || "Error al procesar la imagen");
       setEstado("idle");
     }
   };

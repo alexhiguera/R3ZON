@@ -8,15 +8,16 @@ import {
   Pencil,
   Trash2,
   Loader2,
-  AlertTriangle,
   CheckCircle2,
-  XCircle,
-  X,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useNegocioId } from "@/lib/useNegocioId";
 import { useToast } from "@/components/ui/Toast";
+import { useSupabaseQuery } from "@/lib/useSupabaseQuery";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { Field } from "@/components/ui/Field";
+import { Input, Select, Textarea } from "@/components/ui/Input";
+import { Modal } from "@/components/ui/Modal";
 import {
   estadoStock,
   eur,
@@ -34,29 +35,31 @@ const ESTADO_BADGE: Record<EstadoStock, { cls: string; label: string }> = {
   sin_stock: { cls: "border-text-lo/30 bg-text-lo/10 text-text-mid", label: "Sin inventario" },
 };
 
+// Solo lo que la lista necesita renderizar — `descripcion`, `precio_coste` e
+// `imagen_url` se piden explícitamente al abrir el modal de edición.
+const COLUMNAS_LISTA =
+  "id,nombre,codigo,categoria,tipo,unidad,precio_venta,iva_pct," +
+  "stock_tracking,stock_actual,stock_minimo,color,activo,created_at,updated_at";
+
 export default function ProductosPage() {
-  const supabase = createClient();
   const negocioId = useNegocioId();
   const toast = useToast();
+  const supabase = useMemo(() => createClient(), []);
 
-  const [productos, setProductos] = useState<Producto[]>([]);
-  const [cargando, setCargando] = useState(true);
+  const {
+    data: productosData,
+    loading: cargando,
+    refresh,
+    setData,
+  } = useSupabaseQuery<Producto[]>(
+    (sb) => sb.from("productos").select(COLUMNAS_LISTA).order("nombre"),
+    { context: "productos" },
+  );
+  const productos: Producto[] = productosData ?? [];
+
   const [busqueda, setBusqueda] = useState("");
   const [filtroCategoria, setFiltroCategoria] = useState<string>("todas");
   const [editando, setEditando] = useState<Partial<Producto> | null>(null);
-
-  const cargar = async () => {
-    setCargando(true);
-    const { data, error } = await supabase
-      .from("productos")
-      .select("*")
-      .order("nombre");
-    if (error) toast.err(error.message);
-    else setProductos((data ?? []) as Producto[]);
-    setCargando(false);
-  };
-
-  useEffect(() => { cargar(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
 
   const categorias = useMemo(() => {
     const s = new Set<string>();
@@ -71,24 +74,29 @@ export default function ProductosPage() {
       if (!q) return true;
       return (
         p.nombre.toLowerCase().includes(q) ||
-        (p.codigo ?? "").toLowerCase().includes(q) ||
-        (p.descripcion ?? "").toLowerCase().includes(q)
+        (p.codigo ?? "").toLowerCase().includes(q)
       );
     });
   }, [productos, busqueda, filtroCategoria]);
 
   async function eliminar(p: Producto) {
     if (!confirm(`¿Eliminar "${p.nombre}"? Esta acción no se puede deshacer.`)) return;
-    const prev = productos;
-    setProductos((s) => s.filter((x) => x.id !== p.id));
+    // Optimista: quita de la UI; revierte si falla.
+    setData((prev) => prev?.filter((x) => x.id !== p.id) ?? prev);
     const { error } = await supabase.from("productos").delete().eq("id", p.id);
     if (error) {
-      setProductos(prev);
       toast.err(`No se pudo eliminar: ${error.message}`);
+      refresh();
     } else {
       toast.ok(`Eliminado ${p.nombre}`);
     }
   }
+
+  const productoVacio = (): Partial<Producto> => ({
+    nombre: "", precio_venta: 0, precio_coste: 0, iva_pct: 21,
+    tipo: "producto", unidad: "ud", stock_tracking: true,
+    stock_actual: 0, stock_minimo: 0, activo: true,
+  });
 
   return (
     <div className="flex flex-col gap-5">
@@ -101,30 +109,24 @@ export default function ProductosPage() {
       <div className="card-glass flex flex-wrap items-center gap-3 p-4">
         <div className="relative flex-1 min-w-[220px]">
           <Search className="pointer-events-none absolute left-3 top-3 text-text-lo" size={14} />
-          <input
+          <Input
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
-            placeholder="Buscar por nombre, código o descripción…"
-            className="h-10 w-full rounded-lg border border-indigo-400/20 bg-indigo-900/30 pl-9 pr-3 text-sm text-text-hi placeholder:text-text-lo focus:border-cyan/50 focus:outline-none"
+            placeholder="Buscar por nombre o código…"
+            className="pl-9"
           />
         </div>
-        <select
+        <Select
           value={filtroCategoria}
           onChange={(e) => setFiltroCategoria(e.target.value)}
-          className="h-10 rounded-lg border border-indigo-400/20 bg-indigo-900/30 px-3 text-sm text-text-hi"
+          className="w-auto"
         >
           <option value="todas">Todas las categorías</option>
           {categorias.map((c) => <option key={c} value={c}>{c}</option>)}
-        </select>
+        </Select>
         <button
           type="button"
-          onClick={() =>
-            setEditando({
-              nombre: "", precio_venta: 0, precio_coste: 0, iva_pct: 21,
-              tipo: "producto", unidad: "ud", stock_tracking: true,
-              stock_actual: 0, stock_minimo: 0, activo: true,
-            })
-          }
+          onClick={() => setEditando(productoVacio())}
           className="inline-flex h-10 items-center gap-2 rounded-lg bg-gradient-to-r from-emerald-500 to-emerald-600 px-4 text-sm font-bold text-white shadow-glow"
         >
           <Plus size={14} /> Nuevo producto
@@ -136,11 +138,7 @@ export default function ProductosPage() {
           <Loader2 className="animate-spin text-text-lo" size={20} />
         </div>
       ) : visibles.length === 0 ? (
-        <EmptyState onCrear={() => setEditando({
-          nombre: "", precio_venta: 0, precio_coste: 0, iva_pct: 21,
-          tipo: "producto", unidad: "ud", stock_tracking: true,
-          stock_actual: 0, stock_minimo: 0, activo: true,
-        })} />
+        <EmptyState onCrear={() => setEditando(productoVacio())} />
       ) : (
         <div className="card-glass overflow-hidden">
           <div className="grid grid-cols-1 divide-y divide-indigo-400/10">
@@ -188,7 +186,7 @@ export default function ProductosPage() {
                   </div>
                   <div className="flex shrink-0 gap-1">
                     <button
-                      onClick={() => setEditando(p)}
+                      onClick={() => abrirEdicion(p, supabase, setEditando, toast)}
                       aria-label="Editar"
                       className="flex h-8 w-8 items-center justify-center rounded-lg border border-indigo-400/20 bg-indigo-900/30 text-text-mid hover:text-text-hi"
                     >
@@ -209,16 +207,34 @@ export default function ProductosPage() {
         </div>
       )}
 
-      {editando && (
-        <ProductoModal
-          inicial={editando}
-          negocioId={negocioId}
-          onCerrar={() => setEditando(null)}
-          onGuardado={() => { setEditando(null); cargar(); }}
-        />
-      )}
+      <ProductoModal
+        inicial={editando}
+        negocioId={negocioId}
+        onCerrar={() => setEditando(null)}
+        onGuardado={() => { setEditando(null); refresh(); }}
+      />
     </div>
   );
+}
+
+// Pide al detalle de un producto incluyendo `descripcion`, `precio_coste` e
+// `imagen_url` que no están en el SELECT de la lista.
+async function abrirEdicion(
+  p: Producto,
+  supabase: ReturnType<typeof createClient>,
+  setEditando: (p: Partial<Producto> | null) => void,
+  toast: { err: (msg: string) => void },
+) {
+  const { data, error } = await supabase
+    .from("productos")
+    .select("*")
+    .eq("id", p.id)
+    .single();
+  if (error) {
+    toast.err(`No se pudo cargar el producto: ${error.message}`);
+    return;
+  }
+  setEditando(data as Producto);
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -228,16 +244,22 @@ function ProductoModal({
   onCerrar,
   onGuardado,
 }: {
-  inicial: Partial<Producto>;
+  inicial: Partial<Producto> | null;
   negocioId: string | null;
   onCerrar: () => void;
   onGuardado: () => void;
 }) {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const toast = useToast();
-  const [p, setP] = useState<Partial<Producto>>(inicial);
+  const [p, setP] = useState<Partial<Producto>>(inicial ?? {});
   const [guardando, setGuardando] = useState(false);
-  const esNuevo = !inicial.id;
+
+  // Sincronizar cuando cambia el "inicial"
+  useStateSync(inicial, setP);
+
+  if (!inicial) return null;
+  const inicialNonNull = inicial;
+  const esNuevo = !inicialNonNull.id;
 
   async function guardar(e: React.FormEvent) {
     e.preventDefault();
@@ -264,7 +286,7 @@ function ProductoModal({
 
     const q = esNuevo
       ? supabase.from("productos").insert(payload)
-      : supabase.from("productos").update(payload).eq("id", inicial.id!);
+      : supabase.from("productos").update(payload).eq("id", inicialNonNull.id!);
 
     const { error } = await q;
     setGuardando(false);
@@ -277,84 +299,67 @@ function ProductoModal({
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
-      onClick={onCerrar}
+    <Modal
+      open={!!inicial}
+      onClose={onCerrar}
+      title={esNuevo ? "Nuevo producto" : `Editar · ${inicial.nombre ?? ""}`}
+      size="lg"
     >
-      <form
-        onSubmit={guardar}
-        onClick={(e) => e.stopPropagation()}
-        className="card-glass max-h-[90vh] w-full max-w-2xl overflow-y-auto p-5"
-      >
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="font-display text-lg font-bold text-text-hi">
-            {esNuevo ? "Nuevo producto" : `Editar · ${inicial.nombre}`}
-          </h2>
-          <button type="button" onClick={onCerrar} aria-label="Cerrar"
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-text-mid hover:text-text-hi">
-            <X size={16} />
-          </button>
-        </div>
-
+      <form onSubmit={guardar}>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Nombre" full>
-            <input value={p.nombre ?? ""} onChange={(e) => setP({ ...p, nombre: e.target.value })}
-              required className={inputCls} autoFocus />
+            <Input value={p.nombre ?? ""} onChange={(e) => setP({ ...p, nombre: e.target.value })}
+              required autoFocus />
           </Field>
           <Field label="Código / SKU">
-            <input value={p.codigo ?? ""} onChange={(e) => setP({ ...p, codigo: e.target.value })} className={inputCls} />
+            <Input value={p.codigo ?? ""} onChange={(e) => setP({ ...p, codigo: e.target.value })} />
           </Field>
           <Field label="Categoría">
-            <input value={p.categoria ?? ""} onChange={(e) => setP({ ...p, categoria: e.target.value })}
-              placeholder="Bebidas, Postres, Camisetas…" className={inputCls} />
+            <Input value={p.categoria ?? ""} onChange={(e) => setP({ ...p, categoria: e.target.value })}
+              placeholder="Bebidas, Postres, Camisetas…" />
           </Field>
           <Field label="Tipo">
-            <select value={p.tipo ?? "producto"} onChange={(e) => setP({ ...p, tipo: e.target.value as TipoProducto })}
-              className={inputCls}>
+            <Select value={p.tipo ?? "producto"} onChange={(e) => setP({ ...p, tipo: e.target.value as TipoProducto })}>
               <option value="producto">Producto</option>
               <option value="servicio">Servicio</option>
-            </select>
+            </Select>
           </Field>
           <Field label="Unidad">
-            <select value={p.unidad ?? "ud"} onChange={(e) => setP({ ...p, unidad: e.target.value })} className={inputCls}>
+            <Select value={p.unidad ?? "ud"} onChange={(e) => setP({ ...p, unidad: e.target.value })}>
               {UNIDADES.map((u) => <option key={u} value={u}>{u}</option>)}
-            </select>
+            </Select>
           </Field>
           <Field label="Precio venta (€)">
-            <input type="number" step="0.01" value={p.precio_venta ?? 0}
-              onChange={(e) => setP({ ...p, precio_venta: parseFloat(e.target.value) || 0 })} className={inputCls} />
+            <Input type="number" step="0.01" value={p.precio_venta ?? 0}
+              onChange={(e) => setP({ ...p, precio_venta: parseFloat(e.target.value) || 0 })} />
           </Field>
           <Field label="Precio coste (€)">
-            <input type="number" step="0.01" value={p.precio_coste ?? 0}
-              onChange={(e) => setP({ ...p, precio_coste: parseFloat(e.target.value) || 0 })} className={inputCls} />
+            <Input type="number" step="0.01" value={p.precio_coste ?? 0}
+              onChange={(e) => setP({ ...p, precio_coste: parseFloat(e.target.value) || 0 })} />
           </Field>
           <Field label="IVA %">
-            <input type="number" step="0.01" value={p.iva_pct ?? 21}
-              onChange={(e) => setP({ ...p, iva_pct: parseFloat(e.target.value) || 0 })} className={inputCls} />
+            <Input type="number" step="0.01" value={p.iva_pct ?? 21}
+              onChange={(e) => setP({ ...p, iva_pct: parseFloat(e.target.value) || 0 })} />
           </Field>
           <Field label="Color (TPV)">
-            <input type="color" value={p.color ?? "#4f46e5"}
-              onChange={(e) => setP({ ...p, color: e.target.value })}
-              className="h-10 w-full rounded-lg border border-indigo-400/20 bg-indigo-900/30" />
+            <Input type="color" value={p.color ?? "#4f46e5"}
+              onChange={(e) => setP({ ...p, color: e.target.value })} />
           </Field>
 
           {p.tipo !== "servicio" && (
             <>
-              <Field label="Stock inicial" full>
-                <input type="number" step="0.001" value={p.stock_actual ?? 0}
+              <Field
+                label="Stock inicial"
+                full
+                hint={!esNuevo ? "El stock actual se ajusta desde Stock con un movimiento." : undefined}
+              >
+                <Input type="number" step="0.001" value={p.stock_actual ?? 0}
                   onChange={(e) => setP({ ...p, stock_actual: parseFloat(e.target.value) || 0 })}
-                  className={inputCls} disabled={!esNuevo}
-                />
-                {!esNuevo && (
-                  <span className="mt-1 text-[0.7rem] text-text-lo">
-                    El stock actual se ajusta desde el módulo Stock con un movimiento.
-                  </span>
-                )}
+                  disabled={!esNuevo} />
               </Field>
               <Field label="Stock mínimo (alerta)">
-                <input type="number" step="0.001" value={p.stock_minimo ?? 0}
-                  onChange={(e) => setP({ ...p, stock_minimo: parseFloat(e.target.value) || 0 })}
-                  className={inputCls} />
+                <Input type="number" step="0.001" value={p.stock_minimo ?? 0}
+                  onChange={(e) => setP({ ...p, stock_minimo: parseFloat(e.target.value) || 0 })} />
               </Field>
               <label className="col-span-2 flex items-center gap-2 text-xs text-text-mid">
                 <input type="checkbox" checked={p.stock_tracking ?? true}
@@ -366,9 +371,8 @@ function ProductoModal({
           )}
 
           <Field label="Descripción" full>
-            <textarea value={p.descripcion ?? ""} rows={2}
-              onChange={(e) => setP({ ...p, descripcion: e.target.value })}
-              className={`${inputCls} h-auto resize-none py-2`} />
+            <Textarea value={p.descripcion ?? ""} rows={2}
+              onChange={(e) => setP({ ...p, descripcion: e.target.value })} />
           </Field>
 
           <label className="col-span-2 flex items-center gap-2 text-xs text-text-mid">
@@ -391,7 +395,7 @@ function ProductoModal({
           </button>
         </div>
       </form>
-    </div>
+    </Modal>
   );
 }
 
@@ -411,14 +415,13 @@ function EmptyState({ onCrear }: { onCrear: () => void }) {
   );
 }
 
-const inputCls =
-  "h-10 w-full rounded-lg border border-indigo-400/20 bg-indigo-900/30 px-3 text-sm text-text-hi placeholder:text-text-lo focus:border-cyan/50 focus:outline-none";
-
-function Field({ label, children, full }: { label: string; children: React.ReactNode; full?: boolean }) {
-  return (
-    <label className={`flex flex-col gap-1 ${full ? "col-span-2" : ""}`}>
-      <span className="text-[0.65rem] font-semibold uppercase tracking-wider text-text-lo">{label}</span>
-      {children}
-    </label>
-  );
+// Helper: sincroniza el estado interno cuando cambia el `inicial` que llega
+// por props (al abrir el modal con un producto distinto).
+function useStateSync<T>(
+  value: T | null,
+  setter: React.Dispatch<React.SetStateAction<T>>,
+) {
+  useEffect(() => {
+    if (value) setter(value);
+  }, [value, setter]);
 }

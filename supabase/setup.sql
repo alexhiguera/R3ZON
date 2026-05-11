@@ -13,6 +13,13 @@
 begin;
 
 -- 1. WIPE — orden inverso de dependencia ------------------------------------
+drop table if exists public.tpv_venta_items     cascade;
+drop table if exists public.tpv_ventas          cascade;
+drop table if exists public.stock_movimientos   cascade;
+drop table if exists public.productos           cascade;
+drop table if exists public.metodos_pago        cascade;
+drop table if exists public.documentos          cascade;
+drop table if exists public.fichajes            cascade;
 drop table if exists public.agenda_eventos      cascade;
 drop table if exists public.google_connections  cascade;
 drop table if exists public.comunicaciones      cascade;
@@ -37,12 +44,17 @@ drop table if exists public.pagos_stripe        cascade;
 commit;
 
 -- 2. SCHEMA + EXTENSIONES ----------------------------------------------------
+-- Orden importante: cada módulo asume las tablas anteriores.
 \i schema.sql
 \i auth_extension.sql
+\i team_ext.sql
 \i crm_kanban_ext.sql
 \i agenda_ext.sql
-\i team_ext.sql
 \i billing_ext.sql
+\i documentos_ext.sql
+\i metodos_pago_ext.sql
+\i inventario_ext.sql
+\i fichajes_ext.sql
 \i fix_tenant_defaults.sql
 
 -- 3. SEED --------------------------------------------------------------------
@@ -53,10 +65,18 @@ commit;
 --       en este orden:
 --   1) schema.sql
 --   2) auth_extension.sql
---   3) crm_kanban_ext.sql
---   4) agenda_ext.sql
---   5) team_ext.sql
+--   3) team_ext.sql
+--   4) crm_kanban_ext.sql
+--   5) agenda_ext.sql
 --   6) billing_ext.sql
---   7) fix_tenant_defaults.sql
---   8) seed_clientes.sql
+--   7) documentos_ext.sql
+--   8) metodos_pago_ext.sql
+--   9) inventario_ext.sql
+--  10) fichajes_ext.sql
+--  11) fix_tenant_defaults.sql
+--  12) seed_clientes.sql
+--
+-- Opcional (gestión avanzada de retención de logs, ejecutar manualmente
+-- cuando proceda y solo si tu plan Supabase soporta pg_cron):
+--   - retention_ext.sql
 -- =============================================================================

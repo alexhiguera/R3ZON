@@ -1,6 +1,10 @@
 // Lógica pura de documentos comerciales (factura, ticket, presupuesto, …).
 // Sin red ni Supabase: todo determinístico para tests.
 
+import { eur, round2 } from "./formato";
+
+export { eur };
+
 export type TipoDocumento =
   | "factura"
   | "ticket"
@@ -108,8 +112,6 @@ export type TotalesDocumento = {
   desglose_iva: Map<number, { base: number; cuota: number }>;
 };
 
-const round2 = (n: number) => Math.round(n * 100) / 100;
-
 /** Calcula totales de un documento. Determinístico, sin efectos secundarios. */
 export function calcularTotales(
   lineas: LineaDocumento[],
@@ -172,15 +174,6 @@ export function lineaVacia(): LineaDocumento {
     iva_pct:       21,
   };
 }
-
-/** Formatea importes en EUR con 2 decimales. */
-export const eur = (n: number): string =>
-  new Intl.NumberFormat("es-ES", {
-    style: "currency",
-    currency: "EUR",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(Number.isFinite(n) ? n : 0);
 
 /** Construye la referencia visible (mismo formato que la columna generada). */
 export function referenciaDocumento(

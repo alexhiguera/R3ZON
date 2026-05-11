@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import {
   FileText,
@@ -12,9 +12,8 @@ import {
   Loader2,
   ExternalLink,
 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
+import { useSupabaseQuery } from "@/lib/useSupabaseQuery";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { useToast } from "@/components/ui/Toast";
 import {
   ETIQUETA_TIPO,
   TIPOS_DOCUMENTO,
@@ -39,33 +38,24 @@ const ESTADO_COLOR: Record<string, string> = {
   anulado:  "border-danger/30 bg-danger/10 text-danger",
 };
 
+// `lineas` (JSONB potencialmente grande), `emisor_snapshot` y otros campos
+// pesados no se usan en el listado.
+const COLUMNAS_LISTA =
+  "id,tipo,serie,numero,anio,referencia,fecha_emision,cliente_snapshot,total,estado,pdf_url,created_at,updated_at";
+
 export default function DocumentosPage() {
-  const supabase = createClient();
-  const toast = useToast();
-
-  const [docs, setDocs] = useState<Documento[]>([]);
-  const [cargando, setCargando] = useState(true);
-  const [filtro, setFiltro] = useState<TipoDocumento | "todos">("todos");
-
-  useEffect(() => {
-    (async () => {
-      const { data, error } = await supabase
+  const { data, loading: cargando } = useSupabaseQuery<Documento[]>(
+    (sb) =>
+      sb
         .from("documentos")
-        .select(
-          "id,tipo,serie,numero,anio,referencia,fecha_emision,cliente_snapshot,total,estado,pdf_url,created_at,updated_at",
-        )
+        .select(COLUMNAS_LISTA)
         .order("fecha_emision", { ascending: false })
-        .order("numero", { ascending: false });
+        .order("numero", { ascending: false }),
+    { context: "documentos" },
+  );
+  const docs: Documento[] = data ?? [];
 
-      if (error) {
-        toast.err(`Error al cargar documentos: ${error.message}`);
-        setCargando(false);
-        return;
-      }
-      setDocs((data ?? []) as Documento[]);
-      setCargando(false);
-    })();
-  }, [supabase, toast]);
+  const [filtro, setFiltro] = useState<TipoDocumento | "todos">("todos");
 
   const visibles = useMemo(
     () => (filtro === "todos" ? docs : docs.filter((d) => d.tipo === filtro)),
