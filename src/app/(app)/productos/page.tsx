@@ -21,19 +21,12 @@ import { Modal } from "@/components/ui/Modal";
 import {
   estadoStock,
   eur,
-  type EstadoStock,
   type Producto,
   type TipoProducto,
 } from "@/lib/inventario";
+import { ESTADO_STOCK_BADGE } from "@/lib/ui-constants";
 
 const UNIDADES = ["ud", "kg", "l", "g", "ración", "hora"];
-
-const ESTADO_BADGE: Record<EstadoStock, { cls: string; label: string }> = {
-  ok:        { cls: "border-ok/30 bg-ok/10 text-ok",                 label: "En stock" },
-  bajo:      { cls: "border-warn/30 bg-warn/10 text-warn",           label: "Stock bajo" },
-  agotado:   { cls: "border-danger/30 bg-danger/10 text-danger",     label: "Agotado" },
-  sin_stock: { cls: "border-text-lo/30 bg-text-lo/10 text-text-mid", label: "Sin inventario" },
-};
 
 // Solo lo que la lista necesita renderizar — `descripcion`, `precio_coste` e
 // `imagen_url` se piden explícitamente al abrir el modal de edición.
@@ -144,7 +137,7 @@ export default function ProductosPage() {
           <div className="grid grid-cols-1 divide-y divide-indigo-400/10">
             {visibles.map((p) => {
               const est = estadoStock(p);
-              const badge = ESTADO_BADGE[est];
+              const badge = ESTADO_STOCK_BADGE[est];
               return (
                 <div
                   key={p.id}

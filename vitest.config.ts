@@ -15,7 +15,9 @@ export default defineConfig({
   },
   test: {
     environment: "node",
-    include: ["tests/**/*.test.ts"],
+    include: ["tests/**/*.test.{ts,tsx}"],
     globals: false,
+    // Tests de componentes (Testing Library) se ejecutan en jsdom mediante el
+    // pragma `// @vitest-environment jsdom` en la cabecera del archivo.
   },
 });

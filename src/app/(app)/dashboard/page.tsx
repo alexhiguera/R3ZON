@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { Activity, AlertTriangle, Building2, Calendar, RefreshCcw, Wallet } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { KpiCard } from "@/components/dashboard/KpiCard";
@@ -7,9 +8,21 @@ import { UpcomingAppointments } from "@/components/dashboard/UpcomingAppointment
 import { PendingTasks } from "@/components/dashboard/PendingTasks";
 import { RecentClients } from "@/components/dashboard/RecentClients";
 import { RecentActivity } from "@/components/dashboard/RecentActivity";
-import { FinanceSummary } from "@/components/dashboard/FinanceSummary";
 import { useDashboardData } from "@/lib/useDashboardData";
 import { eur } from "@/lib/finanzas";
+
+// Recharts (~95 KB gz) se difiere para que no entre en el initial JS de la home.
+const FinanceSummary = dynamic(
+  () => import("@/components/dashboard/FinanceSummary").then((m) => m.FinanceSummary),
+  {
+    ssr: false,
+    loading: () => (
+      <section className="card-glass flex h-72 items-center justify-center text-text-lo">
+        Cargando estado financiero…
+      </section>
+    ),
+  },
+);
 
 function saludo() {
   const h = new Date().getHours();

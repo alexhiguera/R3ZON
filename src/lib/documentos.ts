@@ -5,6 +5,8 @@ import { eur, round2 } from "./formato";
 
 export { eur };
 
+// TODO(post-iter36): migrar a Database["public"]["Tables"]["documentos"]["Row"]
+// (generar `src/lib/database.types.ts` con `supabase login && npx supabase gen types ...`)
 export type TipoDocumento =
   | "factura"
   | "ticket"

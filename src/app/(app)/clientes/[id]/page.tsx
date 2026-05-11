@@ -15,6 +15,7 @@ import { TabHistorial } from "@/components/crm/TabHistorial";
 import { TabComunicaciones } from "@/components/crm/TabComunicaciones";
 import { TabAutomatizacion } from "@/components/crm/TabAutomatizacion";
 import type { Cliente, Contacto } from "@/components/clientes/types";
+import { ESTADO_CLIENTE_BADGE } from "@/lib/ui-constants";
 
 type Tab = "info" | "contactos" | "citas" | "comunicaciones" | "automatizacion";
 
@@ -25,12 +26,6 @@ const TABS: { id: Tab; label: string; Icon: typeof Info; tooltip: string }[] = [
   { id: "comunicaciones", label: "Mensajes",    Icon: MessageSquare, tooltip: "Emails, WhatsApps y notas." },
   { id: "automatizacion", label: "Automático",  Icon: Zap,           tooltip: "Webhooks y automatizaciones n8n." },
 ];
-
-const ESTADO_BADGE: Record<Cliente["estado"], string> = {
-  activa:    "border-emerald-400/30 bg-emerald-500/10 text-emerald-200",
-  prospecto: "border-cyan/30 bg-cyan/10 text-cyan",
-  inactiva:  "border-rose-400/30 bg-rose-500/10 text-rose-200",
-};
 
 export default function FichaClientePage() {
   const { id } = useParams<{ id: string }>();
@@ -96,7 +91,7 @@ export default function FichaClientePage() {
           <div className="flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="font-display text-2xl font-bold text-text-hi">{cliente.nombre}</h1>
-              <span className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${ESTADO_BADGE[cliente.estado]}`}>
+              <span className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${ESTADO_CLIENTE_BADGE[cliente.estado]}`}>
                 {cliente.estado}
               </span>
             </div>

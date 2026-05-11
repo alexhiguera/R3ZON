@@ -39,9 +39,7 @@ describe("estadoStock", () => {
   });
 
   it("trata stock_actual o stock_minimo null como 0 (defensivo)", () => {
-    // @ts-expect-error — simula fila de BD con campo null
     expect(estadoStock({ stock_tracking: true, stock_actual: null, stock_minimo: 5 })).toBe("agotado");
-    // @ts-expect-error
     expect(estadoStock({ stock_tracking: true, stock_actual: 10,   stock_minimo: null })).toBe("ok");
   });
 });

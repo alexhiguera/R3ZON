@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { AppShell } from "@/components/layout/AppShell";
+import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function AppLayout({
@@ -21,7 +22,11 @@ export default async function AppLayout({
   // Importante: si ya estamos en /onboarding hay que SALIR antes de hacer la
   // consulta para evitar el loop 307 cuando el header viniera vacío.
   if (pathname.startsWith("/onboarding")) {
-    return <AppShell>{children}</AppShell>;
+    return (
+      <AppShell>
+        <ErrorBoundary>{children}</ErrorBoundary>
+      </AppShell>
+    );
   }
 
   const { data: perfil } = await supabase
@@ -34,5 +39,9 @@ export default async function AppLayout({
     redirect("/onboarding");
   }
 
-  return <AppShell>{children}</AppShell>;
+  return (
+    <AppShell>
+      <ErrorBoundary>{children}</ErrorBoundary>
+    </AppShell>
+  );
 }

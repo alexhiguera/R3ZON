@@ -221,6 +221,31 @@ npx cap sync
 
 > Resumen de todo lo construido en orden de iteraciones (más reciente → más antiguo).
 
+### Iteración 36 — *2026-05-11* — Auditoría integral: triggers, error boundary, paginación, lazy load y tests UI
+
+**Fase 1 — críticos**
+- `supabase/fix_tenant_defaults.sql`: el array de tablas con trigger `fill_negocio_id` se amplió con las 6 tablas nuevas (`productos`, `stock_movimientos`, `tpv_ventas`, `tpv_venta_items`, `documentos`, `metodos_pago`). Hasta ahora la app funcionaba porque enviaba `negocio_id` explícitamente, pero ahora hay red de seguridad RLS también para inserts que lo omitan. Pendiente: aplicar el script en la BD productiva (Supabase SQL Editor).
+- `src/lib/database.types.ts` queda como TODO: `npx supabase gen types` requiere `supabase login` interactivo del usuario; añadidos comentarios `TODO(post-iter36)` en `finanzas.ts`, `inventario.ts` y `documentos.ts` con la receta exacta para cuando se ejecute.
+
+**Fase 2 — importantes**
+- `src/components/ui/ErrorBoundary.tsx` nuevo: componente cliente con UI consistente (card-glass + botón "Reintentar") y log en dev. Montado en `(app)/layout.tsx` envolviendo `{children}` (también dentro de la rama de onboarding) — un error en cualquier ruta interna ya no rompe toda la app.
+- Paginación cursor en `clientes/page.tsx` y `stock/page.tsx`: estado `oldestSeen`, query `.lt("created_at" | "ts", cursor).limit(50)`, botón "Cargar 50 más" debajo del listado. En stock se reemplazó el `useSupabaseQuery` de movimientos por estado local (el hook genérico no soporta cursor).
+
+**Fase 3 — recomendables**
+- `src/lib/ui-constants.ts` nuevo: `ESTADO_CLIENTE_BADGE`, `ESTADO_STOCK_BADGE`, `COLOR_MOV_STOCK`. Eliminadas las 4 definiciones duplicadas (`clientes/page.tsx`, `clientes/[id]/page.tsx`, `productos/page.tsx`, `stock/page.tsx`).
+- `dashboard/page.tsx`: `FinanceSummary` se convierte a `dynamic(..., { ssr: false, loading: <skeleton> })` para que recharts (~95 KB gz) no entre en el initial JS de la home. `/finanzas` sigue cargándolo síncrono porque ahí sí es bundle de entrada.
+- `STRUCTURE.md` reescrito: árbol completo (16 SQL, 14 módulos UI), tabla de módulos de negocio con tabla principal y notas, sección de integraciones externas, setup actualizado a Next.js 16.
+- Tests UI con Testing Library: `tests/components/Field.test.tsx` (4 casos: label, asociación, hint, error con clase danger) y `tests/components/Modal.test.tsx` (6 casos: render condicional, ESC, click backdrop/contenido, dismissable=false). `vitest.config.ts` extiende `include` a `*.test.tsx` y los archivos usan pragma `// @vitest-environment jsdom` (vitest 4 deprecó `environmentMatchGlobs`).
+
+**Verificación**
+- `npm run test:run` → **119/119 verdes** (109 previos + 10 nuevos).
+- `npx tsc --noEmit` → cero errores en código del proyecto (eliminados `@ts-expect-error` obsoletos en `tests/inventario.test.ts:42-44`).
+- `npm run build` → ✓ Compiled in 10.2s.
+
+**Lo que NO se tocó por decisión**: tipos manuales `Producto`/`Documento`/`StockMovimiento`/`VentaTPV` (alto riesgo de cascada hasta tener `database.types.ts` generado), `lib/agenda.ts`/`lib/google.ts` (estables), `useInfiniteQuery` genérico (solo 2 callsites), recharts en `/finanzas` (legítimamente parte del bundle de entrada).
+
+---
+
 ### Iteración 35 — *2026-05-11* — Auditoría de lógica de negocio: integridad atómica y validaciones reforzadas
 
 Tras auditar exhaustivamente la lógica de negocio (TS puro + RPCs SQL), corrijo los **bugs reales** y refuerzo la integridad. Los hallazgos triviales/falsos del agente quedan descartados (documentados en `/Users/alex/.claude/plans/encapsulated-spinning-alpaca.md`).

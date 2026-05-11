@@ -36,7 +36,13 @@ begin
     'agenda_eventos',
     'config_keys',
     'miembros_negocio',
-    'pagos_stripe'
+    'pagos_stripe',
+    'productos',
+    'stock_movimientos',
+    'tpv_ventas',
+    'tpv_venta_items',
+    'documentos',
+    'metodos_pago'
   ] loop
     -- Sólo aplicamos si la tabla existe (algunas son extensiones opcionales).
     if exists (

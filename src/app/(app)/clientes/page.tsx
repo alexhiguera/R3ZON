@@ -4,11 +4,12 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import {
   Search, Plus, Building2, Phone, Mail, MessageCircle,
-  ChevronRight, SlidersHorizontal, Globe,
+  ChevronRight, SlidersHorizontal, Globe, Loader2,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Tooltip } from "@/components/ui/Tooltip";
+import { ESTADO_CLIENTE_BADGE } from "@/lib/ui-constants";
 
 type ClienteRow = {
   id: string;
@@ -30,18 +31,16 @@ const ETIQUETA_COLORS: Record<string, string> = {
   empresa:  "border-fuchsia/40 bg-fuchsia/10 text-fuchsia",
 };
 
-const ESTADO_BADGE: Record<ClienteRow["estado"], string> = {
-  activa:    "border-emerald-400/30 bg-emerald-500/10 text-emerald-200",
-  prospecto: "border-cyan/30 bg-cyan/10 text-cyan",
-  inactiva:  "border-rose-400/30 bg-rose-500/10 text-rose-200",
-};
+const PAGE_SIZE = 50;
 
 export default function ClientesPage() {
   const [clientes, setClientes] = useState<ClienteRow[]>([]);
   const [busqueda, setBusqueda] = useState("");
   const [cargando, setCargando] = useState(true);
+  const [hayMas, setHayMas] = useState(false);
+  const [cargandoMas, setCargandoMas] = useState(false);
 
-  const cargar = useCallback(async (q = "") => {
+  const cargar = useCallback(async (q = "", cursor: string | null = null, append = false) => {
     const supabase = createClient();
     let query = supabase
       .from("clientes")
@@ -53,9 +52,13 @@ export default function ClientesPage() {
         `nombre.ilike.%${q}%,cif.ilike.%${q}%,email.ilike.%${q}%,sector.ilike.%${q}%`
       );
     }
-    const { data } = await query.limit(50);
-    setClientes((data ?? []) as ClienteRow[]);
-    setCargando(false);
+    if (cursor) query = query.lt("created_at", cursor);
+    const { data } = await query.limit(PAGE_SIZE);
+    const filas = (data ?? []) as ClienteRow[];
+    setClientes((prev) => (append ? [...prev, ...filas] : filas));
+    setHayMas(filas.length === PAGE_SIZE);
+    if (append) setCargandoMas(false);
+    else setCargando(false);
   }, []);
 
   useEffect(() => { cargar(); }, [cargar]);
@@ -64,6 +67,13 @@ export default function ClientesPage() {
     const t = setTimeout(() => cargar(busqueda), 300);
     return () => clearTimeout(t);
   }, [busqueda, cargar]);
+
+  async function cargarMas() {
+    const ultimo = clientes[clientes.length - 1];
+    if (!ultimo) return;
+    setCargandoMas(true);
+    await cargar(busqueda, ultimo.created_at, true);
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -162,7 +172,7 @@ export default function ClientesPage() {
 
             {/* Estado */}
             <div className="relative z-10 flex items-center gap-2 pointer-events-none">
-              <span className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${ESTADO_BADGE[c.estado]}`}>
+              <span className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${ESTADO_CLIENTE_BADGE[c.estado]}`}>
                 {c.estado}
               </span>
               {(c.etiquetas ?? []).slice(0, 2).map((tag) => (
@@ -231,6 +241,20 @@ export default function ClientesPage() {
           </article>
         ))}
       </div>
+
+      {hayMas && (
+        <div className="flex justify-center">
+          <button
+            type="button"
+            onClick={cargarMas}
+            disabled={cargandoMas}
+            className="inline-flex h-10 items-center gap-2 rounded-xl border border-indigo-400/25 bg-indigo-900/30 px-4 text-sm font-semibold text-indigo-200 hover:border-cyan/40 hover:text-cyan disabled:opacity-50"
+          >
+            {cargandoMas ? <Loader2 size={14} className="animate-spin" /> : null}
+            Cargar {PAGE_SIZE} más
+          </button>
+        </div>
+      )}
     </div>
   );
 }

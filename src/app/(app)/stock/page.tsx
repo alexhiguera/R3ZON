@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Boxes,
   Plus,
@@ -30,6 +30,7 @@ import {
   type StockMovimiento,
   type TipoMovimientoStock,
 } from "@/lib/inventario";
+import { COLOR_MOV_STOCK, ESTADO_STOCK_BADGE } from "@/lib/ui-constants";
 
 const ICONO_MOV: Record<TipoMovimientoStock, typeof ArrowDownLeft> = {
   entrada:    ArrowDownLeft,
@@ -37,21 +38,6 @@ const ICONO_MOV: Record<TipoMovimientoStock, typeof ArrowDownLeft> = {
   ajuste:     Sliders,
   venta_tpv:  ShoppingCart,
   devolucion: RotateCcw,
-};
-
-const COLOR_MOV: Record<TipoMovimientoStock, string> = {
-  entrada:    "text-ok",
-  salida:     "text-fuchsia",
-  ajuste:     "text-warn",
-  venta_tpv:  "text-cyan",
-  devolucion: "text-text-mid",
-};
-
-const COLOR_ESTADO: Record<EstadoStock, string> = {
-  ok:        "border-ok/30 bg-ok/10 text-ok",
-  bajo:      "border-warn/30 bg-warn/10 text-warn",
-  agotado:   "border-danger/30 bg-danger/10 text-danger",
-  sin_stock: "border-text-lo/30 bg-text-lo/10 text-text-mid",
 };
 
 // `descripcion`, `precio_*`, `imagen_url` no se usan aquí.
@@ -63,8 +49,12 @@ type MovimientoConNombre = StockMovimiento & {
   productos: { nombre: string } | null;
 };
 
+const PAGE_MOV = 50;
+
 export default function StockPage() {
   const negocioId = useNegocioId();
+  const supabase = useMemo(() => createClient(), []);
+  const toast = useToast();
 
   const {
     data: productosData,
@@ -76,25 +66,46 @@ export default function StockPage() {
   );
   const productos: Producto[] = productosData ?? [];
 
-  const {
-    data: movimientosData,
-    refresh: refreshMov,
-  } = useSupabaseQuery<MovimientoConNombre[]>(
-    (sb) =>
-      sb
-        .from("stock_movimientos")
-        .select("id,producto_id,tipo,cantidad,motivo,ts,user_id,negocio_id,referencia,productos(nombre)")
-        .order("ts", { ascending: false })
-        .limit(50),
-    { context: "movimientos" },
-  );
+  const [movimientosRaw, setMovimientosRaw] = useState<MovimientoConNombre[]>([]);
+  const [hayMasMov, setHayMasMov] = useState(false);
+  const [cargandoMasMov, setCargandoMasMov] = useState(false);
+
+  const cargarMov = useCallback(async (cursor: string | null = null, append = false) => {
+    let q = supabase
+      .from("stock_movimientos")
+      .select("id,producto_id,tipo,cantidad,motivo,ts,user_id,negocio_id,referencia,productos(nombre)")
+      .order("ts", { ascending: false });
+    if (cursor) q = q.lt("ts", cursor);
+    const { data, error } = await q.limit(PAGE_MOV);
+    if (error) {
+      toast.err(`Error al cargar movimientos: ${error.message}`);
+      if (append) setCargandoMasMov(false);
+      return;
+    }
+    const filas = (data ?? []) as unknown as MovimientoConNombre[];
+    setMovimientosRaw((prev) => (append ? [...prev, ...filas] : filas));
+    setHayMasMov(filas.length === PAGE_MOV);
+    if (append) setCargandoMasMov(false);
+  }, [supabase, toast]);
+
+  useEffect(() => { cargarMov(); }, [cargarMov]);
+
+  const refreshMov = useCallback(() => { cargarMov(); }, [cargarMov]);
+
+  async function cargarMasMov() {
+    const ultimo = movimientosRaw[movimientosRaw.length - 1];
+    if (!ultimo) return;
+    setCargandoMasMov(true);
+    await cargarMov(ultimo.ts, true);
+  }
+
   const movimientos = useMemo(
     () =>
-      (movimientosData ?? []).map((m) => ({
+      movimientosRaw.map((m) => ({
         ...m,
         nombre: m.productos?.nombre ?? "—",
       })),
-    [movimientosData],
+    [movimientosRaw],
   );
 
   const cargando = cargandoProd;
@@ -182,7 +193,7 @@ export default function StockPage() {
                           {p.codigo && (
                             <span className="font-mono text-[0.7rem] text-text-lo">{p.codigo}</span>
                           )}
-                          <span className={`rounded-md border px-1.5 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wider ${COLOR_ESTADO[est]}`}>
+                          <span className={`rounded-md border px-1.5 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wider ${ESTADO_STOCK_BADGE[est].cls}`}>
                             {est === "ok" ? "OK" : est === "bajo" ? "Bajo" : est === "agotado" ? "Agotado" : "Sin stock"}
                           </span>
                         </div>
@@ -222,7 +233,7 @@ export default function StockPage() {
                   const positivo = m.cantidad > 0;
                   return (
                     <li key={m.id} className="flex items-center gap-2 rounded-lg border border-indigo-400/10 bg-indigo-900/20 p-2 text-xs">
-                      <Icono size={12} className={`shrink-0 ${COLOR_MOV[m.tipo]}`} />
+                      <Icono size={12} className={`shrink-0 ${COLOR_MOV_STOCK[m.tipo]}`} />
                       <div className="min-w-0 flex-1">
                         <div className="truncate font-medium text-text-hi">{m.nombre}</div>
                         <div className="text-[0.65rem] text-text-lo">
@@ -236,6 +247,17 @@ export default function StockPage() {
                   );
                 })}
               </ul>
+            )}
+            {hayMasMov && (
+              <button
+                type="button"
+                onClick={cargarMasMov}
+                disabled={cargandoMasMov}
+                className="mt-3 inline-flex h-9 w-full items-center justify-center gap-2 rounded-lg border border-indigo-400/20 bg-indigo-900/30 text-xs font-semibold text-indigo-200 hover:border-cyan/40 hover:text-cyan disabled:opacity-50"
+              >
+                {cargandoMasMov ? <Loader2 size={12} className="animate-spin" /> : null}
+                Cargar {PAGE_MOV} más
+              </button>
             )}
           </div>
         </aside>

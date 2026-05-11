@@ -7,6 +7,8 @@ export { eur };
 
 export type TipoProducto = "producto" | "servicio";
 
+// TODO(post-iter36): migrar a Database["public"]["Tables"]["productos"|"stock_movimientos"|"tpv_ventas"]["Row"]
+// (generar `src/lib/database.types.ts` con `supabase login && npx supabase gen types ...`)
 export type Producto = {
   id: string;
   negocio_id: string;

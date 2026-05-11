@@ -2,6 +2,9 @@ import { eur, round2 } from "./formato";
 
 export { eur };
 
+// TODO(post-iter36): generar `src/lib/database.types.ts` con
+//   `supabase login && npx supabase gen types typescript --project-id htsryzrwdgllqnzbreyq > src/lib/database.types.ts`
+// y sustituir por: type MovimientoFila = Pick<Database["public"]["Tables"]["finanzas"]["Row"], "tipo"|"fecha"|"base_imponible"|"iva_importe"|"irpf_importe"|"total">;
 export type MovimientoFila = {
   tipo: "ingreso" | "gasto";
   fecha: string;
