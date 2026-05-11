@@ -10,6 +10,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { PlantillaDocumento } from "@/components/documentos/PlantillaDocumento";
 import {
   ETIQUETA_TIPO,
+  FORMATO_TIPO,
   eur,
   type Documento,
 } from "@/lib/documentos";
@@ -33,9 +34,12 @@ export default function DocumentoDetallePage() {
       toast.err("El navegador bloqueó la ventana de impresión.");
       return;
     }
+    const esTicket = FORMATO_TIPO[doc.tipo] === "ticket";
+    const css = esTicket
+      ? "body{margin:0;background:#fff;padding:0;font-family:ui-monospace,Menlo,monospace}@page{size:80mm auto;margin:0}"
+      : "body{margin:0;background:#f1f5f9;padding:24px;font-family:system-ui,sans-serif}@page{size:A4;margin:18mm}@media print{body{background:#fff;padding:0}}";
     w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${doc.referencia}</title>
-      <style>body{margin:0;background:#f1f5f9;padding:24px;font-family:system-ui,sans-serif}
-      @page{size:A4;margin:18mm}@media print{body{background:#fff;padding:0}}</style>
+      <style>${css}</style>
       </head><body>${html}<script>window.onload=()=>window.print()</script></body></html>`);
     w.document.close();
   }

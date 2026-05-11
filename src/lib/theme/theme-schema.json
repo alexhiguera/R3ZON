@@ -115,6 +115,22 @@
       "var": "--text-hi",      "default": "#f0f4ff",     "when": { "palette": "custom" }
     },
     {
+      "id": "doc.primario",   "label": "Color primario", "type": "color",
+      "default": "#4f46e5"
+    },
+    {
+      "id": "doc.texto",      "label": "Color de texto", "type": "color",
+      "default": "#0f172a"
+    },
+    {
+      "id": "doc.acento",     "label": "Fondo cabecera", "type": "color",
+      "default": "#eef2ff"
+    },
+    {
+      "id": "doc.acentoSuave","label": "Fondo cliente",  "type": "color",
+      "default": "#f8fafc"
+    },
+    {
       "id": "font.sans",
       "label": "Tipografía base",
       "type": "font",

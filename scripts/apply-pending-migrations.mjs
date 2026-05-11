@@ -56,6 +56,8 @@ const FILES = [
   "supabase/proveedores_ext.sql",
   // Re-aplicar fix_tenant_defaults para registrar los nuevos triggers.
   "supabase/fix_tenant_defaults.sql",
+  // Iteración: tipo 'recibo' en documentos + bucket 'logos'.
+  "supabase/documentos_recibo_logos_ext.sql",
 ];
 
 async function tryConnect() {

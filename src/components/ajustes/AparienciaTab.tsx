@@ -88,18 +88,18 @@ function ColorPicker({
   onChange: (v: string) => void;
 }) {
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-1.5">
       <input
         type="color"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="h-9 w-12 cursor-pointer rounded-lg border border-indigo-400/20 bg-transparent"
+        className="h-8 w-9 shrink-0 cursor-pointer rounded-lg border border-indigo-400/20 bg-transparent"
       />
       <input
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-28 rounded-lg border border-indigo-400/20 bg-indigo-900/40 px-2 py-1.5 text-xs text-text-hi"
+        className="min-w-0 flex-1 rounded-lg border border-indigo-400/20 bg-indigo-900/40 px-2 py-1.5 text-[0.7rem] text-text-hi"
       />
     </div>
   );
@@ -170,83 +170,106 @@ export function AparienciaTab() {
       </header>
 
       <div className="space-y-5">
-        {themeSchema.controls.map((c) => {
-          if (c.when) {
-            const ok = Object.entries(c.when).every(([k, v]) => theme[k] === v);
-            if (!ok) return null;
+        {(() => {
+          // Agrupa controles `color` consecutivos en una grilla horizontal
+          // para que no ocupen una fila completa cada uno.
+          const visibles = themeSchema.controls.filter((c) => {
+            if (!c.when) return true;
+            return Object.entries(c.when).every(([k, v]) => theme[k] === v);
+          });
+
+          // Para agrupar visualmente, los colores con id "doc.*" se rinden
+          // bajo un encabezado "Documentos"; el resto van juntos en otro bloque.
+          const grupoDe = (c: SchemaControl) =>
+            c.id.startsWith("doc.") ? "doc" : "base";
+
+          const bloques: Array<
+            | { kind: "single"; control: SchemaControl }
+            | { kind: "colors"; grupo: "doc" | "base"; controls: Extract<SchemaControl, { type: "color" }>[] }
+          > = [];
+          for (const c of visibles) {
+            if (c.type === "color") {
+              const g = grupoDe(c) as "doc" | "base";
+              const last = bloques[bloques.length - 1];
+              if (last && last.kind === "colors" && last.grupo === g) {
+                last.controls.push(c);
+              } else {
+                bloques.push({ kind: "colors", grupo: g, controls: [c] });
+              }
+            } else {
+              bloques.push({ kind: "single", control: c });
+            }
           }
-          return (
-            <div key={c.id} className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-[0.65rem] font-semibold uppercase tracking-wider text-text-lo">
+
+          return bloques.map((b, idx) => {
+            if (b.kind === "colors") {
+              const grilla = (
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+                  {b.controls.map((c) => (
+                    <div key={c.id} className="space-y-1.5">
+                      <span className="block text-[0.6rem] font-semibold uppercase tracking-wider text-text-lo">
+                        {c.label}
+                      </span>
+                      <ColorPicker
+                        value={theme[c.id] || c.default}
+                        onChange={(v) => setField(c.id, v)}
+                      />
+                    </div>
+                  ))}
+                </div>
+              );
+
+              if (b.grupo === "doc") {
+                return (
+                  <section
+                    key={`colors-${idx}`}
+                    className="space-y-3 rounded-xl border border-indigo-400/15 bg-indigo-900/20 p-4"
+                  >
+                    <h3 className="text-xs font-semibold uppercase tracking-wider text-text-mid">
+                      Documentos
+                    </h3>
+                    {grilla}
+                  </section>
+                );
+              }
+
+              return <div key={`colors-${idx}`}>{grilla}</div>;
+            }
+
+            const c = b.control;
+            return (
+              <div key={c.id} className="space-y-2">
+                <span className="block text-[0.65rem] font-semibold uppercase tracking-wider text-text-lo">
                   {c.label}
                 </span>
-              </div>
 
-              {c.type === "segmented" && (
-                <Segmented
-                  value={theme[c.id]}
-                  options={c.options}
-                  onChange={(v) => setField(c.id, v)}
-                />
-              )}
+                {c.type === "segmented" && (
+                  <Segmented
+                    value={theme[c.id]}
+                    options={c.options}
+                    onChange={(v) => setField(c.id, v)}
+                  />
+                )}
 
-              {c.type === "preset" && (
-                <PresetGrid
-                  value={theme[c.id]}
-                  control={c}
-                  onChange={(v) => setField(c.id, v)}
-                />
-              )}
+                {c.type === "preset" && (
+                  <PresetGrid
+                    value={theme[c.id]}
+                    control={c}
+                    onChange={(v) => setField(c.id, v)}
+                  />
+                )}
 
-              {c.type === "color" && (
-                <ColorPicker
-                  value={theme[c.id] || c.default}
-                  onChange={(v) => setField(c.id, v)}
-                />
-              )}
-
-              {c.type === "font" && (
-                <div className="grid gap-2 sm:grid-cols-[1fr,auto] sm:items-center">
+                {c.type === "font" && (
                   <FontPicker
                     value={theme[c.id]}
                     options={c.options}
                     onChange={(v) => setField(c.id, v)}
                   />
-                  <span
-                    className="rounded-lg border border-indigo-400/20 bg-indigo-900/30 px-3 py-1.5 text-sm"
-                    style={{ fontFamily: theme[c.id] }}
-                  >
-                    The quick brown fox jumps · 0123456789
-                  </span>
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      <div className="rounded-xl border border-indigo-400/15 bg-indigo-900/30 p-4">
-        <p className="text-[0.65rem] font-semibold uppercase tracking-wider text-text-lo">
-          Vista previa
-        </p>
-        <div className="mt-3 flex flex-wrap gap-2">
-          <span className="rounded-full border border-cyan/40 bg-cyan/10 px-3 py-1 text-xs text-cyan">
-            Cyan
-          </span>
-          <span className="rounded-full border border-fuchsia/40 bg-fuchsia/10 px-3 py-1 text-xs text-fuchsia">
-            Fuchsia
-          </span>
-          <span className="rounded-full border border-indigo-400/40 bg-indigo-600/20 px-3 py-1 text-xs text-indigo-300">
-            Primario
-          </span>
-          <span
-            className="rounded-full border border-white/10 px-3 py-1 text-xs"
-            style={{ fontFamily: "var(--font-display)" }}
-          >
-            Display: R3ZON Business OS
-          </span>
-        </div>
+                )}
+              </div>
+            );
+          });
+        })()}
       </div>
 
     </div>

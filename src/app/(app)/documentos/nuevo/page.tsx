@@ -19,12 +19,14 @@ import {
   ClipboardList,
   FileSignature,
   AlertCircle,
-  Search,
   UserPlus,
   Pencil,
   Maximize2,
   ChevronDown,
+  BadgeCheck,
+  Package,
 } from "lucide-react";
+import { useThemeEngine } from "@/lib/theme/ThemeProvider";
 import { createClient } from "@/lib/supabase/client";
 import { useNegocioId } from "@/lib/useNegocioId";
 import { useToast } from "@/components/ui/Toast";
@@ -38,6 +40,7 @@ import { PlantillaDocumento } from "@/components/documentos/PlantillaDocumento";
 import {
   DESCRIPCION_TIPO,
   ETIQUETA_TIPO,
+  FORMATO_TIPO,
   TIPOS_DOCUMENTO,
   REQUIERE_CLIENTE_FISCAL,
   calcularTotales,
@@ -56,6 +59,15 @@ type ClienteFila = {
   cif: string | null;
   direccion: string | null;
   email: string | null;
+};
+
+type ProductoFila = {
+  id: string;
+  nombre: string;
+  descripcion: string | null;
+  precio_venta: number;
+  iva_pct: number;
+  tipo: string;
 };
 
 type MetodoPagoFila = {
@@ -79,6 +91,7 @@ const ICONO_TIPO: Record<TipoDocumento, typeof FileText> = {
   presupuesto: FileSpreadsheet,
   albaran:     ClipboardList,
   proforma:    FileSignature,
+  recibo:      BadgeCheck,
 };
 
 export default function NuevoDocumentoPage() {
@@ -87,12 +100,13 @@ export default function NuevoDocumentoPage() {
   const negocioId = useNegocioId();
   const toast = useToast();
   const previewRef = useRef<HTMLDivElement>(null);
+  const { theme } = useThemeEngine();
 
   const [tipo, setTipo] = useState<TipoDocumento | null>(null);
 
   // ── Datos del emisor ────────────────────────────────────────────────────
   const [emisor, setEmisor] = useState<EmisorSnapshot>({
-    nombre: "", cif: null, direccion: null, email: null, telefono: null,
+    nombre: "", cif: null, direccion: null, email: null, telefono: null, logo_url: null,
   });
 
   // ── Cliente ─────────────────────────────────────────────────────────────
@@ -101,9 +115,11 @@ export default function NuevoDocumentoPage() {
   const [cliente, setCliente] = useState<ClienteSnapshot>({
     nombre: "", cif: null, direccion: null, email: null,
   });
-  const [busquedaCliente, setBusquedaCliente] = useState("");
   const [mostrarManual, setMostrarManual] = useState(false);
   const [guardarComoCliente, setGuardarComoCliente] = useState(true);
+
+  // ── Productos / servicios guardados ─────────────────────────────────────
+  const [productos, setProductos] = useState<ProductoFila[]>([]);
 
   // ── Cabecera (con valores por defecto) ──────────────────────────────────
   const [serie, setSerie] = useState("A");
@@ -136,10 +152,10 @@ export default function NuevoDocumentoPage() {
   // ── Carga inicial ───────────────────────────────────────────────────────
   useEffect(() => {
     (async () => {
-      const [{ data: perfil }, { data: cls }, { data: mps }] = await Promise.all([
+      const [{ data: perfil }, { data: cls }, { data: mps }, { data: prods }] = await Promise.all([
         supabase
           .from("perfiles_negocio")
-          .select("nombre_negocio,cif_nif,direccion,email_contacto,telefono")
+          .select("nombre_negocio,cif_nif,direccion,email_contacto,telefono,logo_url")
           .single(),
         supabase
           .from("clientes")
@@ -150,6 +166,11 @@ export default function NuevoDocumentoPage() {
           .select("id,etiqueta,tipo,detalle,predeterminado")
           .order("predeterminado", { ascending: false })
           .order("etiqueta"),
+        supabase
+          .from("productos")
+          .select("id,nombre,descripcion,precio_venta,iva_pct,tipo")
+          .eq("activo", true)
+          .order("nombre"),
       ]);
 
       if (perfil) {
@@ -159,9 +180,11 @@ export default function NuevoDocumentoPage() {
           direccion: perfil.direccion ?? null,
           email:     perfil.email_contacto ?? null,
           telefono:  perfil.telefono ?? null,
+          logo_url:  perfil.logo_url ?? null,
         });
       }
       setClientes((cls ?? []) as ClienteFila[]);
+      setProductos((prods ?? []) as ProductoFila[]);
 
       const ms = (mps ?? []) as MetodoPagoFila[];
       setMetodosGuardados(ms);
@@ -174,21 +197,14 @@ export default function NuevoDocumentoPage() {
     })();
   }, [supabase]);
 
-  // ── Búsqueda de clientes ────────────────────────────────────────────────
-  const sugerencias = useMemo(() => {
-    const q = busquedaCliente.trim().toLowerCase();
-    if (!q) return [];
-    return clientes
-      .filter(
-        (c) =>
-          c.nombre.toLowerCase().includes(q) ||
-          (c.cif ?? "").toLowerCase().includes(q) ||
-          (c.email ?? "").toLowerCase().includes(q),
-      )
-      .slice(0, 6);
-  }, [clientes, busquedaCliente]);
-
-  function elegirCliente(c: ClienteFila) {
+  // ── Selección de cliente desde dropdown ─────────────────────────────────
+  function elegirClientePorId(id: string) {
+    if (!id) {
+      limpiarCliente();
+      return;
+    }
+    const c = clientes.find((x) => x.id === id);
+    if (!c) return;
     setClienteId(c.id);
     setCliente({
       nombre:    c.nombre,
@@ -196,15 +212,36 @@ export default function NuevoDocumentoPage() {
       direccion: c.direccion,
       email:     c.email,
     });
-    setBusquedaCliente(c.nombre);
     setMostrarManual(false);
   }
 
   function limpiarCliente() {
     setClienteId(null);
     setCliente({ nombre: "", cif: null, direccion: null, email: null });
-    setBusquedaCliente("");
   }
+
+  // ── Selección de producto por línea ─────────────────────────────────────
+  function aplicarProductoEnLinea(i: number, productoId: string) {
+    if (!productoId) return;
+    const p = productos.find((x) => x.id === productoId);
+    if (!p) return;
+    actualizarLinea(i, {
+      descripcion: p.descripcion ? `${p.nombre} — ${p.descripcion}` : p.nombre,
+      precio_unit: Number(p.precio_venta) || 0,
+      iva_pct:     Number(p.iva_pct) || 0,
+    });
+  }
+
+  // ── Colores del documento (desde el tema configurable en Ajustes) ───────
+  const coloresDocumento = useMemo(
+    () => ({
+      primario:    theme["doc.primario"]    ?? "#4f46e5",
+      texto:       theme["doc.texto"]       ?? "#0f172a",
+      acento:      theme["doc.acento"]      ?? "#eef2ff",
+      acentoSuave: theme["doc.acentoSuave"] ?? "#f8fafc",
+    }),
+    [theme],
+  );
 
   // ── Totales y validación ────────────────────────────────────────────────
   const totales = useMemo(() => calcularTotales(lineas, irpfPct), [lineas, irpfPct]);
@@ -322,22 +359,31 @@ export default function NuevoDocumentoPage() {
 
   // ── Acciones post-generación ───────────────────────────────────────────
   function abrirVentanaImpresion(modo: "pdf" | "vista") {
-    if (!previewRef.current) return;
+    if (!previewRef.current || !tipo) return;
     const html = previewRef.current.innerHTML;
     const titulo = generado?.referencia ?? "documento";
+    const formato = FORMATO_TIPO[tipo];
     const w = window.open("", "_blank", "width=900,height=1100");
     if (!w) {
       toast.err("El navegador bloqueó la ventana.");
       return;
     }
     const autoPrint = modo === "pdf" ? "<script>window.onload=()=>window.print()</script>" : "";
+    const cssA4 = `
+      body{margin:0;background:#f1f5f9;padding:24px;font-family:system-ui,sans-serif}
+      .doc-wrap{max-width:900px;margin:0 auto;background:#fff;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,.15)}
+      @page{size:A4;margin:18mm}
+      @media print{body{background:#fff;padding:0}.doc-wrap{box-shadow:none;max-width:none;border-radius:0}}
+    `;
+    const cssTicket = `
+      body{margin:0;background:#f1f5f9;padding:12px;font-family:ui-monospace,Menlo,monospace}
+      .doc-wrap{width:80mm;margin:0 auto;background:#fff;box-shadow:0 6px 24px rgba(0,0,0,.15)}
+      @page{size:80mm auto;margin:0}
+      @media print{body{background:#fff;padding:0}.doc-wrap{box-shadow:none}}
+    `;
+    const css = formato === "ticket" ? cssTicket : cssA4;
     w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${titulo}</title>
-      <style>
-        body{margin:0;background:#f1f5f9;padding:24px;font-family:system-ui,sans-serif}
-        .doc-wrap{max-width:900px;margin:0 auto;background:#fff;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,.15)}
-        @page{size:A4;margin:18mm}
-        @media print{body{background:#fff;padding:0}.doc-wrap{box-shadow:none;max-width:none;border-radius:0}}
-      </style></head><body><div class="doc-wrap">${html}</div>${autoPrint}</body></html>`);
+      <style>${css}</style></head><body><div class="doc-wrap">${html}</div>${autoPrint}</body></html>`);
     w.document.close();
   }
 
@@ -477,41 +523,29 @@ export default function NuevoDocumentoPage() {
           <Card title="Cliente">
             {!mostrarManual ? (
               <div className="flex flex-col gap-2">
-                <div className="relative">
-                  <Search
-                    size={14}
-                    className="pointer-events-none absolute left-3 top-3.5 text-text-lo"
-                  />
-                  <input
-                    type="text"
-                    value={busquedaCliente}
-                    onChange={(e) => {
-                      setBusquedaCliente(e.target.value);
-                      if (clienteId) limpiarCliente();
-                    }}
-                    placeholder="Buscar cliente por nombre, CIF o email…"
-                    className={`${inputCls} pl-9`}
-                  />
-                  {sugerencias.length > 0 && !clienteId && (
-                    <div className="absolute z-10 mt-1 w-full overflow-hidden rounded-xl border border-indigo-400/30 bg-bg shadow-2xl">
-                      {sugerencias.map((c) => (
-                        <button
-                          key={c.id}
-                          type="button"
-                          onClick={() => elegirCliente(c)}
-                          className="flex w-full flex-col items-start gap-0.5 px-3 py-2 text-left hover:bg-indigo-900/40"
-                        >
-                          <span className="text-sm font-semibold text-text-hi">
-                            {c.nombre}
-                          </span>
-                          <span className="text-[0.7rem] text-text-lo">
-                            {c.cif ?? "Sin CIF"}{c.email ? ` · ${c.email}` : ""}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
+                <Field label="Cliente guardado" full>
+                  <select
+                    value={clienteId ?? ""}
+                    onChange={(e) => elegirClientePorId(e.target.value)}
+                    className={inputCls}
+                  >
+                    <option value="">— Selecciona un cliente —</option>
+                    {clientes.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.nombre}
+                        {c.cif ? ` · ${c.cif}` : ""}
+                      </option>
+                    ))}
+                  </select>
+                  {clientes.length === 0 && (
+                    <Link
+                      href="/clientes"
+                      className="mt-1 text-[0.7rem] text-cyan hover:underline"
+                    >
+                      Aún no tienes clientes guardados — créalos en el módulo Clientes
+                    </Link>
                   )}
-                </div>
+                </Field>
 
                 {clienteId && (
                   <div className="flex items-center gap-2 rounded-xl border border-ok/30 bg-ok/10 px-3 py-2 text-sm">
@@ -525,7 +559,7 @@ export default function NuevoDocumentoPage() {
                       onClick={limpiarCliente}
                       className="text-xs text-text-mid hover:text-text-hi"
                     >
-                      Cambiar
+                      Quitar
                     </button>
                   </div>
                 )}
@@ -599,7 +633,7 @@ export default function NuevoDocumentoPage() {
                   }}
                   className="inline-flex items-center justify-center gap-2 rounded-lg border border-indigo-400/20 bg-indigo-900/20 py-2 text-xs font-semibold text-text-mid hover:text-text-hi"
                 >
-                  <Search size={12} /> Volver a buscar
+                  <ChevronDown size={12} /> Volver al listado guardado
                 </button>
               </div>
             )}
@@ -664,8 +698,8 @@ export default function NuevoDocumentoPage() {
             </Card>
           )}
 
-          {/* LÍNEAS */}
-          <Card title="Líneas">
+          {/* CONTENIDO (productos / servicios) */}
+          <Card title="Contenido">
             <div className="flex flex-col gap-3">
               {lineas.map((l, i) => (
                 <div
@@ -673,9 +707,41 @@ export default function NuevoDocumentoPage() {
                   className="rounded-xl border border-indigo-400/15 bg-indigo-900/20 p-3"
                 >
                   <div className="grid grid-cols-12 gap-2">
+                    <label className="col-span-12 flex flex-col gap-1">
+                      <span className="text-[0.6rem] font-medium uppercase tracking-wider text-text-lo">
+                        Producto / servicio guardado
+                      </span>
+                      <div className="relative">
+                        <Package
+                          size={13}
+                          className="pointer-events-none absolute left-2.5 top-3 text-text-lo"
+                        />
+                        <select
+                          value=""
+                          onChange={(e) => {
+                            aplicarProductoEnLinea(i, e.target.value);
+                            e.target.value = "";
+                          }}
+                          className={`${inputCls} pl-8`}
+                          disabled={productos.length === 0}
+                        >
+                          <option value="">
+                            {productos.length === 0
+                              ? "— Sin productos guardados —"
+                              : "— Elegir de tu catálogo —"}
+                          </option>
+                          {productos.map((p) => (
+                            <option key={p.id} value={p.id}>
+                              {p.nombre} · {eur(Number(p.precio_venta) || 0)}
+                              {p.tipo === "servicio" ? " · servicio" : ""}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </label>
                     <input
                       type="text"
-                      placeholder="Descripción"
+                      placeholder="Descripción (o añade manualmente)"
                       value={l.descripcion}
                       onChange={(e) =>
                         actualizarLinea(i, { descripcion: e.target.value })
@@ -724,7 +790,7 @@ export default function NuevoDocumentoPage() {
                 onClick={() => setLineas((prev) => [...prev, lineaVacia()])}
                 className="inline-flex items-center justify-center gap-2 rounded-xl border border-dashed border-cyan/40 bg-cyan/5 py-3 text-sm font-semibold text-cyan hover:bg-cyan/10"
               >
-                <Plus size={14} /> Añadir línea
+                <Plus size={14} /> Añadir manualmente
               </button>
             </div>
           </Card>
@@ -835,30 +901,6 @@ export default function NuevoDocumentoPage() {
             />
           </Card>
 
-          {/* GENERAR */}
-          {!generado && (
-            <>
-              {errores.length > 0 && (
-                <div className="rounded-xl border border-warn/30 bg-warn/10 p-3 text-xs text-warn">
-                  <div className="mb-1 flex items-center gap-1.5 font-bold">
-                    <AlertCircle size={13} /> Faltan datos para generar
-                  </div>
-                  <ul className="list-disc pl-4">
-                    {errores.map((e, i) => <li key={i}>{e}</li>)}
-                  </ul>
-                </div>
-              )}
-              <button
-                type="button"
-                onClick={generar}
-                disabled={generando || errores.length > 0 || !negocioId}
-                className="flex h-14 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-base font-bold text-white shadow-glow transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:from-text-lo disabled:to-text-lo disabled:opacity-50 disabled:hover:translate-y-0"
-              >
-                {generando ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle2 size={18} />}
-                Generar {ETIQUETA_TIPO[tipo].toLowerCase()}
-              </button>
-            </>
-          )}
         </fieldset>
 
         {/* ─── PREVISUALIZACIÓN (derecha) ─────────────────────────── */}
@@ -889,9 +931,35 @@ export default function NuevoDocumentoPage() {
                 notas={notas || null}
                 condiciones_pago={condicionesPago || null}
                 metodo_pago={metodoPago || null}
+                colores={coloresDocumento}
               />
             </div>
           </div>
+
+          {/* GENERAR — bajo la previsualización */}
+          {!generado && (
+            <>
+              {errores.length > 0 && (
+                <div className="rounded-xl border border-warn/30 bg-warn/10 p-3 text-xs text-warn">
+                  <div className="mb-1 flex items-center gap-1.5 font-bold">
+                    <AlertCircle size={13} /> Faltan datos para generar
+                  </div>
+                  <ul className="list-disc pl-4">
+                    {errores.map((e, i) => <li key={i}>{e}</li>)}
+                  </ul>
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={generar}
+                disabled={generando || errores.length > 0 || !negocioId}
+                className="flex h-14 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-base font-bold text-white shadow-glow transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:from-text-lo disabled:to-text-lo disabled:opacity-50 disabled:hover:translate-y-0"
+              >
+                {generando ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle2 size={18} />}
+                Generar {ETIQUETA_TIPO[tipo].toLowerCase()}
+              </button>
+            </>
+          )}
 
           {generado && (
             <div className="card-glass p-4">
@@ -953,6 +1021,7 @@ export default function NuevoDocumentoPage() {
           notas={notas || null}
           condiciones_pago={condicionesPago || null}
           metodo_pago={metodoPago || null}
+          colores={coloresDocumento}
         />
       </Modal>
     </div>

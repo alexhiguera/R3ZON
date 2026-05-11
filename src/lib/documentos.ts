@@ -13,7 +13,22 @@ export type TipoDocumento =
   | "ticket"
   | "presupuesto"
   | "albaran"
-  | "proforma";
+  | "proforma"
+  | "recibo";
+
+// Formato físico final del documento al imprimirlo/exportarlo.
+// "ticket": rollo térmico vertical (~80 mm de ancho).
+// "a4":     hoja A4 estándar para impresión o adjunto PDF.
+export type FormatoDocumento = "a4" | "ticket";
+
+export const FORMATO_TIPO: Record<TipoDocumento, FormatoDocumento> = {
+  factura:     "a4",
+  ticket:      "ticket",
+  presupuesto: "a4",
+  albaran:     "a4",
+  proforma:    "a4",
+  recibo:      "a4",
+};
 
 export type EstadoDocumento =
   | "borrador"
@@ -36,6 +51,7 @@ export type EmisorSnapshot = {
   direccion: string | null;
   email: string | null;
   telefono: string | null;
+  logo_url?: string | null;
 };
 
 export type ClienteSnapshot = {
@@ -82,6 +98,7 @@ export const ETIQUETA_TIPO: Record<TipoDocumento, string> = {
   presupuesto: "Presupuesto",
   albaran:     "Albarán",
   proforma:    "Proforma",
+  recibo:      "Recibo",
 };
 
 export const DESCRIPCION_TIPO: Record<TipoDocumento, string> = {
@@ -90,6 +107,7 @@ export const DESCRIPCION_TIPO: Record<TipoDocumento, string> = {
   presupuesto: "Oferta económica vinculante hasta su fecha de validez.",
   albaran:     "Justificante de entrega de mercancía o servicio.",
   proforma:    "Borrador de factura sin validez fiscal.",
+  recibo:      "Justificante de cobro: confirma el pago de una cantidad recibida.",
 };
 
 export const TIPOS_DOCUMENTO: TipoDocumento[] = [
@@ -98,6 +116,7 @@ export const TIPOS_DOCUMENTO: TipoDocumento[] = [
   "presupuesto",
   "albaran",
   "proforma",
+  "recibo",
 ];
 
 // Tipos que necesitan datos fiscales completos del cliente.

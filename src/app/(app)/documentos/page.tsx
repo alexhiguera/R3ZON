@@ -8,6 +8,7 @@ import {
   FileSpreadsheet,
   ClipboardList,
   FileSignature,
+  BadgeCheck,
   Plus,
   Loader2,
   ExternalLink,
@@ -28,6 +29,7 @@ const ICONO_TIPO: Record<TipoDocumento, typeof FileText> = {
   presupuesto: FileSpreadsheet,
   albaran:     ClipboardList,
   proforma:    FileSignature,
+  recibo:      BadgeCheck,
 };
 
 const ESTADO_COLOR: Record<string, string> = {

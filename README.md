@@ -221,6 +221,41 @@ npx cap sync
 
 > Resumen de todo lo construido en orden de iteraciones (más reciente → más antiguo).
 
+### Iteración 41 — *2026-05-11* — Refactor módulo Documentos: formatos A4 vs ticket térmico, recibo, formulario con desplegables, colores configurables, bucket `logos`
+
+**Plantilla**
+- `src/components/documentos/PlantillaDocumento.tsx` reescrito en dos plantillas: `PlantillaA4` (presupuesto, factura, albarán, proforma, **recibo**) y `PlantillaTicket` (sólo `ticket`, 80mm térmico vertical con tipografía monoespaciada).
+- `FORMATO_TIPO` en `src/lib/documentos.ts` mapea cada `TipoDocumento` a su formato físico. El selector A4 vs ticket se aplica también al `@page` del HTML generado por `window.print` (tanto en `nuevo` como en `[id]`).
+- A4: la columna de fechas (emisión/vencimiento) ahora se alinea verticalmente al centro del bloque cliente (`alignItems: stretch` + `justifyContent: center`).
+- Logo del emisor incrustado en el documento (A4 a la izquierda del título, ticket centrado sobre el nombre). `EmisorSnapshot.logo_url` propagado desde el perfil.
+- Colores parametrizables vía prop `colores` (primario, texto, acento, acentoSuave) con defaults; consumidos desde el motor de tema.
+
+**Nuevo tipo "Recibo"**
+- `TipoDocumento` extendido con `'recibo'`. Añadido a `ETIQUETA_TIPO`, `DESCRIPCION_TIPO`, `TIPOS_DOCUMENTO`, `FORMATO_TIPO` (`a4`) y `ICONO_TIPO` (`BadgeCheck`) tanto en `nuevo/page.tsx` como en el listado.
+- `supabase/documentos_recibo_logos_ext.sql` nuevo: amplía el CHECK constraint de `documentos.tipo` y los dos RPCs (`siguiente_numero_documento`, `crear_documento_generado`) para aceptar `'recibo'`. Idempotente.
+
+**Formulario del editor (`/documentos/nuevo`)**
+- Cliente: la barra de búsqueda por texto se sustituye por un `<select>` de clientes guardados; conserva el botón "Añadir cliente manualmente" para captura ad-hoc.
+- Sección **"Líneas"** renombrada a **"Contenido"**. Cada línea expone un `<select>` con productos/servicios activos del módulo Productos: al elegir uno se rellenan descripción, precio e IVA. Botón "Añadir manualmente" para filas libres.
+- El botón verde **Generar** se ha movido del formulario al panel derecho, **debajo de la previsualización**, con el listado de errores de validación contextual.
+- Carga inicial extendida para traer `productos` activos y el `logo_url` del perfil.
+
+**Tema configurable de documentos (Ajustes → Apariencia)**
+- `src/lib/theme/theme-schema.json`: nuevos controles `doc.primario`, `doc.texto`, `doc.acento`, `doc.acentoSuave` (color pickers, sin alterar variables CSS globales). Persistencia automática vía `ThemeProvider`.
+- `nuevo/page.tsx` deriva `coloresDocumento` desde `useThemeEngine().theme` y lo inyecta en `PlantillaDocumento`.
+
+**Bucket `logos` (fix bug)**
+- `supabase/documentos_recibo_logos_ext.sql` crea el bucket público `logos` con las cuatro políticas RLS (lectura libre; insert/update/delete restringidos a los miembros del negocio cuya primera carpeta coincida con `current_negocio_id()`). La subida del logo en Ajustes → Negocio dejará de fallar con `bucket not found`.
+
+**AparienciaTab**
+- Eliminada la tarjeta "Vista previa" del final.
+- Eliminadas las cajas de texto de muestra a la derecha de cada selector de tipografía (el `<select>` se renderiza a ancho completo).
+
+**Migraciones**
+- `scripts/apply-pending-migrations.mjs` actualizado para aplicar `supabase/documentos_recibo_logos_ext.sql`.
+
+---
+
 ### Iteración 40 — *2026-05-11* — Iconos+charts+light theme · menú usuario · perfil · proveedores · productos con imagen+barcode · suscripción con método de pago
 
 **Tema (fixes pendientes)**
