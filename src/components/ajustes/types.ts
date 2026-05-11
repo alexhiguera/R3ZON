@@ -11,6 +11,7 @@ export type PerfilNegocio = {
   moneda: string;
   zona_horaria: string;
   plan: string;
+  stock_mode_enabled: boolean;
   created_at: string;
   updated_at: string;
 };
@@ -22,4 +23,6 @@ export type TabId =
   | "equipo"
   | "suscripcion"
   | "seguridad"
-  | "apariencia";
+  | "apariencia"
+  | "listado"
+  | "cumplimiento";

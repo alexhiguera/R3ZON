@@ -58,6 +58,10 @@ const FILES = [
   "supabase/fix_tenant_defaults.sql",
   // Iteración: tipo 'recibo' en documentos + bucket 'logos'.
   "supabase/documentos_recibo_logos_ext.sql",
+  // Iteración: flag stock_mode_enabled en perfiles_negocio (página Listado).
+  "supabase/listado_ext.sql",
+  // Iteración: RPCs + vista para registrar/revocar consentimientos RGPD del titular.
+  "supabase/rgpd_ext.sql",
 ];
 
 async function tryConnect() {

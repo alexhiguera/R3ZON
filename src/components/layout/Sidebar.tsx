@@ -9,12 +9,10 @@ import {
   Kanban,
   Clock,
   FileText,
-  Package,
   Boxes,
   ShoppingCart,
   Wallet,
   Truck,
-  ShieldCheck,
   Settings,
   type LucideIcon,
 } from "lucide-react";
@@ -29,13 +27,11 @@ const NAV: NavItem[] = [
   { href: "/citas",     label: "Agenda",        Icon: Calendar },
   { href: "/tareas",    label: "Tareas",        Icon: Kanban },
   { href: "/fichajes",  label: "Fichajes",      Icon: Clock },
-  { href: "/productos", label: "Productos",     Icon: Package },
-  { href: "/stock",     label: "Stock",         Icon: Boxes },
+  { href: "/listado",   label: "Listado",       Icon: Boxes },
   { href: "/tpv",       label: "TPV",           Icon: ShoppingCart },
   { href: "/documentos", label: "Documentos",   Icon: FileText },
   { href: "/finanzas",  label: "Finanzas",      Icon: Wallet },
   { href: "/proveedores", label: "Proveedores", Icon: Truck },
-  { href: "/rgpd",      label: "RGPD",          Icon: ShieldCheck },
   { href: "/ajustes",   label: "Ajustes",       Icon: Settings },
 ];
 

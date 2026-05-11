@@ -221,6 +221,60 @@ npx cap sync
 
 > Resumen de todo lo construido en orden de iteraciones (más reciente → más antiguo).
 
+### Iteración 43 — *2026-05-12* — Cumplimiento RGPD: consentimientos del titular, onboarding obligatorio y sección **Cumplimiento** en Ajustes
+
+**Modelo de datos**
+- Nuevo `supabase/rgpd_ext.sql` (idempotente) sobre la tabla existente `consentimientos_rgpd`:
+  - RPC `registrar_consentimiento(tipo, version, aceptado, ip, user_agent)` que inserta el consentimiento del titular (`cliente_id = NULL`) en el negocio actual (`current_negocio_id()`), con sello temporal y firma de evidencia.
+  - RPC `revocar_consentimiento(tipo)` que marca `revocado_en` en la última aceptación vigente del tipo.
+  - Vista `v_consentimientos_negocio`: estado actual (vigente / revocado / rechazado) por tipo para el titular del negocio.
+- `scripts/apply-pending-migrations.mjs` actualizado para aplicar `rgpd_ext.sql`.
+
+**Onboarding obligatorio**
+- `src/app/(auth)/registro/page.tsx`: añadidos tres checkboxes:
+  - **Privacidad + aviso legal** (obligatorio, bloquea el submit si no se marca).
+  - **Cookies** (opcional, según LSSI-CE art. 22.2).
+  - **Comunicaciones comerciales / marketing** (opcional, RGPD art. 6.1.a).
+  - Los consentimientos se persisten en `user_metadata.pending_consents` durante el `signUp`.
+- `src/app/auth/callback/route.ts`: tras `exchangeCodeForSession`, lee `pending_consents` del usuario, llama a la RPC `registrar_consentimiento` por cada uno pasando IP (de `x-forwarded-for`) y user-agent, y limpia los pendientes.
+- La invitación de miembros (`src/app/api/team/invite/route.ts`) ya almacena `privacidad_version` / `terminos_version` y el RPC `aceptar_invitacion` registra el consentimiento del invitado al primer login.
+
+**Sección Cumplimiento en Ajustes**
+- Nueva tab `Cumplimiento` (icono `Scale`) en `src/components/ajustes/SettingsTabs.tsx` y en el union `TabId` de `types.ts`.
+- `src/components/ajustes/CumplimientoTab.tsx`:
+  - Grid de tarjetas con enlaces públicos a `/legal/privacidad`, `/legal/cookies`, `/legal/aviso-legal`, `/legal/terminos`.
+  - Lista de consentimientos registrados leyendo `v_consentimientos_negocio`, con badges `Vigente` / `Revocado` / `Rechazado`, versión y fecha de aceptación.
+  - Botón **Revocar** para tipos opcionales (`cookies`, `marketing`) que invoca `revocar_consentimiento`.
+
+**Navegación**
+- `src/components/layout/Sidebar.tsx`: entrada `RGPD` eliminada (junto al icono `ShieldCheck` no utilizado). La ruta `src/app/(app)/rgpd/` se ha borrado; el cumplimiento vive ahora dentro de Ajustes.
+
+---
+
+### Iteración 42 — *2026-05-12* — Unificación Productos + Stock en página **Listado** con modo stock configurable
+
+**Página unificada `/listado`**
+- Nueva ruta `src/app/(app)/listado/page.tsx` que fusiona el catálogo (antiguo `/productos`) y la vista de inventario (antiguo `/stock`) en una sola pantalla. Se eliminan ambas rutas previas.
+- **Filtro Producto / Servicio / Todos** como segmented control (junto a la búsqueda y al filtro de categoría). En modo stock activo, además filtro de estado (Con stock / Bajo / Agotado / Sin inventario).
+- **Etiquetas de stock a la izquierda de cada fila, separadas pero alineadas con ella**: columna fija a la izquierda (`w-32`) con la badge (`En stock`, `Stock bajo`, `Agotado`, `Sin inventario`) fuera de la tarjeta del producto. Las filas se alinean verticalmente con su etiqueta. Se oculta en móvil (`hidden sm:flex`) para mantener legibilidad.
+- **Los servicios nunca muestran etiqueta de inventario** (no son inventariables); en su lugar llevan un chip "Servicio" inline dentro de la fila.
+- KPIs (Con stock / Bajo / Agotados) y panel "Últimos movimientos" sólo se renderizan si el modo stock está activo, y excluyen servicios del cálculo.
+- Conservado del antiguo `/productos`: alta/edición con modal, subida de imagen (`producto-imagenes`), escáner de códigos de barras (`BarcodeScanModal`), borrado optimista. Conservado de `/stock`: modal de movimientos (entrada/salida/ajuste) y paginación de movimientos.
+
+**Modo stock configurable (Ajustes → Listado)**
+- `supabase/listado_ext.sql` nuevo: `alter table perfiles_negocio add column if not exists stock_mode_enabled boolean not null default true`. Idempotente.
+- Nuevo tab **Listado** en `src/components/ajustes/SettingsTabs.tsx` con un toggle (`role="switch"`) que persiste `stock_mode_enabled` en el perfil del negocio. Componente: `src/components/ajustes/ListadoTab.tsx`.
+- `PerfilNegocio.stock_mode_enabled` añadido a `src/components/ajustes/types.ts`.
+- Con stock desactivado: el listado oculta KPIs, panel de movimientos, filtro de estado, botones de movimiento y badges. Los productos siguen siendo catálogo con precio/IVA/categoría/tipo.
+
+**Navegación**
+- `src/components/layout/Sidebar.tsx`: dos entradas (`Productos` + `Stock`) reemplazadas por una sola entrada **Listado** (icono `Boxes`).
+
+**Migraciones**
+- `scripts/apply-pending-migrations.mjs` actualizado para aplicar `supabase/listado_ext.sql`.
+
+---
+
 ### Iteración 41 — *2026-05-11* — Refactor módulo Documentos: formatos A4 vs ticket térmico, recibo, formulario con desplegables, colores configurables, bucket `logos`
 
 **Plantilla**
