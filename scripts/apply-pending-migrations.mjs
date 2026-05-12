@@ -50,6 +50,8 @@ const candidates = [
 
 // --- migraciones a aplicar, en orden ---
 const FILES = [
+  // RPCs de reordenación batch del Kanban (reordenar_tareas_batch / reordenar_columnas_batch).
+  "supabase/crm_kanban_ext.sql",
   "supabase/theme_ext.sql",
   "supabase/perfil_usuario_ext.sql",
   "supabase/inventario_imagenes_ext.sql",
