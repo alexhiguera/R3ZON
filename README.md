@@ -246,6 +246,37 @@ npx cap sync
 
 > Resumen de todo lo construido en orden de iteraciones (más reciente → más antiguo).
 
+### Iteración 47 — *2026-05-12* — Búsqueda global Cmd+K, pestaña Datos (import/export), sistema de roles con super admin global y ROLES.md
+
+**Nuevas capacidades transversales**
+
+- **Búsqueda global**: `src/components/layout/CommandPalette.tsx` (nuevo) — atajo `Cmd+K`/`Ctrl+K` desde cualquier ruta autenticada; búsqueda con debounce 200 ms en clientes, citas, tareas, finanzas y documentos con resultados agrupados por tipo, iconos y navegación con teclado (↑↓ Enter Esc); integrado en `AppShell`.
+- **Pestaña Datos en Ajustes**: `src/components/ajustes/DatosTab.tsx` (nuevo) — concentra toda la gestión import/export del negocio:
+  - Exportación ZIP completa (movida desde Cumplimiento, conserva los 7 recursos + consentimientos).
+  - Exportación CSV individual por recurso (clientes, finanzas, tareas, documentos, citas, comunicaciones).
+  - Importación JSON (acepta tanto formato de tabla individual como bundle multi-tabla del export R3ZON).
+  - Importación CSV con detección heurística de tabla destino y separador (`,` o `;`); parser propio en `src/lib/csv.ts:parseCSV()` sin dependencias.
+- **Sistema de roles profesional**: `supabase/roles_ext.sql` (nuevo) introduce tres dimensiones desacopladas:
+  - **`admin_global`**: tabla nueva con RLS restrictiva; función `es_admin_global()` consultable desde RLS y RPCs.
+  - **`miembros_negocio.permisos jsonb`**: overrides granulares por recurso/acción que sobrescriben el baseline del rol punto-fino.
+  - **`permisos_baseline(rol)`**: función inmutable como única fuente de verdad de los permisos por defecto (`admin`/`editor`/`lector`).
+  - **`tiene_permiso(recurso, accion)`**: resolución unificada usable desde RLS, RPCs y servidor.
+  - **`v_permisos_actuales`**: vista que devuelve `nivel`/`rol`/`permisos` del usuario en una sola query.
+  - Hook cliente `src/lib/usePermissions.ts` con API `{ can, esAdmin, nivel, rol }` para gating de UI.
+  - Documentación completa en `ROLES.md` (raíz del repo) con arquitectura, baseline por rol, ejemplos en RLS/Server Actions/cliente y decisiones de diseño justificadas.
+- **Modo claro**: ya estaba implementado en el theme engine (`mode` segmented en `theme-schema.json` + overrides en `applyTheme()` + boot script en `layout.tsx`); confirmado funcional.
+- **Vercel Analytics**: ya integrado en iteración previa (`@vercel/analytics/next` + `<Analytics />` en root layout).
+
+**Revisión de dependencias**
+
+- Eliminada `class-variance-authority` (0 usos en el código). Conservadas el resto: `tailwind-merge` (`lib/utils.ts`), `tailwindcss-animate` (plugin Tailwind), `@xyflow/react` (HierarchyChart), `clsx`, `tesseract.js`, `recharts`, `@fullcalendar/*`, `@dnd-kit/*`, `html2canvas`/`jspdf`/`fflate` (lazy-loaded en runtime), `zod`, `stripe`, `pg` (sólo scripts dev).
+
+**SQL nuevo**: `supabase/roles_ext.sql` (admin_global + permisos jsonb + funciones + vistas). Incluido en `setup.sql` después de `team_ext.sql`.
+
+**Pendiente**: §11 recordatorios email · UI para editar `permisos` granulares en EquipoTab · panel `/admin` global.
+
+---
+
 ### Iteración 46 — *2026-05-12* — Sprint v1.0 completo: limpieza técnica, errores, seguridad, comunicaciones, exportación, plan Free, PDF, analytics
 
 **Plan v1.0 ejecutado íntegramente (§1–§10, §12)**

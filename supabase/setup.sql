@@ -48,6 +48,7 @@ commit;
 \i schema.sql
 \i auth_extension.sql
 \i team_ext.sql
+\i roles_ext.sql
 \i crm_kanban_ext.sql
 \i agenda_ext.sql
 \i billing_ext.sql
@@ -66,15 +67,16 @@ commit;
 --   1) schema.sql
 --   2) auth_extension.sql
 --   3) team_ext.sql
---   4) crm_kanban_ext.sql
---   5) agenda_ext.sql
---   6) billing_ext.sql
---   7) documentos_ext.sql
---   8) metodos_pago_ext.sql
---   9) inventario_ext.sql
---  10) fichajes_ext.sql
---  11) fix_tenant_defaults.sql
---  12) seed_clientes.sql
+--   4) roles_ext.sql
+--   5) crm_kanban_ext.sql
+--   6) agenda_ext.sql
+--   7) billing_ext.sql
+--   8) documentos_ext.sql
+--   9) metodos_pago_ext.sql
+--  10) inventario_ext.sql
+--  11) fichajes_ext.sql
+--  12) fix_tenant_defaults.sql
+--  13) seed_clientes.sql
 --
 -- Opcional (gestión avanzada de retención de logs, ejecutar manualmente
 -- cuando proceda y solo si tu plan Supabase soporta pg_cron):

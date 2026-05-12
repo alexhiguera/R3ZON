@@ -4,6 +4,7 @@ import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { Sidebar } from "./Sidebar";
+import { CommandPalette } from "./CommandPalette";
 import { DeviceTracker } from "@/components/auth/DeviceTracker";
 import { ToastProvider } from "@/components/ui/Toast";
 
@@ -19,6 +20,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <ToastProvider>
+    <CommandPalette />
     <div className="min-h-[100dvh] lg:grid lg:grid-cols-[280px_1fr]">
       <DeviceTracker />
       {/* Sidebar desktop */}

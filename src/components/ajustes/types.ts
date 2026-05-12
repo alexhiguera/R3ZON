@@ -25,4 +25,5 @@ export type TabId =
   | "seguridad"
   | "apariencia"
   | "listado"
+  | "datos"
   | "cumplimiento";

@@ -11,6 +11,7 @@ import {
   Palette,
   Boxes,
   Scale,
+  Database,
   type LucideIcon,
 } from "lucide-react";
 import { NegocioTab } from "./NegocioTab";
@@ -22,6 +23,7 @@ import { SuscripcionTab } from "./SuscripcionTab";
 import { AparienciaTab } from "./AparienciaTab";
 import { ListadoTab } from "./ListadoTab";
 import { CumplimientoTab } from "./CumplimientoTab";
+import { DatosTab } from "./DatosTab";
 import type { PerfilNegocio, TabId } from "./types";
 
 const TABS: { id: TabId; label: string; Icon: LucideIcon }[] = [
@@ -33,6 +35,7 @@ const TABS: { id: TabId; label: string; Icon: LucideIcon }[] = [
   { id: "equipo",        label: "Equipo",        Icon: Users },
   { id: "suscripcion",   label: "Suscripción",   Icon: CreditCard },
   { id: "seguridad",     label: "Seguridad",     Icon: ShieldCheck },
+  { id: "datos",         label: "Datos",         Icon: Database },
   { id: "cumplimiento",  label: "Cumplimiento",  Icon: Scale },
 ];
 
@@ -85,6 +88,7 @@ export function SettingsTabs({ perfil }: { perfil: PerfilNegocio }) {
         {active === "equipo" && <EquipoTab />}
         {active === "suscripcion" && <SuscripcionTab />}
         {active === "seguridad" && <SeguridadTab />}
+        {active === "datos" && <DatosTab />}
         {active === "cumplimiento" && <CumplimientoTab />}
       </section>
     </div>

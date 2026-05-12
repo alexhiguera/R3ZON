@@ -27,7 +27,6 @@
     "@supabase/supabase-js": "^2.45.4",
     "@vercel/analytics": "^2.0.1",
     "@xyflow/react": "^12.10.2",
-    "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "fflate": "^0.8.2",
     "html2canvas": "^1.4.1",
