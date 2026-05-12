@@ -16,6 +16,7 @@ import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin     from "@fullcalendar/daygrid";
 import timeGridPlugin    from "@fullcalendar/timegrid";
+import multiMonthPlugin  from "@fullcalendar/multimonth";
 import interactionPlugin from "@fullcalendar/interaction";
 import type { EventDropArg, EventInput, LocaleInput } from "@fullcalendar/core";
 import type { EventResizeDoneArg } from "@fullcalendar/interaction";
@@ -50,6 +51,7 @@ const esLocale = {
     week:  "Semana",
     day:   "Día",
     list:  "Agenda",
+    year:  "Año",
   },
   weekText: "Sm",
   allDayText: "Todo el día",
@@ -293,7 +295,7 @@ export default function CalendarView() {
       <div className="r3zon-calendar p-4 sm:p-6">
         <FullCalendar
           ref={calendarRef}
-          plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+          plugins={[dayGridPlugin, timeGridPlugin, multiMonthPlugin, interactionPlugin]}
           initialView="timeGridWeek"
           locale={esLocale as LocaleInput}
           firstDay={1}
@@ -301,13 +303,23 @@ export default function CalendarView() {
           headerToolbar={{
             left:   "prev,next today",
             center: "title",
-            right:  "dayGridMonth,timeGridWeek,timeGridDay",
+            right:  "multiMonthYear,dayGridMonth,timeGridWeek,timeGridDay",
           }}
           buttonText={{
             today: "Hoy",
             month: "Mes",
             week:  "Semana",
             day:   "Día",
+            year:  "Año",
+          }}
+          views={{
+            multiMonthYear: {
+              type: "multiMonth",
+              duration: { years: 1 },
+              multiMonthMaxColumns: 4,
+              multiMonthMinWidth: 220,
+              buttonText: "Año",
+            },
           }}
           allDaySlot={true}
           allDayText="Todo el día"

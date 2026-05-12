@@ -15,6 +15,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { createClient } from "@/lib/supabase/client";
+import { MisCitas } from "@/components/perfil/MisCitas";
 
 const AVATAR_BUCKET = "avatars";
 const AVATAR_MAX_BYTES = 2 * 1024 * 1024;
@@ -299,6 +300,8 @@ export default function PerfilPage() {
           </div>
         </div>
       </div>
+
+      <MisCitas />
 
       {/* Permisos */}
       <div className="card-glass space-y-3 p-5">

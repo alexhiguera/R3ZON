@@ -23,6 +23,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   X, Loader2, Trash2, MapPin, FileText, User2,
   Smartphone, Search, Calendar as CalendarIcon, Palette,
+  ChevronDown, ChevronRight, Sliders,
 } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/client";
@@ -96,6 +97,11 @@ export function EventModal({
   const [error,   setError]   = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  // El bloque "Adicionales" se abre automáticamente si alguno de sus campos
+  // tiene contenido al editar, para que el usuario vea sus datos.
+  const [adicionalesOpen, setAdicionalesOpen] = useState<boolean>(
+    !!(initial.ubicacion || initial.description || initial.cliente_id),
+  );
 
   // ---- combobox clientes ----
   const supabase = createClient();
@@ -261,86 +267,6 @@ export function EventModal({
             />
           </div>
 
-          {/* Combobox cliente */}
-          <div className="sm:col-span-2">
-            <label className="mb-1 flex items-center gap-1 text-xs font-semibold text-text-mid">
-              <User2 size={13} /> Cliente
-              <Help text="Vincula esta cita a uno de tus clientes para verla luego en su ficha." />
-            </label>
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setOpen((v) => !v)}
-                className="flex w-full items-center justify-between rounded-xl border border-indigo-400/20 bg-indigo-900/30 px-3 py-2.5 text-left text-sm text-text-hi hover:border-indigo-400/40"
-              >
-                <span className="flex items-center gap-2">
-                  <Search size={14} className="text-text-mid" />
-                  {selected
-                    ? selected.nombre
-                    : <span className="text-text-ghost">Sin cliente vinculado</span>}
-                </span>
-                {selected && (
-                  <span
-                    role="button"
-                    tabIndex={0}
-                    aria-label="Quitar cliente vinculado"
-                    onClick={(e) => { e.stopPropagation(); setSelected(null); setClienteId(null); }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setSelected(null);
-                        setClienteId(null);
-                      }
-                    }}
-                    className="cursor-pointer text-xs text-text-mid hover:text-danger focus:outline-none focus-visible:text-danger"
-                  >
-                    quitar
-                  </span>
-                )}
-              </button>
-
-              {open && (
-                <div className="absolute z-10 mt-2 w-full overflow-hidden rounded-xl border border-indigo-400/25 bg-[rgba(20,18,60,0.98)] shadow-2xl backdrop-blur-md">
-                  <div className="border-b border-indigo-400/15 p-2">
-                    <input
-                      type="text"
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
-                      placeholder="Buscar por nombre, CIF o email…"
-                      className="w-full rounded-lg bg-indigo-900/40 px-3 py-2 text-sm text-text-hi placeholder:text-text-ghost focus:outline-none"
-                      autoFocus
-                    />
-                  </div>
-                  <ul className="max-h-56 overflow-y-auto py-1">
-                    {results.length === 0 && (
-                      <li className="px-3 py-2 text-xs text-text-ghost">Sin resultados</li>
-                    )}
-                    {results.map((c) => (
-                      <li key={c.id}>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSelected(c);
-                            setClienteId(c.id);
-                            setOpen(false);
-                            setSearch("");
-                          }}
-                          className="flex w-full flex-col items-start gap-0.5 px-3 py-2 text-left text-sm hover:bg-indigo-500/15"
-                        >
-                          <span className="text-text-hi">{c.nombre}</span>
-                          <span className="text-xs text-text-mid">
-                            {[c.cif, c.email].filter(Boolean).join(" · ")}
-                          </span>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          </div>
-
           {/* Inicio */}
           <div>
             <label className="mb-1 flex items-center gap-1 text-xs font-semibold text-text-mid">
@@ -364,36 +290,6 @@ export function EventModal({
               value={end}
               onChange={(e) => setEnd(e.target.value)}
               className="w-full rounded-xl border border-indigo-400/20 bg-indigo-900/30 px-3 py-2.5 text-sm text-text-hi focus:border-cyan/50 focus:outline-none"
-            />
-          </div>
-
-          {/* Ubicación */}
-          <div className="sm:col-span-2">
-            <label className="mb-1 flex items-center gap-1 text-xs font-semibold text-text-mid">
-              <MapPin size={13} /> Ubicación
-              <Help text="Opcional. Aparecerá en Google Maps si la abres desde el calendario del móvil." />
-            </label>
-            <input
-              type="text"
-              value={ubicacion}
-              onChange={(e) => setUbicacion(e.target.value)}
-              placeholder="Ej: C/ Mayor 12, Madrid · o videollamada"
-              className="w-full rounded-xl border border-indigo-400/20 bg-indigo-900/30 px-3 py-2.5 text-sm text-text-hi placeholder:text-text-ghost focus:border-cyan/50 focus:outline-none"
-            />
-          </div>
-
-          {/* Notas */}
-          <div className="sm:col-span-2">
-            <label className="mb-1 flex items-center gap-1 text-xs font-semibold text-text-mid">
-              <FileText size={13} /> Notas
-              <Help text="Detalles, recordatorios o cualquier nota interna sobre la cita." />
-            </label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={3}
-              placeholder="Lo que necesites recordar antes de la cita…"
-              className="w-full resize-none rounded-xl border border-indigo-400/20 bg-indigo-900/30 px-3 py-2.5 text-sm text-text-hi placeholder:text-text-ghost focus:border-cyan/50 focus:outline-none"
             />
           </div>
 
@@ -422,6 +318,139 @@ export function EventModal({
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Adicionales — colapsable con cliente, ubicación y notas */}
+          <div className="sm:col-span-2">
+            <button
+              type="button"
+              onClick={() => setAdicionalesOpen((v) => !v)}
+              aria-expanded={adicionalesOpen}
+              className="flex w-full items-center justify-between rounded-2xl border border-indigo-400/20 bg-indigo-900/20 px-4 py-3 text-left text-sm font-semibold text-text-hi transition hover:border-indigo-400/40"
+            >
+              <span className="flex items-center gap-2">
+                <Sliders size={14} className="text-cyan" />
+                Adicionales
+                <span className="text-[11px] font-normal text-text-mid">
+                  · cliente, ubicación, notas
+                </span>
+              </span>
+              {adicionalesOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+            </button>
+
+            {adicionalesOpen && (
+              <div className="mt-3 space-y-4 rounded-2xl border border-indigo-400/15 bg-indigo-900/10 p-4">
+                {/* Combobox cliente */}
+                <div>
+                  <label className="mb-1 flex items-center gap-1 text-xs font-semibold text-text-mid">
+                    <User2 size={13} /> Persona asociada
+                    <Help text="Vincula esta cita a uno de tus clientes para verla luego en su ficha." />
+                  </label>
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setOpen((v) => !v)}
+                      className="flex w-full items-center justify-between rounded-xl border border-indigo-400/20 bg-indigo-900/30 px-3 py-2.5 text-left text-sm text-text-hi hover:border-indigo-400/40"
+                    >
+                      <span className="flex items-center gap-2">
+                        <Search size={14} className="text-text-mid" />
+                        {selected
+                          ? selected.nombre
+                          : <span className="text-text-ghost">Sin cliente vinculado</span>}
+                      </span>
+                      {selected && (
+                        <span
+                          role="button"
+                          tabIndex={0}
+                          aria-label="Quitar cliente vinculado"
+                          onClick={(e) => { e.stopPropagation(); setSelected(null); setClienteId(null); }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setSelected(null);
+                              setClienteId(null);
+                            }
+                          }}
+                          className="cursor-pointer text-xs text-text-mid hover:text-danger focus:outline-none focus-visible:text-danger"
+                        >
+                          quitar
+                        </span>
+                      )}
+                    </button>
+
+                    {open && (
+                      <div className="absolute z-10 mt-2 w-full overflow-hidden rounded-xl border border-indigo-400/25 bg-[rgba(20,18,60,0.98)] shadow-2xl backdrop-blur-md">
+                        <div className="border-b border-indigo-400/15 p-2">
+                          <input
+                            type="text"
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            placeholder="Buscar por nombre, CIF o email…"
+                            className="w-full rounded-lg bg-indigo-900/40 px-3 py-2 text-sm text-text-hi placeholder:text-text-ghost focus:outline-none"
+                            autoFocus
+                          />
+                        </div>
+                        <ul className="max-h-56 overflow-y-auto py-1">
+                          {results.length === 0 && (
+                            <li className="px-3 py-2 text-xs text-text-ghost">Sin resultados</li>
+                          )}
+                          {results.map((c) => (
+                            <li key={c.id}>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelected(c);
+                                  setClienteId(c.id);
+                                  setOpen(false);
+                                  setSearch("");
+                                }}
+                                className="flex w-full flex-col items-start gap-0.5 px-3 py-2 text-left text-sm hover:bg-indigo-500/15"
+                              >
+                                <span className="text-text-hi">{c.nombre}</span>
+                                <span className="text-xs text-text-mid">
+                                  {[c.cif, c.email].filter(Boolean).join(" · ")}
+                                </span>
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Ubicación */}
+                <div>
+                  <label className="mb-1 flex items-center gap-1 text-xs font-semibold text-text-mid">
+                    <MapPin size={13} /> Ubicación
+                    <Help text="Opcional. Aparecerá en Google Maps si la abres desde el calendario del móvil." />
+                  </label>
+                  <input
+                    type="text"
+                    value={ubicacion}
+                    onChange={(e) => setUbicacion(e.target.value)}
+                    placeholder="Ej: C/ Mayor 12, Madrid · o videollamada"
+                    className="w-full rounded-xl border border-indigo-400/20 bg-indigo-900/30 px-3 py-2.5 text-sm text-text-hi placeholder:text-text-ghost focus:border-cyan/50 focus:outline-none"
+                  />
+                </div>
+
+                {/* Notas */}
+                <div>
+                  <label className="mb-1 flex items-center gap-1 text-xs font-semibold text-text-mid">
+                    <FileText size={13} /> Notas
+                    <Help text="Detalles, recordatorios o cualquier nota interna sobre la cita." />
+                  </label>
+                  <textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    rows={3}
+                    placeholder="Lo que necesites recordar antes de la cita…"
+                    className="w-full resize-none rounded-xl border border-indigo-400/20 bg-indigo-900/30 px-3 py-2.5 text-sm text-text-hi placeholder:text-text-ghost focus:border-cyan/50 focus:outline-none"
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

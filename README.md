@@ -221,6 +221,40 @@ npx cap sync
 
 > Resumen de todo lo construido en orden de iteraciones (más reciente → más antiguo).
 
+### Iteración 44 — *2026-05-12* — Módulo **Citas** con lista, vista anual, modal con bloque "Adicionales", historial conectado a `agenda_eventos`, sección de citas en Perfil, y documentos por cliente
+
+**Historial de citas conectado a la fuente real**
+- `src/components/crm/TabHistorial.tsx`: corregido — antes consultaba la tabla legacy `citas` (vacía en producción), ahora lee `agenda_eventos` (que es la sincronizada con Google). Campos remapeados (`title`, `description`, `start_time`, `end_time`, `estado`, `ubicacion`). El botón "Nueva cita" enlaza ahora a `/citas?cliente=…`.
+
+**Módulo Citas con calendario + lista**
+- `src/app/(app)/citas/page.tsx`: convertido a `"use client"` con segmented control **Calendario / Lista**.
+- Nuevo `src/components/agenda/CitasLista.tsx`: listado completo de eventos (`agenda_eventos` con join a `clientes`) con búsqueda por título/cliente/ubicación y filtros **Próximas / Hoy / 7 días / Pasadas / Todas**. Ordena ascendente salvo en "Pasadas". Cada fila enlaza al cliente si está vinculado.
+
+**Vista anual en el calendario**
+- `npm install @fullcalendar/multimonth@6.1.20`.
+- `src/components/agenda/CalendarView.tsx`: añadido `multiMonthPlugin`, locale traducido (`year: "Año"`), botón **Año** en la `headerToolbar`, vista `multiMonthYear` configurada (4 columnas, ancho mínimo 220px).
+
+**Calendario a página completa**
+- `src/components/layout/AppShell.tsx`: lee `usePathname()` y, para las rutas listadas en `FULL_BLEED = ["/citas"]`, retira el `max-w-[1240px]` del `<main>` para que el calendario ocupe todo el ancho disponible.
+
+**Modal de cita reordenado con bloque "Adicionales"**
+- `src/components/agenda/EventModal.tsx`:
+  - Cuerpo reordenado: título → inicio → fin → color (siempre visibles).
+  - Nuevo bloque colapsable **Adicionales** (icono `Sliders`, `ChevronDown/Right`) al final del formulario con: persona asociada (combobox de clientes), ubicación y notas.
+  - Se abre automáticamente al editar una cita si ya tiene cliente, ubicación o notas.
+
+**Sección "Mis próximas citas" en Perfil**
+- Nuevo `src/components/perfil/MisCitas.tsx`: lista de hasta 8 citas futuras (`start_time >= now`, `estado != 'cancelada'`) con cliente vinculado, ubicación, hora y duración. Enlace directo al cliente y a la agenda.
+- Integrado en `src/app/(app)/perfil/page.tsx` entre los datos personales y el bloque de Permisos.
+
+**Documentos asociados al cliente**
+- Nuevo `src/components/crm/TabDocumentos.tsx`: dos paneles en paralelo dentro de la ficha del cliente:
+  - **Documentos comerciales** (`documentos` con `cliente_id = clienteId`): referencia, tipo, fecha, total, estado (`borrador|generado|enviado|pagado|anulado`), enlace al PDF y al detalle.
+  - **Movimientos financieros** (`finanzas` con `cliente_id = clienteId`): concepto, fecha, total con signo según `tipo`, estado de pago.
+- `src/app/(app)/clientes/[id]/page.tsx`: nueva tab **Documentos** (icono `FileText`) entre "Historial" y "Mensajes".
+
+---
+
 ### Iteración 43 — *2026-05-12* — Cumplimiento RGPD: consentimientos del titular, onboarding obligatorio y sección **Cumplimiento** en Ajustes
 
 **Modelo de datos**

@@ -1,13 +1,21 @@
 "use client";
 
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { Sidebar } from "./Sidebar";
 import { DeviceTracker } from "@/components/auth/DeviceTracker";
 import { ToastProvider } from "@/components/ui/Toast";
 
+// Rutas que ocupan todo el ancho disponible (sin el max-w por defecto).
+const FULL_BLEED = ["/citas"];
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
+  const pathname = usePathname() ?? "";
+  const fullBleed = FULL_BLEED.some(
+    (p) => pathname === p || pathname.startsWith(p + "/")
+  );
 
   return (
     <ToastProvider>
@@ -51,7 +59,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="accent-bar ml-1" style={{ width: 40, height: 2 }} />
         </header>
 
-        <main className="mx-auto w-full max-w-[1240px] flex-1 px-4 pb-20 pt-4 sm:px-6 lg:px-8 lg:py-8">
+        <main
+          className={
+            fullBleed
+              ? "w-full flex-1 px-4 pb-20 pt-4 sm:px-6 lg:px-8 lg:py-8"
+              : "mx-auto w-full max-w-[1240px] flex-1 px-4 pb-20 pt-4 sm:px-6 lg:px-8 lg:py-8"
+          }
+        >
           {children}
         </main>
       </div>
