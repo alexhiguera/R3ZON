@@ -57,6 +57,7 @@ commit;
 \i inventario_ext.sql
 \i fichajes_ext.sql
 \i fix_tenant_defaults.sql
+\i security_hardening.sql
 
 -- 3. SEED --------------------------------------------------------------------
 \i seed_clientes.sql
@@ -76,7 +77,8 @@ commit;
 --  10) inventario_ext.sql
 --  11) fichajes_ext.sql
 --  12) fix_tenant_defaults.sql
---  13) seed_clientes.sql
+--  13) security_hardening.sql
+--  14) seed_clientes.sql
 --
 -- Opcional (gestión avanzada de retención de logs, ejecutar manualmente
 -- cuando proceda y solo si tu plan Supabase soporta pg_cron):

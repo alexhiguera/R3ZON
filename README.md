@@ -246,6 +246,16 @@ npx cap sync
 
 > Resumen de todo lo construido en orden de iteraciones (más reciente → más antiguo).
 
+### Iteración 48 — *2026-05-12* — Endurecimiento de seguridad: RLS en tablas archivo y vistas con `security_invoker`
+
+Auditoría del Database Linter de Supabase. Se resuelven los 8 ERRORES detectados:
+
+- **RLS habilitada** en `fichajes_archivo`, `stock_movimientos_archivo`, `tpv_ventas_archivo` y `tpv_venta_items_archivo` con políticas `SELECT` por tenant vía `current_negocio_id()`.
+- **Vistas reescritas con `security_invoker = on`** (`v_fichaje_estado_actual`, `v_consentimientos_negocio`, `v_equipo_negocio`) — ya no se ejecutan con privilegios del creador.
+- **`v_equipo_negocio` sin JOIN a `auth.users`**: el email del titular se toma de `perfiles_negocio.email_contacto`. Elimina el lint `auth_users_exposed`.
+
+Nuevo fichero `supabase/security_hardening.sql` (idempotente) integrado en `setup.sql` tras `fix_tenant_defaults.sql`. Los WARNs restantes (search_path mutable en triggers, RPCs `security definer` intencionales por diseño del modelo de roles, buckets públicos para logos/avatares) se aceptan como decisiones de arquitectura.
+
 ### Iteración 47 — *2026-05-12* — Búsqueda global Cmd+K, pestaña Datos (import/export), sistema de roles con super admin global y ROLES.md
 
 **Nuevas capacidades transversales**
