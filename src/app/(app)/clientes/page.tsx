@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   Search, Plus, Building2, Phone, Mail, MessageCircle,
   ChevronRight, SlidersHorizontal, Globe, Loader2,
+  LayoutGrid, List as ListIcon,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -33,12 +34,26 @@ const ETIQUETA_COLORS: Record<string, string> = {
 
 const PAGE_SIZE = 50;
 
+type Vista = "lista" | "tarjetas";
+const VISTA_KEY = "clientes:vista";
+
 export default function ClientesPage() {
   const [clientes, setClientes] = useState<ClienteRow[]>([]);
   const [busqueda, setBusqueda] = useState("");
   const [cargando, setCargando] = useState(true);
   const [hayMas, setHayMas] = useState(false);
   const [cargandoMas, setCargandoMas] = useState(false);
+  const [vista, setVista] = useState<Vista>("lista");
+
+  useEffect(() => {
+    const v = typeof window !== "undefined" ? window.localStorage.getItem(VISTA_KEY) : null;
+    if (v === "lista" || v === "tarjetas") setVista(v);
+  }, []);
+
+  const cambiarVista = (v: Vista) => {
+    setVista(v);
+    if (typeof window !== "undefined") window.localStorage.setItem(VISTA_KEY, v);
+  };
 
   const cargar = useCallback(async (q = "", cursor: string | null = null, append = false) => {
     const supabase = createClient();
@@ -97,6 +112,34 @@ export default function ClientesPage() {
             className="h-12 w-full rounded-xl border border-indigo-400/20 bg-indigo-900/30 pl-10 pr-4 text-sm text-text-hi placeholder:text-text-lo focus:border-cyan/50 focus:outline-none focus:ring-2 focus:ring-cyan/20"
           />
         </div>
+        <div className="flex h-12 items-center gap-0.5 rounded-xl border border-indigo-400/20 bg-indigo-900/30 p-1">
+          <Tooltip text="Vista lista" side="bottom">
+            <button
+              onClick={() => cambiarVista("lista")}
+              aria-pressed={vista === "lista"}
+              className={`flex h-9 w-9 items-center justify-center rounded-lg transition-colors ${
+                vista === "lista"
+                  ? "bg-cyan/15 text-cyan"
+                  : "text-indigo-300 hover:text-text-hi"
+              }`}
+            >
+              <ListIcon size={15} />
+            </button>
+          </Tooltip>
+          <Tooltip text="Vista tarjetas" side="bottom">
+            <button
+              onClick={() => cambiarVista("tarjetas")}
+              aria-pressed={vista === "tarjetas"}
+              className={`flex h-9 w-9 items-center justify-center rounded-lg transition-colors ${
+                vista === "tarjetas"
+                  ? "bg-cyan/15 text-cyan"
+                  : "text-indigo-300 hover:text-text-hi"
+              }`}
+            >
+              <LayoutGrid size={15} />
+            </button>
+          </Tooltip>
+        </div>
         <Tooltip text="Filtros avanzados próximamente" side="bottom">
           <button className="flex h-12 w-12 items-center justify-center rounded-xl border border-indigo-400/20 bg-indigo-900/30 text-indigo-300 hover:border-indigo-400/40">
             <SlidersHorizontal size={16} />
@@ -135,7 +178,89 @@ export default function ClientesPage() {
         </div>
       )}
 
+      {/* Listado de clientes */}
+      {clientes.length > 0 && vista === "lista" && (
+        <div className="card-glass overflow-hidden">
+          <ul className="divide-y divide-indigo-400/10">
+            {clientes.map((c) => (
+              <li key={c.id} className="group relative flex items-center gap-3 px-4 py-3 hover:bg-indigo-900/20">
+                <Link
+                  href={`/clientes/${c.id}`}
+                  aria-label={c.nombre}
+                  className="absolute inset-0 z-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan/40"
+                />
+                <div className="relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-indigo-400/20 bg-indigo-900/40 font-display text-sm font-bold uppercase text-indigo-300 pointer-events-none">
+                  {c.nombre.charAt(0)}
+                </div>
+                <div className="relative z-10 min-w-0 flex-1 pointer-events-none">
+                  <div className="flex items-center gap-2">
+                    <span className="truncate font-display text-sm font-semibold text-text-hi">{c.nombre}</span>
+                    <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${ESTADO_CLIENTE_BADGE[c.estado]}`}>
+                      {c.estado}
+                    </span>
+                  </div>
+                  <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-text-lo">
+                    {c.cif && <span>{c.cif}</span>}
+                    {c.sector && <span>{c.sector}</span>}
+                    {c.email && <span className="truncate">{c.email}</span>}
+                    {c.telefono && <span>{c.telefono}</span>}
+                  </div>
+                </div>
+                <div className="relative z-10 hidden shrink-0 items-center gap-1.5 sm:flex">
+                  {c.telefono && (
+                    <Tooltip text="Llamar" side="bottom">
+                      <a
+                        href={`tel:${c.telefono}`}
+                        className="flex h-8 w-8 items-center justify-center rounded-lg border border-indigo-400/20 bg-indigo-900/40 text-indigo-300 hover:border-ok/40 hover:text-ok"
+                      >
+                        <Phone size={13} />
+                      </a>
+                    </Tooltip>
+                  )}
+                  {c.telefono && (
+                    <Tooltip text="WhatsApp" side="bottom">
+                      <a
+                        href={`https://wa.me/${c.telefono.replace(/\D/g, "")}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex h-8 w-8 items-center justify-center rounded-lg border border-indigo-400/20 bg-indigo-900/40 text-indigo-300 hover:border-ok/40 hover:text-ok"
+                      >
+                        <MessageCircle size={13} />
+                      </a>
+                    </Tooltip>
+                  )}
+                  {c.email && (
+                    <Tooltip text="Email" side="bottom">
+                      <a
+                        href={`mailto:${c.email}`}
+                        className="flex h-8 w-8 items-center justify-center rounded-lg border border-indigo-400/20 bg-indigo-900/40 text-indigo-300 hover:border-cyan/40 hover:text-cyan"
+                      >
+                        <Mail size={13} />
+                      </a>
+                    </Tooltip>
+                  )}
+                  {c.sitio_web && (
+                    <Tooltip text="Web" side="bottom">
+                      <a
+                        href={c.sitio_web.startsWith("http") ? c.sitio_web : `https://${c.sitio_web}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex h-8 w-8 items-center justify-center rounded-lg border border-indigo-400/20 bg-indigo-900/40 text-indigo-300 hover:border-cyan/40 hover:text-cyan"
+                      >
+                        <Globe size={13} />
+                      </a>
+                    </Tooltip>
+                  )}
+                </div>
+                <ChevronRight size={15} className="relative z-10 pointer-events-none shrink-0 text-indigo-400/40 group-hover:text-indigo-300" />
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {/* Cuadrícula de clientes */}
+      {vista === "tarjetas" && (
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {clientes.map((c) => (
           <article
@@ -241,6 +366,7 @@ export default function ClientesPage() {
           </article>
         ))}
       </div>
+      )}
 
       {hayMas && (
         <div className="flex justify-center">

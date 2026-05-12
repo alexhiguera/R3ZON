@@ -221,6 +221,24 @@ npx cap sync
 
 > Resumen de todo lo construido en orden de iteraciones (más reciente → más antiguo).
 
+### Iteración 45 — *2026-05-12* — Vistas alternativas en Clientes (lista / tarjetas, organigrama jerárquico) y reorganización de la ficha
+
+**Listado de clientes con dos vistas conmutables**
+- `src/app/(app)/clientes/page.tsx`: añadido conmutador *Lista* ↔ *Tarjetas* en la barra superior. La vista por defecto es **lista** (más densa, optimizada para escanear). La preferencia se persiste por usuario en `localStorage["clientes:vista"]`.
+- Vista lista: filas compactas con avatar, razón social, badge de estado, CIF/sector/email/teléfono y acciones rápidas (llamar, WhatsApp, email, web). El `Link` cubre toda la fila vía *stretched link* y los iconos de acción se superponen con `pointer-events`.
+- Vista tarjetas: se conserva intacta la cuadrícula previa.
+
+**Organigrama jerárquico como vista predeterminada de Contactos**
+- `src/components/clientes/ContactosTab.tsx`: añadido conmutador *Árbol* ↔ *Tarjetas*. La vista por defecto es **árbol**, que reutiliza `HierarchyChart` (`@xyflow/react`) para dibujar el organigrama a partir de `reports_to`. Se va construyendo automáticamente conforme se añaden contactos con su superior directo. La preferencia se persiste en `localStorage["clientes:contactos:vista"]`.
+
+**Separación de Documentos y Movimientos**
+- `src/components/crm/TabDocumentos.tsx`: simplificado — ahora muestra **solo** documentos comerciales (facturas, presupuestos, albaranes) a ancho completo.
+- `src/components/crm/TabMovimientos.tsx` (nuevo): contiene la sección de ingresos/gastos que antes vivía dentro de Documentos. Lee `finanzas` filtrando por `cliente_id` y mantiene el formato con badges de estado de pago.
+
+**Limpieza de pestañas en la ficha del cliente**
+- `src/app/(app)/clientes/[id]/page.tsx`: eliminadas las pestañas **Mensajes** (`TabComunicaciones`) y **Automático** (`TabAutomatizacion`); añadida la pestaña **Movimientos**. Orden final: *Información · Contactos · Historial · Documentos · Movimientos*.
+- Sincronización con agenda ya garantizada desde la iteración 44: los eventos creados en el calendario con cliente asociado se ven en la pestaña *Historial* (consulta directa de `agenda_eventos`).
+
 ### Iteración 44 — *2026-05-12* — Módulo **Citas** con lista, vista anual, modal con bloque "Adicionales", historial conectado a `agenda_eventos`, sección de citas en Perfil, y documentos por cliente
 
 **Historial de citas conectado a la fuente real**

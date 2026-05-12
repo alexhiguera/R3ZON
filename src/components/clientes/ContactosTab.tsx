@@ -1,12 +1,19 @@
 "use client";
 
 import { useState } from "react";
+import { useEffect } from "react";
 import {
   Plus, Mail, Phone, MessageCircle, Pencil, Trash2,
   Crown, UserPlus2, Loader2, Save, X,
+  Network, LayoutGrid,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { HierarchyChart } from "./HierarchyChart";
+import { Tooltip } from "@/components/ui/Tooltip";
 import type { Contacto } from "./types";
+
+type Vista = "arbol" | "tarjetas";
+const VISTA_KEY = "clientes:contactos:vista";
 
 type ContactoForm = {
   id?: string;
@@ -38,6 +45,17 @@ export function ContactosTab({
 }) {
   const [editing, setEditing] = useState<ContactoForm | null>(null);
   const [saving, setSaving] = useState(false);
+  const [vista, setVista] = useState<Vista>("arbol");
+
+  useEffect(() => {
+    const v = typeof window !== "undefined" ? window.localStorage.getItem(VISTA_KEY) : null;
+    if (v === "arbol" || v === "tarjetas") setVista(v);
+  }, []);
+
+  const cambiarVista = (v: Vista) => {
+    setVista(v);
+    if (typeof window !== "undefined") window.localStorage.setItem(VISTA_KEY, v);
+  };
 
   const abrirNuevo = () => setEditing({ ...EMPTY });
   const abrirEditar = (c: Contacto) =>
@@ -112,16 +130,44 @@ export function ContactosTab({
             Personas dentro de la organización del cliente con las que tienes relación.
           </p>
         </div>
-        <button
-          onClick={abrirNuevo}
-          className="flex h-11 items-center gap-2 rounded-xl bg-gradient-to-r from-cyan to-fuchsia px-4 text-sm font-bold text-bg"
-        >
-          <Plus size={14} /> Añadir contacto
-        </button>
+        <div className="flex items-center gap-2">
+          <div className="flex h-11 items-center gap-0.5 rounded-xl border border-indigo-400/20 bg-indigo-900/30 p-1">
+            <Tooltip text="Organigrama jerárquico" side="bottom">
+              <button
+                onClick={() => cambiarVista("arbol")}
+                aria-pressed={vista === "arbol"}
+                className={`flex h-8 w-8 items-center justify-center rounded-lg transition-colors ${
+                  vista === "arbol" ? "bg-cyan/15 text-cyan" : "text-indigo-300 hover:text-text-hi"
+                }`}
+              >
+                <Network size={14} />
+              </button>
+            </Tooltip>
+            <Tooltip text="Vista tarjetas" side="bottom">
+              <button
+                onClick={() => cambiarVista("tarjetas")}
+                aria-pressed={vista === "tarjetas"}
+                className={`flex h-8 w-8 items-center justify-center rounded-lg transition-colors ${
+                  vista === "tarjetas" ? "bg-cyan/15 text-cyan" : "text-indigo-300 hover:text-text-hi"
+                }`}
+              >
+                <LayoutGrid size={14} />
+              </button>
+            </Tooltip>
+          </div>
+          <button
+            onClick={abrirNuevo}
+            className="flex h-11 items-center gap-2 rounded-xl bg-gradient-to-r from-cyan to-fuchsia px-4 text-sm font-bold text-bg"
+          >
+            <Plus size={14} /> Añadir contacto
+          </button>
+        </div>
       </div>
 
       {contactos.length === 0 ? (
         <EmptyState onAdd={abrirNuevo} />
+      ) : vista === "arbol" ? (
+        <HierarchyChart contactos={contactos} onAddFirst={abrirNuevo} />
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
           {contactos.map((c) => {
