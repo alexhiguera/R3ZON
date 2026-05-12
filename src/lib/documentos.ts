@@ -2,12 +2,12 @@
 // Sin red ni Supabase: todo determinístico para tests.
 
 import { eur, round2 } from "./formato";
+import type { Database } from "./database.types";
 
 export { eur };
 
-// TODO(post-iter37): migrar a `Database["public"]["Tables"]["documentos"]["Row"]`
-// (`src/lib/database.types.ts` ya existe). Atención: el editor extiende el tipo
-// con campos derivados (totales, snapshots) — refactor mayor.
+type DocumentoRow = Database["public"]["Tables"]["documentos"]["Row"];
+
 export type TipoDocumento =
   | "factura"
   | "ticket"
@@ -61,35 +61,15 @@ export type ClienteSnapshot = {
   email: string | null;
 };
 
-export type Documento = {
-  id: string;
-  negocio_id: string;
-  cliente_id: string | null;
+export type Documento = Omit<
+  DocumentoRow,
+  "tipo" | "estado" | "emisor_snapshot" | "cliente_snapshot" | "lineas"
+> & {
   tipo: TipoDocumento;
-  serie: string;
-  numero: number | null;
-  anio: number;
-  referencia: string;
-  fecha_emision: string;
-  fecha_vencimiento: string | null;
+  estado: EstadoDocumento;
   emisor_snapshot: EmisorSnapshot;
   cliente_snapshot: ClienteSnapshot;
   lineas: LineaDocumento[];
-  subtotal: number;
-  descuento_total: number;
-  base_imponible: number;
-  iva_total: number;
-  irpf_pct: number;
-  irpf_total: number;
-  total: number;
-  estado: EstadoDocumento;
-  notas: string | null;
-  condiciones_pago: string | null;
-  metodo_pago: string | null;
-  finanza_id: string | null;
-  pdf_url: string | null;
-  created_at: string;
-  updated_at: string;
 };
 
 export const ETIQUETA_TIPO: Record<TipoDocumento, string> = {

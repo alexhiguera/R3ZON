@@ -13,6 +13,7 @@ import {
   AlertCircle,
   ExternalLink,
   Ban,
+  Archive,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -60,6 +61,7 @@ export function CumplimientoTab() {
   const [rows, setRows] = useState<Vigente[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyTipo, setBusyTipo] = useState<string | null>(null);
+  const [exportando, setExportando] = useState(false);
   const [toast, setToast] = useState<{ kind: "ok" | "err"; msg: string } | null>(null);
 
   const flash = (t: typeof toast) => {
@@ -81,6 +83,54 @@ export function CumplimientoTab() {
     void cargar();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const exportarDatos = async () => {
+    setExportando(true);
+    try {
+      const [
+        { data: clientes },
+        { data: finanzas },
+        { data: tareas },
+        { data: documentos },
+        { data: citas },
+        { data: comunicaciones },
+        { data: consentimientos },
+      ] = await Promise.all([
+        supabase.from("clientes").select("*").order("created_at"),
+        supabase.from("finanzas").select("*").order("fecha"),
+        supabase.from("tareas_kanban").select("*").order("created_at"),
+        supabase.from("documentos").select("*").order("created_at"),
+        supabase.from("agenda_eventos").select("*").order("start_time"),
+        supabase.from("comunicaciones").select("*").order("created_at"),
+        supabase.from("v_consentimientos_negocio").select("*"),
+      ]);
+
+      const { zipSync, strToU8 } = await import("fflate");
+      const fecha = new Date().toISOString().slice(0, 10);
+      const encode = (obj: unknown) => strToU8(JSON.stringify(obj, null, 2));
+      const zip = zipSync({
+        "clientes.json":       encode(clientes ?? []),
+        "finanzas.json":       encode(finanzas ?? []),
+        "tareas.json":         encode(tareas ?? []),
+        "documentos.json":     encode(documentos ?? []),
+        "citas.json":          encode(citas ?? []),
+        "comunicaciones.json": encode(comunicaciones ?? []),
+        "consentimientos.json":encode(consentimientos ?? []),
+        "exportado.txt":       strToU8(`Exportación R3ZON Business OS — ${fecha}\nContenido: todos los datos del negocio en formato JSON.\n`),
+      });
+      const blob = new Blob([zip.buffer as ArrayBuffer], { type: "application/zip" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `r3zon-mis-datos-${fecha}.zip`;
+      a.click();
+      URL.revokeObjectURL(url);
+      flash({ kind: "ok", msg: "Datos exportados correctamente." });
+    } catch {
+      flash({ kind: "err", msg: "No se pudo generar la exportación." });
+    }
+    setExportando(false);
+  };
 
   const revocar = async (tipo: string) => {
     if (!confirm(`¿Revocar el consentimiento de "${tipo}"?`)) return;
@@ -209,6 +259,24 @@ export function CumplimientoTab() {
             ))}
           </ul>
         )}
+      </div>
+      <div className="card-glass p-5 sm:p-7">
+        <div className="section-label mb-2">Portabilidad de datos</div>
+        <p className="mb-4 text-xs text-text-mid">
+          Derecho de portabilidad (Art. 20 RGPD). Descarga todos tus datos en
+          formato JSON comprimido. El archivo incluye clientes, finanzas, tareas,
+          documentos, citas, comunicaciones y consentimientos.
+        </p>
+        <button
+          type="button"
+          onClick={exportarDatos}
+          disabled={exportando}
+          className="flex items-center gap-2 rounded-xl border border-indigo-400/25 bg-indigo-900/30 px-4 py-2.5 text-sm font-semibold text-indigo-200 hover:border-cyan/40 hover:text-cyan disabled:opacity-50"
+        >
+          {exportando
+            ? <><Loader2 className="animate-spin" size={15} /> Generando…</>
+            : <><Archive size={15} /> Exportar mis datos (.zip)</>}
+        </button>
       </div>
     </div>
   );

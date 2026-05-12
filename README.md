@@ -141,24 +141,49 @@ r3zon-crm/
 # 1. Dependencias
 npm install
 
-# 2. Base de datos (ejecutar en Supabase SQL Editor en este orden)
-#   schema.sql → auth_extension.sql → crm_kanban_ext.sql → agenda_ext.sql
-#   billing_ext.sql → team_ext.sql → fix_tenant_defaults.sql
-#   (o usar setup.sql para wipe + reload completo en dev)
+# 2. Variables de entorno
+cp .env.local.example .env.local
+# Rellenar todos los valores — ver comentarios en .env.local.example
 
-# 3. Variables de entorno — copiar .env.local.example a .env.local y rellenar:
-#   NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-#   SUPABASE_SERVICE_ROLE_KEY        ← Supabase Dashboard > Settings > API
-#   GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET
-#   GOOGLE_WEBHOOK_URL               ← URL HTTPS pública (en dev: túnel cloudflared/ngrok)
-#   CRON_SECRET                      ← openssl rand -base64 32
-#   STRIPE_SECRET_KEY / STRIPE_WEBHOOK_SECRET / STRIPE_PRICE_PRO / STRIPE_PRICE_BUSINESS
+# 3. Base de datos
+# Opción A (dev): abrir Supabase SQL Editor y pegar setup.sql completo.
+#   setup.sql hace wipe + reload de todo en el orden correcto.
+#
+# Opción B (producción o incremental): ejecutar en este orden exacto:
+#   1.  schema.sql                    # tablas base, RLS, triggers
+#   2.  auth_extension.sql            # onboarding, dispositivos, RPCs TOTP
+#   3.  crm_kanban_ext.sql            # comunicaciones, kanban_columnas, RPCs batch
+#   4.  agenda_ext.sql                # agenda_eventos, google_connections, watch channels
+#   5.  billing_ext.sql               # stripe_customer_id, pagos_stripe
+#   6.  team_ext.sql                  # miembros_negocio, RPCs invitación/revocación
+#   7.  metodos_pago_ext.sql          # métodos de pago configurables
+#   8.  documentos_ext.sql            # documentos (factura/ticket/presupuesto), numeración AEAT
+#   9.  documentos_recibo_logos_ext.sql  # campo logo en documentos tipo recibo
+#   10. inventario_ext.sql            # productos, stock_movimientos, TPV
+#   11. inventario_imagenes_ext.sql   # campo imagen_url en productos
+#   12. fichajes_ext.sql              # fichajes (RD-ley 8/2019), state machine
+#   13. proveedores_ext.sql           # proveedores, gastos recurrentes
+#   14. listado_ext.sql               # configuración de campos del listado
+#   15. perfil_usuario_ext.sql        # avatar y preferencias de usuario
+#   16. theme_ext.sql                 # temas personalizados por negocio
+#   17. rgpd_ext.sql                  # funciones adicionales de auditoría RGPD
+#   18. fix_tenant_defaults.sql       # trigger genérico fill_negocio_id (red de seguridad RLS)
+#   19. seed_clientes.sql             # (opcional) 10 empresas de ejemplo
+#   20. retention_ext.sql             # (opcional) limpieza automática de logs con pg_cron
 
 # 4. Crear usuario admin de desarrollo
 npm run seed:admin
 
 # 5. Arrancar
 npm run dev
+```
+
+### Webhook de Stripe en desarrollo
+
+```bash
+# Instalar Stripe CLI: https://stripe.com/docs/stripe-cli
+stripe listen --forward-to localhost:3000/api/billing/webhook
+# Copiar el signing secret que muestra la CLI a STRIPE_WEBHOOK_SECRET en .env.local
 ```
 
 ### Webhook de Google Calendar en desarrollo
@@ -220,6 +245,26 @@ npx cap sync
 ## 📒 Bitácora de iteraciones
 
 > Resumen de todo lo construido en orden de iteraciones (más reciente → más antiguo).
+
+### Iteración 46 — *2026-05-12* — Sprint v1.0 completo: limpieza técnica, errores, seguridad, comunicaciones, exportación, plan Free, PDF, analytics
+
+**Plan v1.0 ejecutado íntegramente (§1–§10, §12)**
+
+- **§1 Limpieza técnica**: eliminados `page 2.tsx` duplicados en clientes y clientes/nuevo; tipos `Producto` y `Documento` migrados a `Database["public"]["Tables"][...]["Row"]` en `src/lib/inventario.ts` y `src/lib/documentos.ts`
+- **§2 Gestión de errores**: `useToast` añadido a `cargar()` en clientes, tareas y finanzas; estados vacíos con CTA existentes confirmados
+- **§3 Onboarding**: flujo registro → onboarding → dashboard confirmado funcional con consentimientos RGPD y `seed_kanban` trigger
+- **§4 Entorno documentado**: `.env.local.example` reescrito con las 20+ variables comentadas; README actualizado con orden de los 21 SQL y setup de webhooks
+- **§5 Seguridad**: auditoría confirmó que tokens Google no se exponen, `channel_token` usa `timingSafeEqual`, `SERVICE_ROLE_KEY` nunca en `NEXT_PUBLIC_*`, webhook Stripe valida `stripe-signature`
+- **§6 Comunicaciones**: tab `Comunicaciones` restaurado en `/clientes/[id]` con `TabComunicaciones` (lista cronológica + añadir nota)
+- **§7 Exportación RGPD**: `src/lib/csv.ts` (nuevo utilitario BOM+CSV); botón "Exportar CSV" en `/clientes` y `/finanzas`; botón "Exportar mis datos" en Ajustes → Cumplimiento genera ZIP con 7 tablas vía `fflate`
+- **§8 Plan Free**: `src/lib/usePlan.ts` (nuevo hook) con `LIMITES` por tier (free/pro/business); banners de upgrade y botón "Nuevo" deshabilitado al alcanzar límite en clientes y tareas
+- **§9 Testing**: 131 tests en 13 archivos ya pasando — sin cambios necesarios
+- **§10 PDF**: `descargarPDF()` en `/documentos/[id]` reescrita con `jsPDF` + `html2canvas` carga lazy; soporte multi-página A4 y formato ticket 80mm; botón "Imprimir" separado
+- **§12 Observabilidad**: `@vercel/analytics` instalado y `<Analytics />` en `src/app/layout.tsx`; logs estructurados con timestamp en el cron `refresh-google-channels`
+
+**Pendiente (post-v1.0)**: §11 recordatorios email · §13 modo claro · §14 búsqueda global Cmd+K
+
+---
 
 ### Iteración 45 — *2026-05-12* — Vistas alternativas en Clientes (lista / tarjetas, organigrama jerárquico) y reorganización de la ficha
 

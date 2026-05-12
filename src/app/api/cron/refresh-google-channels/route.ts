@@ -40,15 +40,21 @@ export async function GET(request: NextRequest) {
 
   try {
     const result = await refreshExpiringWatchChannels();
-    return NextResponse.json({
-      ok: true,
-      ...result,
-    });
+    if (result.failed > 0) {
+      console.error("cron_google_channels_failures", {
+        failed: result.failed,
+        renewed: result.renewed,
+        errors: result.errors,
+        ts: new Date().toISOString(),
+      });
+    } else {
+      console.log("cron_google_channels_ok", { renewed: result.renewed, ts: new Date().toISOString() });
+    }
+    return NextResponse.json({ ok: true, ...result });
   } catch (err) {
-    return NextResponse.json(
-      { ok: false, error: err instanceof Error ? err.message : "unknown" },
-      { status: 500 }
-    );
+    const msg = err instanceof Error ? err.message : "unknown";
+    console.error("cron_google_channels_crash", { error: msg, ts: new Date().toISOString() });
+    return NextResponse.json({ ok: false, error: msg }, { status: 500 });
   }
 }
 

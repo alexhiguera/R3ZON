@@ -2,35 +2,14 @@
 // y testeable.
 
 import { eur, round2, round3 } from "./formato";
+import type { Database } from "./database.types";
 
 export { eur };
 
 export type TipoProducto = "producto" | "servicio";
 
-// TODO(post-iter37): migrar a `Database["public"]["Tables"]["productos"]["Row"]`
-// (`src/lib/database.types.ts` ya existe). El cambio toca consumidores que asumen
-// `precio_*` y `iva_pct` como no-nullable; revisar página por página al hacerlo.
-export type Producto = {
-  id: string;
-  negocio_id: string;
-  codigo: string | null;
-  nombre: string;
-  descripcion: string | null;
-  categoria: string | null;
-  tipo: TipoProducto;
-  unidad: string;
-  precio_venta: number;
-  precio_coste: number;
-  iva_pct: number;
-  stock_tracking: boolean;
-  stock_actual: number;
-  stock_minimo: number;
-  imagen_url: string | null;
-  color: string | null;
-  activo: boolean;
-  created_at: string;
-  updated_at: string;
-};
+type ProductoRow = Database["public"]["Tables"]["productos"]["Row"];
+export type Producto = Omit<ProductoRow, "tipo"> & { tipo: TipoProducto };
 
 export type TipoMovimientoStock =
   | "entrada"

@@ -26,6 +26,8 @@ import { Plus, Settings2, Loader2, Kanban, GripHorizontal } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Tooltip } from "@/components/ui/Tooltip";
+import { useToast } from "@/components/ui/Toast";
+import { usePlan, haAlcanzadoLimite } from "@/lib/usePlan";
 import { TaskCard } from "@/components/kanban/TaskCard";
 import { TaskModal } from "@/components/kanban/TaskModal";
 import { InlineTaskAdder } from "@/components/kanban/InlineTaskAdder";
@@ -163,6 +165,9 @@ function SortableColumn({
 // ─── Página principal ──────────────────────────────────────────────────────
 export default function TareasPage() {
   const supabase = createClient();
+  const toast = useToast();
+  const { plan, limites, contadores } = usePlan();
+  const tareaLimiteAlcanzado = haAlcanzadoLimite(plan, "tareas", contadores.tareas);
 
   const [columnas, setColumnas] = useState<Columna[]>([]);
   const [tareas, setTareas] = useState<Tarea[]>([]);
@@ -180,17 +185,20 @@ export default function TareasPage() {
   columnasRef.current = columnas;
 
   const cargar = useCallback(async () => {
-    const [{ data: cols }, { data: tk }] = await Promise.all([
+    const [{ data: cols, error: eCols }, { data: tk, error: eTk }] = await Promise.all([
       supabase.from("kanban_columnas").select("*").order("posicion"),
       supabase.from("tareas_kanban")
         .select("*")
         .eq("completada", false)
         .order("posicion"),
     ]);
+    if (eCols || eTk) {
+      toast.err("No se pudieron cargar las tareas. Comprueba tu conexión e inténtalo de nuevo.");
+    }
     setColumnas((cols ?? []) as Columna[]);
     setTareas((tk ?? []) as Tarea[]);
     setCargando(false);
-  }, []);
+  }, [toast]);
 
   useEffect(() => { cargar(); }, [cargar]);
 
@@ -413,6 +421,26 @@ export default function TareasPage() {
         description="Arrastra las tarjetas para cambiar su estado. Las columnas también se pueden reordenar desde el icono de su cabecera."
       />
 
+      {/* Banner de límite plan Free */}
+      {plan === "free" && limites.tareas !== null && (
+        <div className={`flex items-center justify-between gap-4 rounded-2xl border px-4 py-3 text-sm ${
+          tareaLimiteAlcanzado
+            ? "border-danger/30 bg-danger/10 text-danger"
+            : contadores.tareas >= limites.tareas - 2
+            ? "border-warn/30 bg-warn/10 text-warn"
+            : "border-indigo-400/20 bg-indigo-900/20 text-text-mid"
+        }`}>
+          <span>
+            {tareaLimiteAlcanzado
+              ? `Has alcanzado el límite de ${limites.tareas} tareas activas del plan Free.`
+              : `Plan Free: ${contadores.tareas} / ${limites.tareas} tareas activas.`}
+          </span>
+          <a href="/ajustes?tab=suscripcion" className="shrink-0 rounded-lg border border-current px-3 py-1 text-xs font-semibold hover:opacity-80">
+            Mejorar plan
+          </a>
+        </div>
+      )}
+
       {/* Barra de herramientas */}
       <div className="flex items-center gap-3">
         <Tooltip
@@ -427,10 +455,16 @@ export default function TareasPage() {
           </button>
         </Tooltip>
         {columnas[0] && (
-          <Tooltip text="Crea una nueva tarea en la primera columna." side="bottom">
+          <Tooltip
+            text={tareaLimiteAlcanzado
+              ? `Límite del plan Free: ${limites.tareas} tareas activas. Mejora tu plan.`
+              : "Crea una nueva tarea en la primera columna."}
+            side="bottom"
+          >
             <button
-              onClick={() => abrirNuevaTarea(columnas[0].slug)}
-              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan to-fuchsia px-4 py-2.5 text-sm font-bold text-bg shadow-glow transition-shadow hover:shadow-glass"
+              onClick={() => !tareaLimiteAlcanzado && abrirNuevaTarea(columnas[0].slug)}
+              disabled={tareaLimiteAlcanzado}
+              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan to-fuchsia px-4 py-2.5 text-sm font-bold text-bg shadow-glow transition-shadow hover:shadow-glass disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Plus size={15} /> Nueva tarea
             </button>

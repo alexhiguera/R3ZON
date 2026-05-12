@@ -9,6 +9,7 @@ import {
   Receipt,
   ScanLine,
   Plus,
+  Download,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -19,8 +20,11 @@ import {
 } from "@/lib/finanzas";
 import { MonthlyBars, TaxLine } from "@/components/finanzas/Charts";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { useToast } from "@/components/ui/Toast";
+import { descargarCSV } from "@/lib/csv";
 
 export default function FinanzasPage() {
+  const toast = useToast();
   const [filas, setFilas] = useState<MovimientoFila[]>([]);
   const [cargando, setCargando] = useState(true);
 
@@ -36,16 +40,51 @@ export default function FinanzasPage() {
     })();
   }, []);
 
+  async function exportarCSV() {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from("finanzas")
+      .select("tipo,fecha,concepto,categoria,base_imponible,iva_porcentaje,iva_importe,irpf_porcentaje,irpf_importe,total,metodo_pago,estado_pago,numero_factura")
+      .order("fecha", { ascending: false });
+    if (error) { toast.err("No se pudo exportar. Inténtalo de nuevo."); return; }
+    descargarCSV(
+      (data ?? []).map((f) => ({
+        Tipo: f.tipo,
+        Fecha: f.fecha,
+        Concepto: f.concepto,
+        Categoría: f.categoria ?? "",
+        "Base imponible": f.base_imponible,
+        "IVA %": f.iva_porcentaje,
+        "IVA €": f.iva_importe ?? "",
+        "IRPF %": f.irpf_porcentaje,
+        "IRPF €": f.irpf_importe ?? "",
+        Total: f.total ?? "",
+        "Método de pago": f.metodo_pago ?? "",
+        "Estado pago": f.estado_pago,
+        "Nº factura": f.numero_factura ?? "",
+      })),
+      `finanzas-${new Date().toISOString().slice(0, 10)}.csv`,
+    );
+  }
+
   const t = totales(filas);
   const mensual = agregarPorMes(filas);
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader
-        eyebrow="Tu dinero"
-        title="Finanzas"
-        description="Lo que entra, lo que sale y lo que tendrás que apartar para Hacienda."
-      />
+      <div className="flex items-start justify-between gap-4">
+        <PageHeader
+          eyebrow="Tu dinero"
+          title="Finanzas"
+          description="Lo que entra, lo que sale y lo que tendrás que apartar para Hacienda."
+        />
+        <button
+          onClick={exportarCSV}
+          className="mt-1 flex shrink-0 items-center gap-2 rounded-xl border border-indigo-400/20 bg-indigo-900/30 px-3 py-2.5 text-sm font-semibold text-indigo-200 hover:border-cyan/40 hover:text-cyan"
+        >
+          <Download size={14} /> Exportar CSV
+        </button>
+      </div>
 
       {/* Acciones rápidas */}
       <div className="grid gap-3 sm:grid-cols-2">

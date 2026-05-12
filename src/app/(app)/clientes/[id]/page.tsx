@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  ArrowLeft, Users, Calendar, Info, FileText, Wallet,
+  ArrowLeft, Users, Calendar, Info, FileText, Wallet, MessageSquare,
   Phone, Mail, MessageCircle, Loader2, Trash2, Building2, Globe,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -12,19 +12,21 @@ import { Tooltip } from "@/components/ui/Tooltip";
 import { InfoTab } from "@/components/clientes/InfoTab";
 import { ContactosTab } from "@/components/clientes/ContactosTab";
 import { TabHistorial } from "@/components/crm/TabHistorial";
+import { TabComunicaciones } from "@/components/crm/TabComunicaciones";
 import { TabDocumentos } from "@/components/crm/TabDocumentos";
 import { TabMovimientos } from "@/components/crm/TabMovimientos";
 import type { Cliente, Contacto } from "@/components/clientes/types";
 import { ESTADO_CLIENTE_BADGE } from "@/lib/ui-constants";
 
-type Tab = "info" | "contactos" | "citas" | "documentos" | "movimientos";
+type Tab = "info" | "contactos" | "citas" | "comunicaciones" | "documentos" | "movimientos";
 
 const TABS: { id: Tab; label: string; Icon: typeof Info; tooltip: string }[] = [
-  { id: "info",        label: "Información", Icon: Info,     tooltip: "Datos fiscales y de contacto." },
-  { id: "contactos",   label: "Contactos",   Icon: Users,    tooltip: "Personas dentro de esta empresa." },
-  { id: "citas",       label: "Historial",   Icon: Calendar, tooltip: "Citas pasadas y futuras." },
-  { id: "documentos",  label: "Documentos",  Icon: FileText, tooltip: "Facturas, presupuestos y albaranes." },
-  { id: "movimientos", label: "Movimientos", Icon: Wallet,   tooltip: "Ingresos y gastos asociados." },
+  { id: "info",           label: "Información",    Icon: Info,          tooltip: "Datos fiscales y de contacto." },
+  { id: "contactos",      label: "Contactos",      Icon: Users,         tooltip: "Personas dentro de esta empresa." },
+  { id: "citas",          label: "Historial",      Icon: Calendar,      tooltip: "Citas pasadas y futuras." },
+  { id: "comunicaciones", label: "Comunicaciones", Icon: MessageSquare, tooltip: "Notas, emails y acciones con este cliente." },
+  { id: "documentos",     label: "Documentos",     Icon: FileText,      tooltip: "Facturas, presupuestos y albaranes." },
+  { id: "movimientos",    label: "Movimientos",    Icon: Wallet,        tooltip: "Ingresos y gastos asociados." },
 ];
 
 export default function FichaClientePage() {
@@ -172,6 +174,14 @@ export default function FichaClientePage() {
       {tab === "info"      && <InfoTab cliente={cliente} onUpdate={setCliente} />}
       {tab === "contactos" && <ContactosTabWrapper clienteId={id} negocioId={cliente.negocio_id} />}
       {tab === "citas"     && <TabHistorial clienteId={id} clienteNombre={cliente.nombre} />}
+      {tab === "comunicaciones" && (
+        <TabComunicaciones
+          clienteId={id}
+          clienteNombre={cliente.nombre}
+          email={cliente.email ?? undefined}
+          telefono={cliente.telefono ?? undefined}
+        />
+      )}
       {tab === "documentos" && <TabDocumentos clienteId={id} clienteNombre={cliente.nombre} />}
       {tab === "movimientos" && <TabMovimientos clienteId={id} clienteNombre={cliente.nombre} />}
     </div>

@@ -5,11 +5,14 @@ import Link from "next/link";
 import {
   Search, Plus, Building2, Phone, Mail, MessageCircle,
   ChevronRight, SlidersHorizontal, Globe, Loader2,
-  LayoutGrid, List as ListIcon,
+  LayoutGrid, List as ListIcon, Download,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Tooltip } from "@/components/ui/Tooltip";
+import { useToast } from "@/components/ui/Toast";
+import { descargarCSV } from "@/lib/csv";
+import { usePlan, haAlcanzadoLimite } from "@/lib/usePlan";
 import { ESTADO_CLIENTE_BADGE } from "@/lib/ui-constants";
 
 type ClienteRow = {
@@ -38,6 +41,9 @@ type Vista = "lista" | "tarjetas";
 const VISTA_KEY = "clientes:vista";
 
 export default function ClientesPage() {
+  const toast = useToast();
+  const { plan, limites, contadores } = usePlan();
+  const limiteAlcanzado = haAlcanzadoLimite(plan, "clientes", contadores.clientes);
   const [clientes, setClientes] = useState<ClienteRow[]>([]);
   const [busqueda, setBusqueda] = useState("");
   const [cargando, setCargando] = useState(true);
@@ -68,13 +74,19 @@ export default function ClientesPage() {
       );
     }
     if (cursor) query = query.lt("created_at", cursor);
-    const { data } = await query.limit(PAGE_SIZE);
+    const { data, error } = await query.limit(PAGE_SIZE);
+    if (error) {
+      toast.err("No se pudieron cargar los clientes. Comprueba tu conexión e inténtalo de nuevo.");
+      if (append) setCargandoMas(false);
+      else setCargando(false);
+      return;
+    }
     const filas = (data ?? []) as ClienteRow[];
     setClientes((prev) => (append ? [...prev, ...filas] : filas));
     setHayMas(filas.length === PAGE_SIZE);
     if (append) setCargandoMas(false);
     else setCargando(false);
-  }, []);
+  }, [toast]);
 
   useEffect(() => { cargar(); }, [cargar]);
 
@@ -90,6 +102,28 @@ export default function ClientesPage() {
     await cargar(busqueda, ultimo.created_at, true);
   }
 
+  async function exportarCSV() {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from("clientes")
+      .select("nombre,cif,sector,email,telefono,sitio_web,estado,created_at")
+      .order("created_at", { ascending: false });
+    if (error) { toast.err("No se pudo exportar. Inténtalo de nuevo."); return; }
+    descargarCSV(
+      (data ?? []).map((c) => ({
+        Nombre: c.nombre,
+        CIF: c.cif ?? "",
+        Sector: c.sector ?? "",
+        Email: c.email ?? "",
+        Teléfono: c.telefono ?? "",
+        Web: c.sitio_web ?? "",
+        Estado: c.estado,
+        Alta: c.created_at.slice(0, 10),
+      })),
+      `clientes-${new Date().toISOString().slice(0, 10)}.csv`,
+    );
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
@@ -97,6 +131,26 @@ export default function ClientesPage() {
         title="Clientes"
         description="Empresas y entidades con las que trabajas. Cada cliente puede tener varios contactos asociados."
       />
+
+      {/* Banner de límite plan Free */}
+      {plan === "free" && limites.clientes !== null && (
+        <div className={`flex items-center justify-between gap-4 rounded-2xl border px-4 py-3 text-sm ${
+          limiteAlcanzado
+            ? "border-danger/30 bg-danger/10 text-danger"
+            : contadores.clientes >= limites.clientes - 1
+            ? "border-warn/30 bg-warn/10 text-warn"
+            : "border-indigo-400/20 bg-indigo-900/20 text-text-mid"
+        }`}>
+          <span>
+            {limiteAlcanzado
+              ? `Has alcanzado el límite de ${limites.clientes} clientes del plan Free.`
+              : `Plan Free: ${contadores.clientes} / ${limites.clientes} clientes.`}
+          </span>
+          <a href="/ajustes?tab=suscripcion" className="shrink-0 rounded-lg border border-current px-3 py-1 text-xs font-semibold hover:opacity-80">
+            Mejorar plan
+          </a>
+        </div>
+      )}
 
       {/* Barra de búsqueda + nuevo */}
       <div className="flex gap-3">
@@ -145,12 +199,28 @@ export default function ClientesPage() {
             <SlidersHorizontal size={16} />
           </button>
         </Tooltip>
-        <Link
-          href="/clientes/nuevo"
-          className="flex h-12 items-center gap-2 rounded-xl bg-gradient-to-r from-cyan to-fuchsia px-4 text-sm font-bold text-bg"
-        >
-          <Plus size={16} /> Nuevo
-        </Link>
+        <Tooltip text="Exportar clientes a CSV" side="bottom">
+          <button
+            onClick={exportarCSV}
+            className="flex h-12 w-12 items-center justify-center rounded-xl border border-indigo-400/20 bg-indigo-900/30 text-indigo-300 hover:border-cyan/40 hover:text-cyan"
+          >
+            <Download size={16} />
+          </button>
+        </Tooltip>
+        {limiteAlcanzado ? (
+          <Tooltip text={`Límite del plan Free: ${limites.clientes} clientes. Mejora tu plan para añadir más.`} side="bottom">
+            <span className="flex h-12 cursor-not-allowed items-center gap-2 rounded-xl bg-indigo-900/40 px-4 text-sm font-bold text-indigo-500 opacity-60">
+              <Plus size={16} /> Nuevo
+            </span>
+          </Tooltip>
+        ) : (
+          <Link
+            href="/clientes/nuevo"
+            className="flex h-12 items-center gap-2 rounded-xl bg-gradient-to-r from-cyan to-fuchsia px-4 text-sm font-bold text-bg"
+          >
+            <Plus size={16} /> Nuevo
+          </Link>
+        )}
       </div>
 
       {/* Estado vacío */}
