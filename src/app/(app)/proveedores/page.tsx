@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Truck,
   Receipt,
-  CalendarClock,
   Repeat,
   Plus,
   Pencil,
@@ -34,13 +33,11 @@ import {
   type TipoGasto,
 } from "@/lib/proveedores";
 
-type TabId = "proveedores" | "general" | "previsto" | "suscripcion";
+type TabId = "proveedores" | "suscripcion";
 
 const TABS: { id: TabId; label: string; Icon: typeof Truck; eyebrow: string }[] = [
-  { id: "proveedores",  label: "Proveedores",     Icon: Truck,         eyebrow: "Directorio" },
-  { id: "general",      label: "Gastos generales",Icon: Receipt,       eyebrow: "One-shot" },
-  { id: "previsto",     label: "Gastos previstos",Icon: CalendarClock, eyebrow: "A futuro" },
-  { id: "suscripcion",  label: "Suscripciones",   Icon: Repeat,        eyebrow: "Recurrentes" },
+  { id: "proveedores",  label: "Proveedores",   Icon: Truck,  eyebrow: "Directorio" },
+  { id: "suscripcion",  label: "Suscripciones", Icon: Repeat, eyebrow: "Recurrentes" },
 ];
 
 export default function ProveedoresPage() {
@@ -51,7 +48,7 @@ export default function ProveedoresPage() {
       <PageHeader
         eyebrow="Compras"
         title="Proveedores"
-        description="Directorio de proveedores y registro de gastos: puntuales, previstos y suscripciones recurrentes."
+        description="Directorio de proveedores y gestión de suscripciones recurrentes."
       />
 
       <div className="grid gap-5 lg:grid-cols-[220px,1fr]">
@@ -406,11 +403,11 @@ function TabGastos({ tipo }: { tipo: Exclude<TabId, "proveedores"> }) {
           type="button"
           onClick={() => setEditando({
             tipo,
-            estado: tipo === "general" ? "pagado" : "pendiente",
+            estado: "pendiente",
             fecha: new Date().toISOString().slice(0, 10),
             importe: 0,
             iva_pct: 21,
-            recurrencia: tipo === "suscripcion" ? "mensual" : null,
+            recurrencia: "mensual",
           })}
           className="inline-flex h-10 items-center gap-2 rounded-lg bg-gradient-to-r from-emerald-500 to-emerald-600 px-4 text-sm font-bold text-white shadow-glow"
         >

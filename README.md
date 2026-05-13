@@ -246,6 +246,15 @@ npx cap sync
 
 > Resumen de todo lo construido en orden de iteraciones (más reciente → más antiguo).
 
+### Iteración 51 — *2026-05-13* — Limpieza de Proveedores y reordenación del sidebar
+
+- **`src/app/(app)/proveedores/page.tsx`**: eliminadas las pestañas **Gastos generales** y **Gastos previstos**; la página queda con dos secciones (**Proveedores** + **Suscripciones**). `TabId` se reduce a `"proveedores" | "suscripcion"`, se quita el icono `CalendarClock` y se simplifica la inicialización del modal (siempre `estado: "pendiente"` y `recurrencia: "mensual"` porque ya solo se crean suscripciones). El header de la página pasa a "Directorio de proveedores y gestión de suscripciones recurrentes." Los registros antiguos con `tipo = "general" | "previsto"` siguen en la BD pero no se exponen en la UI.
+- **`src/components/layout/Sidebar.tsx`**: **Proveedores** sube en el orden — ahora aparece justo después de **Clientes**, coherente con la idea de "directorio de contactos" (clientes + proveedores juntos).
+
+`tsc` limpio, 132/132 tests verdes.
+
+---
+
 ### Iteración 50 — *2026-05-13* — Sidebar scrolleable, cambio de contraseña y responsive móvil en Ajustes/Proveedores
 
 Ajustes de UX detectados al usar la app en móvil:

@@ -24,6 +24,7 @@ type NavItem = { href: string; label: string; Icon: LucideIcon };
 const NAV: NavItem[] = [
   { href: "/dashboard", label: "Inicio",        Icon: LayoutDashboard },
   { href: "/clientes",  label: "Clientes",      Icon: Building2 },
+  { href: "/proveedores", label: "Proveedores", Icon: Truck },
   { href: "/citas",     label: "Agenda",        Icon: Calendar },
   { href: "/tareas",    label: "Tareas",        Icon: Kanban },
   { href: "/fichajes",  label: "Fichajes",      Icon: Clock },
@@ -31,7 +32,6 @@ const NAV: NavItem[] = [
   { href: "/tpv",       label: "TPV",           Icon: ShoppingCart },
   { href: "/documentos", label: "Documentos",   Icon: FileText },
   { href: "/finanzas",  label: "Finanzas",      Icon: Wallet },
-  { href: "/proveedores", label: "Proveedores", Icon: Truck },
   { href: "/ajustes",   label: "Ajustes",       Icon: Settings },
 ];
 
