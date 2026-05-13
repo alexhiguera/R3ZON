@@ -194,8 +194,7 @@ export function DatosTab() {
         <p className="mb-4 text-xs text-text-mid">
           Descarga un archivo ZIP con todos los datos del negocio en formato JSON.
           Incluye clientes, finanzas, tareas, documentos, citas, comunicaciones y
-          consentimientos. Sirve como copia de seguridad y como ejercicio del derecho
-          de portabilidad del Art. 20 RGPD.
+          consentimientos.           Sirve como copia de seguridad.
         </p>
         <button
           type="button"

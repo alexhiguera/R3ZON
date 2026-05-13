@@ -60,10 +60,7 @@ export default function Page() {
         fuero.
       </p>
 
-      <p className="text-xs text-text-lo">
-        ⚠️ Plantilla orientativa. Sustituye los campos entre corchetes y
-        consulta a un asesor legal antes de publicar.
-      </p>
+
     </LegalDoc>
   );
 }
