@@ -246,6 +246,14 @@ npx cap sync
 
 > Resumen de todo lo construido en orden de iteraciones (más reciente → más antiguo).
 
+### Iteración 52 — *2026-05-13* — Finanzas: eliminado "Exportar CSV" y cabecera a ancho completo
+
+- **`src/app/(app)/finanzas/page.tsx`**: retirado el botón **Exportar CSV** y toda la función `exportarCSV` (junto con los imports `Download`, `useToast`, `descargarCSV`). El `PageHeader` deja de estar envuelto en un `flex justify-between` y pasa a ocupar todo el ancho de la página, manteniendo coherencia con el resto de pantallas. La exportación global sigue disponible desde Ajustes › Datos (ZIP completo) para usuarios que la necesiten.
+
+`tsc` limpio, 132/132 tests verdes.
+
+---
+
 ### Iteración 51 — *2026-05-13* — Limpieza de Proveedores y reordenación del sidebar
 
 - **`src/app/(app)/proveedores/page.tsx`**: eliminadas las pestañas **Gastos generales** y **Gastos previstos**; la página queda con dos secciones (**Proveedores** + **Suscripciones**). `TabId` se reduce a `"proveedores" | "suscripcion"`, se quita el icono `CalendarClock` y se simplifica la inicialización del modal (siempre `estado: "pendiente"` y `recurrencia: "mensual"` porque ya solo se crean suscripciones). El header de la página pasa a "Directorio de proveedores y gestión de suscripciones recurrentes." Los registros antiguos con `tipo = "general" | "previsto"` siguen en la BD pero no se exponen en la UI.
