@@ -84,7 +84,7 @@ export function InvitarMiembroModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="invite-title"
-        className="card-glass relative w-full max-w-lg overflow-hidden"
+        className="card-glass relative flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden"
       >
         <header className="flex items-start justify-between border-b border-indigo-400/20 p-5">
           <div>
@@ -102,7 +102,7 @@ export function InvitarMiembroModal({
           </button>
         </header>
 
-        <div className="space-y-4 p-5">
+        <div className="flex-1 space-y-4 overflow-y-auto p-5">
           <Field label="Email del miembro" error={errors.email}>
             <input
               type="email"
@@ -178,7 +178,7 @@ export function InvitarMiembroModal({
           )}
         </div>
 
-        <footer className="flex items-center justify-end gap-2 border-t border-indigo-400/20 bg-indigo-900/20 p-4">
+        <footer className="flex flex-col-reverse gap-2 border-t border-indigo-400/20 bg-indigo-900/20 p-4 sm:flex-row sm:items-center sm:justify-end">
           <button
             type="button"
             onClick={onClose}
@@ -190,7 +190,7 @@ export function InvitarMiembroModal({
             type="button"
             onClick={enviar}
             disabled={busy || !acepta || !form.email}
-            className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-cyan to-fuchsia px-4 py-2 text-xs font-bold text-bg disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-cyan to-fuchsia px-4 py-2 text-xs font-bold text-bg disabled:opacity-50 sm:w-auto"
           >
             {busy ? <Loader2 className="animate-spin" size={13} /> : <Send size={13} />}
             Enviar invitación

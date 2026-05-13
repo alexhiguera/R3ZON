@@ -246,6 +246,23 @@ npx cap sync
 
 > Resumen de todo lo construido en orden de iteraciones (más reciente → más antiguo).
 
+### Iteración 53 — *2026-05-13* — Módulo de Ajustes responsive en móvil
+
+- **`src/components/ajustes/EquipoTab.tsx`**: tabla de miembros envuelta en `overflow-x-auto` con `min-w-[640px]`, botón "Invitar miembro" `w-full sm:w-auto`, descripción de cabecera con `sm:max-w-lg`.
+- **`src/components/ajustes/SuscripcionTab.tsx`**: historial de pagos con scroll horizontal, padding de `PlanActual` reducido a `p-4 sm:p-6`, botón "Gestionar suscripción" full-width en móvil.
+- **`src/components/ajustes/SeguridadTab.tsx`**: cards MFA y "Cerrar sesión en todos los dispositivos" pasan de `flex items-start justify-between` a `flex flex-col gap-3 sm:flex-row` (botones full-width en móvil). Lista de dispositivos conocidos apilada en móvil; `max-w-md` del párrafo de logout convertido a `sm:max-w-md`. Botón "Actualizar contraseña" full-width en móvil.
+- **`src/components/ajustes/InvitarMiembroModal.tsx`**: contenedor con `max-h-[90vh] flex flex-col`, body interior `flex-1 overflow-y-auto` para que el scroll quede dentro del modal y no desborde la pantalla. Footer en `flex-col-reverse` en móvil (Cancelar abajo, Enviar invitación arriba), botón principal full-width.
+- **`src/components/ajustes/HelpDrawer.tsx`**: padding del cuerpo reducido (`p-4 sm:p-5`) para aprovechar mejor el ancho en pantallas estrechas.
+- **`src/components/ajustes/PlaceholderTab.tsx`**: padding de `p-6 sm:p-8` → `p-4 sm:p-8`.
+- **`src/components/ajustes/NegocioTab.tsx`**: botón "Guardar cambios" full-width en móvil.
+- **`src/components/ajustes/GoogleCard.tsx`** y **`src/components/ajustes/N8nCard.tsx`**: header de cada integración (logo + título + badge) se apila en móvil; en N8nCard los pares input + botón Guardar pasan a `flex-col` (botón full-width abajo) y la "Desconectar Google" / "Conectar Google" también full-width en móvil.
+
+Patrón único reutilizado en toda la auditoría: `flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between` + `w-full sm:w-auto` en botones de acción + `overflow-x-auto` envolviendo `<table>` con `min-w-[640px]`. Esto mantiene el diseño glass intacto en escritorio mientras evita scroll horizontal indeseado a 320–640 px.
+
+`tsc` limpio, 132/132 tests verdes. No se tocaron AparienciaTab, AccesibilidadTab, ListadoTab, DatosTab, CumplimientoTab ni IntegracionesTab porque ya eran responsive.
+
+---
+
 ### Iteración 52 — *2026-05-13* — Finanzas: eliminado "Exportar CSV" y cabecera a ancho completo
 
 - **`src/app/(app)/finanzas/page.tsx`**: retirado el botón **Exportar CSV** y toda la función `exportarCSV` (junto con los imports `Download`, `useToast`, `descargarCSV`). El `PageHeader` deja de estar envuelto en un `flex justify-between` y pasa a ocupar todo el ancho de la página, manteniendo coherencia con el resto de pantallas. La exportación global sigue disponible desde Ajustes › Datos (ZIP completo) para usuarios que la necesiten.

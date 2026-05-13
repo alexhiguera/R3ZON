@@ -117,7 +117,7 @@ export function SeguridadTab() {
 
       {/* MFA */}
       <div className="card-glass p-5 sm:p-6">
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-start gap-3">
             <div className={`flex h-11 w-11 items-center justify-center rounded-xl border ${
               mfa === "on"
@@ -139,7 +139,7 @@ export function SeguridadTab() {
           </div>
           <Link
             href="/2fa/configurar"
-            className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold ${
+            className={`flex w-full items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold sm:w-auto ${
               mfa === "on"
                 ? "border border-indigo-400/25 bg-indigo-900/40 text-text-hi hover:border-cyan/40"
                 : "bg-gradient-to-r from-cyan to-fuchsia text-bg"
@@ -152,14 +152,14 @@ export function SeguridadTab() {
 
       {/* Cerrar todas las sesiones */}
       <div className="card-glass p-5 sm:p-6">
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-start gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-rose-400/30 bg-rose-500/10 text-rose-200">
               <LogOut size={20} />
             </div>
             <div>
               <h3 className="font-display text-base font-bold text-text-hi">Cerrar sesión en todos los dispositivos</h3>
-              <p className="mt-0.5 max-w-md text-xs text-text-mid">
+              <p className="mt-0.5 text-xs text-text-mid sm:max-w-md">
                 Útil si has perdido un dispositivo o sospechas un acceso no autorizado.
                 Invalida todos los tokens de sesión en cualquier navegador o app.
               </p>
@@ -169,7 +169,7 @@ export function SeguridadTab() {
             type="button"
             onClick={cerrarTodas}
             disabled={logoutAll}
-            className="flex items-center gap-1.5 rounded-xl border border-rose-400/40 bg-rose-500/10 px-3 py-2 text-xs font-bold text-rose-200 hover:border-rose-400/70 disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-rose-400/40 bg-rose-500/10 px-3 py-2 text-xs font-bold text-rose-200 hover:border-rose-400/70 disabled:opacity-50 sm:w-auto"
           >
             {logoutAll ? <Loader2 className="animate-spin" size={13} /> : <LogOut size={13} />}
             Cerrar todas
@@ -199,7 +199,7 @@ export function SeguridadTab() {
         ) : (
           <ul className="divide-y divide-indigo-400/10">
             {devices.map((d) => (
-              <li key={d.id} className="flex items-center justify-between gap-3 px-5 py-3">
+              <li key={d.id} className="flex flex-col gap-2 px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-3">
                   <Smartphone size={15} className="text-text-mid" />
                   <div>
@@ -360,11 +360,11 @@ function CambiarPasswordCard({ onResult }: { onResult: (t: Toast) => void }) {
           </div>
         )}
 
-        <div className="sm:col-span-2 flex justify-end">
+        <div className="flex sm:col-span-2 sm:justify-end">
           <button
             type="submit"
             disabled={guardando || !actual || !nueva || !confirma}
-            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan to-fuchsia px-4 py-2.5 text-sm font-bold text-bg disabled:opacity-50"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan to-fuchsia px-4 py-2.5 text-sm font-bold text-bg disabled:opacity-50 sm:w-auto"
           >
             {guardando ? <Loader2 className="animate-spin" size={14} /> : <KeyRound size={14} />}
             Actualizar contraseña

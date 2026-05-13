@@ -90,7 +90,7 @@ export function GoogleCard() {
 
   return (
     <article className="card-glass p-5 sm:p-6">
-      <header className="mb-4 flex items-start justify-between gap-3">
+      <header className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-start gap-3">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-indigo-400/25 bg-white/95">
             {/* Logo Google (multi-color oficial) */}
@@ -141,13 +141,13 @@ export function GoogleCard() {
         )}
       </div>
 
-      <div className="mt-4 flex justify-end">
+      <div className="mt-4 flex sm:justify-end">
         {conectado ? (
           <button
             type="button"
             onClick={desconectar}
             disabled={busy}
-            className="flex items-center gap-1.5 rounded-xl border border-rose-400/25 bg-rose-500/10 px-3 py-2 text-xs font-medium text-rose-200 hover:border-rose-400/50 disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-rose-400/25 bg-rose-500/10 px-3 py-2 text-xs font-medium text-rose-200 hover:border-rose-400/50 disabled:opacity-50 sm:w-auto"
           >
             {busy ? <Loader2 className="animate-spin" size={13} /> : <Unplug size={13} />}
             Desconectar
@@ -157,7 +157,7 @@ export function GoogleCard() {
             type="button"
             onClick={conectar}
             disabled={busy || loading}
-            className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-cyan to-fuchsia px-4 py-2 text-xs font-bold text-bg disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-cyan to-fuchsia px-4 py-2 text-xs font-bold text-bg disabled:opacity-50 sm:w-auto"
           >
             {busy ? <Loader2 className="animate-spin" size={13} /> : <Plug size={13} />}
             Conectar Google

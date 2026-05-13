@@ -107,7 +107,7 @@ export function HelpDrawer({
           </button>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-5">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-5">
           {intro && <p className="mb-5 text-sm text-text-mid">{intro}</p>}
 
           <ol className="space-y-5">

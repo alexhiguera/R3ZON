@@ -170,7 +170,7 @@ export function N8nCard() {
 
   return (
     <article className="card-glass p-5 sm:p-6">
-      <header className="mb-4 flex items-start justify-between gap-3">
+      <header className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-start gap-3">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-indigo-400/25 bg-indigo-900/40 text-cyan">
             <Workflow size={20} />
@@ -205,7 +205,7 @@ export function N8nCard() {
         savedFlag={saved.url}
         onDelete={() => eliminar(ALIAS_URL)}
       >
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row">
           <input
             type="url"
             value={url}
@@ -222,7 +222,7 @@ export function N8nCard() {
             type="button"
             onClick={guardarUrl}
             disabled={savingUrl || !url}
-            className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-cyan to-fuchsia px-3 py-2 text-xs font-bold text-bg disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-cyan to-fuchsia px-3 py-2 text-xs font-bold text-bg disabled:opacity-50 sm:w-auto"
           >
             {savingUrl ? <Loader2 className="animate-spin" size={12} /> : <Save size={12} />}
             Guardar
@@ -243,7 +243,7 @@ export function N8nCard() {
         savedFlag={saved.key}
         onDelete={() => eliminar(ALIAS_KEY)}
       >
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row">
           <input
             type="password"
             value={key}
@@ -261,7 +261,7 @@ export function N8nCard() {
             type="button"
             onClick={guardarKey}
             disabled={savingKey || !key}
-            className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-cyan to-fuchsia px-3 py-2 text-xs font-bold text-bg disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-cyan to-fuchsia px-3 py-2 text-xs font-bold text-bg disabled:opacity-50 sm:w-auto"
           >
             {savingKey ? <Loader2 className="animate-spin" size={12} /> : <Save size={12} />}
             Guardar

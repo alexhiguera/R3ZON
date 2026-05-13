@@ -85,14 +85,14 @@ export function EquipoTab() {
             <h2 className="font-display text-base font-bold text-text-hi">
               Miembros del negocio
             </h2>
-            <p className="mt-1 text-sm text-text-mid">
+            <p className="mt-1 text-sm text-text-mid sm:max-w-lg">
               Invita a tus trabajadores y asigna su rol. Cada invitación queda registrada con auditoría legal.
             </p>
           </div>
           <button
             type="button"
             onClick={() => setOpen(true)}
-            className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-cyan to-fuchsia px-4 py-2 text-xs font-bold text-bg"
+            className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-cyan to-fuchsia px-4 py-2 text-xs font-bold text-bg sm:w-auto"
           >
             <UserPlus size={13} /> Invitar miembro
           </button>
@@ -121,7 +121,7 @@ export function EquipoTab() {
         ) : error ? (
           <div className="p-6 text-sm text-rose-300">{error}</div>
         ) : (
-          <table className="w-full text-left text-sm">
+          <div className="overflow-x-auto"><table className="w-full min-w-[640px] text-left text-sm">
             <thead className="bg-indigo-900/40 text-[11px] uppercase tracking-wider text-text-mid">
               <tr>
                 <th className="px-4 py-3 font-semibold">Nombre</th>
@@ -166,7 +166,7 @@ export function EquipoTab() {
                 </tr>
               )}
             </tbody>
-          </table>
+          </table></div>
         )}
       </div>
 

@@ -339,7 +339,7 @@ function PlanActual({
   return (
     <div className="card-glass overflow-hidden">
       <div className="rainbow-bar" />
-      <div className="flex flex-wrap items-start justify-between gap-4 p-5 sm:p-6">
+      <div className="flex flex-wrap items-start justify-between gap-4 p-4 sm:p-6">
         <div className="flex items-start gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-cyan/30 bg-gradient-to-br from-cyan/10 to-fuchsia/10 text-cyan">
             <CreditCard size={22} />
@@ -364,7 +364,7 @@ function PlanActual({
             type="button"
             onClick={onPortal}
             disabled={busy}
-            className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-cyan to-fuchsia px-4 py-2.5 text-sm font-bold text-bg disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-cyan to-fuchsia px-4 py-2.5 text-sm font-bold text-bg disabled:opacity-50 sm:w-auto"
           >
             {busy ? <Loader2 className="animate-spin" size={14} /> : <ExternalLink size={14} />}
             Gestionar suscripción
@@ -478,7 +478,7 @@ function HistorialPagos({ pagos }: { pagos: Pago[] }) {
           Aún no hay pagos registrados.
         </div>
       ) : (
-        <table className="w-full text-left text-sm">
+        <div className="overflow-x-auto"><table className="w-full min-w-[640px] text-left text-sm">
           <thead className="bg-indigo-900/40 text-[11px] uppercase tracking-wider text-text-mid">
             <tr>
               <th className="px-4 py-3 font-semibold">Fecha</th>
@@ -534,7 +534,7 @@ function HistorialPagos({ pagos }: { pagos: Pago[] }) {
               </tr>
             ))}
           </tbody>
-        </table>
+        </table></div>
       )}
     </div>
   );

@@ -255,12 +255,12 @@ export function NegocioTab({ perfil }: { perfil: PerfilNegocio }) {
           })}
         </div>
 
-        <div className="mt-6 flex justify-end">
+        <div className="mt-6 flex sm:justify-end">
           <button
             type="button"
             onClick={guardar}
             disabled={saving}
-            className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-cyan to-fuchsia px-4 py-2.5 text-sm font-bold text-bg disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-cyan to-fuchsia px-4 py-2.5 text-sm font-bold text-bg disabled:opacity-50 sm:w-auto"
           >
             {saving ? <Loader2 className="animate-spin" size={14} /> : <Save size={14} />}
             {saving ? "Guardando…" : "Guardar cambios"}
