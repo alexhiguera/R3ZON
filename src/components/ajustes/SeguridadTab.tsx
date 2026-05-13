@@ -12,10 +12,15 @@ import {
   CheckCircle2,
   AlertCircle,
   ExternalLink,
+  KeyRound,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { formatSupabaseError } from "@/lib/supabase-errors";
 import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { Field } from "@/components/ui/Field";
+import { Input } from "@/components/ui/Input";
 
 type Device = {
   id: string;
@@ -107,6 +112,8 @@ export function SeguridadTab() {
           {toast.msg}
         </div>
       )}
+
+      <CambiarPasswordCard onResult={flash} />
 
       {/* MFA */}
       <div className="card-glass p-5 sm:p-6">
@@ -220,6 +227,150 @@ export function SeguridadTab() {
         )}
       </div>
       {confirmDialogNode}
+    </div>
+  );
+}
+
+function CambiarPasswordCard({ onResult }: { onResult: (t: Toast) => void }) {
+  const supabase = createClient();
+  const [actual, setActual]       = useState("");
+  const [nueva, setNueva]         = useState("");
+  const [confirma, setConfirma]   = useState("");
+  const [mostrar, setMostrar]     = useState(false);
+  const [guardando, setGuardando] = useState(false);
+  const [errores, setErrores]     = useState<{ actual?: string; nueva?: string; confirma?: string }>({});
+
+  const fuerza = (() => {
+    if (!nueva) return 0;
+    let s = 0;
+    if (nueva.length >= 8) s++;
+    if (nueva.length >= 12) s++;
+    if (/[A-Z]/.test(nueva) && /[a-z]/.test(nueva)) s++;
+    if (/\d/.test(nueva)) s++;
+    if (/[^A-Za-z0-9]/.test(nueva)) s++;
+    return s;
+  })();
+  const fuerzaLabel  = ["—", "Muy débil", "Débil", "Aceptable", "Fuerte", "Muy fuerte"][fuerza];
+  const fuerzaColor  = ["bg-text-lo/30", "bg-rose-500", "bg-rose-400", "bg-amber-400", "bg-emerald-400", "bg-emerald-500"][fuerza];
+
+  async function enviar(e: React.FormEvent) {
+    e.preventDefault();
+    const errs: typeof errores = {};
+    if (!actual) errs.actual = "Indica tu contraseña actual.";
+    if (!nueva) errs.nueva = "Indica una contraseña nueva.";
+    else if (nueva.length < 8) errs.nueva = "La nueva contraseña debe tener al menos 8 caracteres.";
+    else if (nueva === actual) errs.nueva = "La nueva contraseña debe ser distinta de la actual.";
+    if (confirma !== nueva) errs.confirma = "Las contraseñas no coinciden.";
+    setErrores(errs);
+    if (Object.keys(errs).length) return;
+
+    setGuardando(true);
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.email) {
+      setGuardando(false);
+      onResult({ kind: "err", msg: "No se ha podido identificar tu cuenta." });
+      return;
+    }
+
+    const { error: signErr } = await supabase.auth.signInWithPassword({
+      email: user.email,
+      password: actual,
+    });
+    if (signErr) {
+      setGuardando(false);
+      setErrores({ actual: "La contraseña actual no es correcta." });
+      return;
+    }
+
+    const { error: updErr } = await supabase.auth.updateUser({ password: nueva });
+    setGuardando(false);
+    if (updErr) {
+      onResult({ kind: "err", msg: formatSupabaseError(updErr) });
+      return;
+    }
+
+    setActual(""); setNueva(""); setConfirma(""); setErrores({});
+    onResult({ kind: "ok", msg: "Contraseña actualizada correctamente." });
+  }
+
+  return (
+    <div className="card-glass p-5 sm:p-6">
+      <div className="mb-4 flex items-start gap-3">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-indigo-400/30 bg-indigo-900/40 text-indigo-300">
+          <KeyRound size={20} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <h3 className="font-display text-base font-bold text-text-hi">Cambiar contraseña</h3>
+          <p className="mt-0.5 text-xs text-text-mid">
+            Usa al menos 8 caracteres con mayúsculas, minúsculas, números y, si puedes,
+            algún símbolo.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setMostrar((v) => !v)}
+          aria-label={mostrar ? "Ocultar contraseñas" : "Mostrar contraseñas"}
+          className="flex h-9 w-9 items-center justify-center rounded-lg border border-indigo-400/20 bg-indigo-900/30 text-text-mid hover:text-text-hi"
+        >
+          {mostrar ? <EyeOff size={14} /> : <Eye size={14} />}
+        </button>
+      </div>
+
+      <form onSubmit={enviar} className="grid gap-3 sm:grid-cols-2" autoComplete="off">
+        <Field label="Contraseña actual" full error={errores.actual}>
+          <Input
+            type={mostrar ? "text" : "password"}
+            value={actual}
+            onChange={(e) => setActual(e.target.value)}
+            autoComplete="current-password"
+          />
+        </Field>
+        <Field label="Nueva contraseña" error={errores.nueva}>
+          <Input
+            type={mostrar ? "text" : "password"}
+            value={nueva}
+            onChange={(e) => setNueva(e.target.value)}
+            autoComplete="new-password"
+          />
+        </Field>
+        <Field label="Confirmar nueva contraseña" error={errores.confirma}>
+          <Input
+            type={mostrar ? "text" : "password"}
+            value={confirma}
+            onChange={(e) => setConfirma(e.target.value)}
+            autoComplete="new-password"
+          />
+        </Field>
+
+        {nueva && (
+          <div className="sm:col-span-2">
+            <div className="mb-1 flex items-center justify-between text-[0.7rem] text-text-mid">
+              <span>Seguridad</span>
+              <span className="font-semibold text-text-hi">{fuerzaLabel}</span>
+            </div>
+            <div className="flex gap-1">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div
+                  key={i}
+                  className={`h-1.5 flex-1 rounded-full ${i <= fuerza ? fuerzaColor : "bg-indigo-900/40"}`}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="sm:col-span-2 flex justify-end">
+          <button
+            type="submit"
+            disabled={guardando || !actual || !nueva || !confirma}
+            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan to-fuchsia px-4 py-2.5 text-sm font-bold text-bg disabled:opacity-50"
+          >
+            {guardando ? <Loader2 className="animate-spin" size={14} /> : <KeyRound size={14} />}
+            Actualizar contraseña
+          </button>
+        </div>
+      </form>
     </div>
   );
 }

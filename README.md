@@ -246,6 +246,19 @@ npx cap sync
 
 > Resumen de todo lo construido en orden de iteraciones (más reciente → más antiguo).
 
+### Iteración 50 — *2026-05-13* — Sidebar scrolleable, cambio de contraseña y responsive móvil en Ajustes/Proveedores
+
+Ajustes de UX detectados al usar la app en móvil:
+
+- **`src/components/layout/Sidebar.tsx`**: refactor en tres bandas — el logo queda fijo arriba, el bloque de navegación es `flex-1 overflow-y-auto` (las secciones se deslizan independientemente) y el `UserMenu` se ancla abajo con `border-t` y `backdrop-blur` para que el perfil esté siempre accesible aunque la lista crezca. Esto soluciona el problema móvil donde la última sección y el botón de usuario quedaban fuera de pantalla.
+- **`src/components/ajustes/SeguridadTab.tsx`**: nueva tarjeta **Cambiar contraseña** con re-autenticación previa (`signInWithPassword` con el email actual + contraseña actual antes de invocar `updateUser({ password })`), validación cliente (mínimo 8 caracteres, distinta de la actual, confirmación que coincida), indicador de fuerza de 1–5 barras (longitud + may/min + dígitos + símbolos) y toggle ojo/ojo-tachado para mostrar las tres contraseñas. Mensajes de error inline por campo y feedback de éxito reutilizando el toast existente.
+- **`src/components/ajustes/SettingsTabs.tsx`** y **`src/app/(app)/proveedores/page.tsx`**: la navegación lateral de pestañas pasa de `flex-1` (que en móvil exprimía 11 pestañas en horizontal) a `shrink-0` con `whitespace-nowrap` y scroll horizontal natural. En desktop sigue siendo columna vertical (`lg:flex-col`).
+- **`src/app/(app)/proveedores/page.tsx`**: los modales `ProveedorModal` y `GastoModal` cambian `grid grid-cols-2` por `grid grid-cols-1 sm:grid-cols-2`, evitando inputs cortados en pantallas estrechas. Los elementos que ocupaban dos columnas (`col-span-2`) se condicionan a `sm:col-span-2` para que respeten la columna única móvil.
+
+Verificación: `npx tsc --noEmit` exit 0, 132/132 tests pasan.
+
+---
+
 ### Iteración 49 — *2026-05-13* — Auditoría integral v1.1: seguridad endurecida, errores legibles y accesibilidad WCAG AA
 
 Diagnóstico completo en tres frentes (seguridad / gestión de errores / accesibilidad) y ejecución en un único sprint:

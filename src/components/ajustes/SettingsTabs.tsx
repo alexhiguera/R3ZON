@@ -52,25 +52,25 @@ export function SettingsTabs({ perfil }: { perfil: PerfilNegocio }) {
         aria-orientation="vertical"
         className="card-glass h-fit p-2 lg:sticky lg:top-4"
       >
-        <ul className="flex gap-1 overflow-x-auto lg:flex-col lg:overflow-visible">
+        <ul className="-mx-1 flex gap-1 overflow-x-auto px-1 pb-1 [scrollbar-width:thin] lg:m-0 lg:flex-col lg:overflow-visible lg:p-0 lg:pb-0">
           {TABS.map(({ id, label, Icon }) => {
             const selected = active === id;
             return (
-              <li key={id} className="flex-1 lg:flex-none">
+              <li key={id} className="shrink-0 lg:w-full">
                 <button
                   role="tab"
                   aria-selected={selected}
                   aria-controls={`panel-${id}`}
                   id={`tab-${id}`}
                   onClick={() => setActive(id)}
-                  className={`flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
+                  className={`flex w-full items-center gap-2 whitespace-nowrap rounded-xl px-3 py-2.5 text-sm font-medium transition ${
                     selected
                       ? "border border-cyan/40 bg-cyan/10 text-cyan"
                       : "border border-transparent text-text-mid hover:border-indigo-400/25 hover:bg-indigo-900/40 hover:text-text-hi"
                   }`}
                 >
                   <Icon size={15} />
-                  <span className="whitespace-nowrap">{label}</span>
+                  <span>{label}</span>
                 </button>
               </li>
             );

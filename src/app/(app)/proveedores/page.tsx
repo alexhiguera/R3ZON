@@ -56,23 +56,23 @@ export default function ProveedoresPage() {
 
       <div className="grid gap-5 lg:grid-cols-[220px,1fr]">
         <nav role="tablist" className="card-glass h-fit p-2 lg:sticky lg:top-4">
-          <ul className="flex gap-1 overflow-x-auto lg:flex-col lg:overflow-visible">
+          <ul className="-mx-1 flex gap-1 overflow-x-auto px-1 pb-1 [scrollbar-width:thin] lg:m-0 lg:flex-col lg:overflow-visible lg:p-0 lg:pb-0">
             {TABS.map(({ id, label, Icon }) => {
               const selected = tab === id;
               return (
-                <li key={id} className="flex-1 lg:flex-none">
+                <li key={id} className="shrink-0 lg:w-full">
                   <button
                     role="tab"
                     aria-selected={selected}
                     onClick={() => setTab(id)}
-                    className={`flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
+                    className={`flex w-full items-center gap-2 whitespace-nowrap rounded-xl px-3 py-2.5 text-sm font-medium transition ${
                       selected
                         ? "border border-cyan/40 bg-cyan/10 text-cyan"
                         : "border border-transparent text-text-mid hover:border-indigo-400/25 hover:bg-indigo-900/40 hover:text-text-hi"
                     }`}
                   >
                     <Icon size={15} />
-                    <span className="whitespace-nowrap">{label}</span>
+                    <span>{label}</span>
                   </button>
                 </li>
               );
@@ -282,7 +282,7 @@ function ProveedorModal({
       title={esNuevo ? "Nuevo proveedor" : `Editar · ${inicial.nombre ?? ""}`}
       size="md"
     >
-      <form onSubmit={guardar} className="grid grid-cols-2 gap-3">
+      <form onSubmit={guardar} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Field label="Nombre" full>
           <Input value={p.nombre ?? ""} onChange={(e) => setP({ ...p, nombre: e.target.value })}
             required autoFocus />
@@ -312,7 +312,7 @@ function ProveedorModal({
         <Field label="Notas" full>
           <Textarea rows={2} value={p.notas ?? ""} onChange={(e) => setP({ ...p, notas: e.target.value })} />
         </Field>
-        <label className="col-span-2 flex items-center gap-2 text-xs text-text-mid">
+        <label className="flex items-center gap-2 text-xs text-text-mid sm:col-span-2">
           <input
             type="checkbox"
             checked={p.activo ?? true}
@@ -321,7 +321,7 @@ function ProveedorModal({
           />
           Proveedor activo
         </label>
-        <div className="col-span-2 mt-2 flex gap-2">
+        <div className="mt-2 flex gap-2 sm:col-span-2">
           <button type="button" onClick={onCerrar}
             className="flex-1 rounded-lg border border-indigo-400/20 bg-indigo-900/20 py-2.5 text-sm font-semibold text-text-mid">
             Cancelar
@@ -558,7 +558,7 @@ function GastoModal({
       title={esNuevo ? `Nuevo · ${TIPO_GASTO_LABEL[tipo]}` : `Editar · ${inicial.concepto ?? ""}`}
       size="md"
     >
-      <form onSubmit={guardar} className="grid grid-cols-2 gap-3">
+      <form onSubmit={guardar} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Field label="Concepto" full>
           <Input value={g.concepto ?? ""} onChange={(e) => setG({ ...g, concepto: e.target.value })}
             placeholder="Hosting Vercel, Material oficina…" required autoFocus />
@@ -622,7 +622,7 @@ function GastoModal({
             onChange={(e) => setG({ ...g, notas: e.target.value })} />
         </Field>
 
-        <div className="col-span-2 mt-2 flex gap-2">
+        <div className="mt-2 flex gap-2 sm:col-span-2">
           <button type="button" onClick={onCerrar}
             className="flex-1 rounded-lg border border-indigo-400/20 bg-indigo-900/20 py-2.5 text-sm font-semibold text-text-mid">
             Cancelar

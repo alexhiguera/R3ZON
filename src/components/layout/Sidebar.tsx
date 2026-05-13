@@ -39,12 +39,12 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
 
   return (
-    <nav className="flex h-full flex-col gap-1.5 p-4">
-      {/* Logo */}
+    <nav className="flex h-full flex-col">
+      {/* Logo (fijo arriba) */}
       <Link
         href="/dashboard"
         onClick={onNavigate}
-        className="mb-4 flex items-center gap-3 px-2"
+        className="flex shrink-0 items-center gap-3 px-6 pt-4 pb-3"
       >
         <div className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-600 to-indigo-800 shadow-glow">
           <span className="font-display text-lg font-extrabold text-white">R3</span>
@@ -58,38 +58,43 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         </div>
       </Link>
 
-      <div className="section-label mb-1 px-3">Navegación</div>
+      {/* Navegación (scrolleable) */}
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-2">
+        <div className="section-label mb-1 px-3">Navegación</div>
+        <div className="flex flex-col gap-1.5">
+          {NAV.map(({ href, label, Icon }) => {
+            const active = pathname === href || pathname?.startsWith(href + "/");
+            return (
+              <Link
+                key={href}
+                href={href}
+                onClick={onNavigate}
+                className={cn(
+                  "btn-big group",
+                  active
+                    ? "bg-glass border border-indigo-400/30 text-text-hi shadow-glass"
+                    : "border border-transparent text-text-mid hover:bg-indigo-900/40 hover:text-text-hi"
+                )}
+              >
+                <span
+                  className={cn(
+                    "flex h-9 w-9 items-center justify-center rounded-xl border transition-colors",
+                    active
+                      ? "border-cyan/40 bg-cyan/10 text-cyan"
+                      : "border-indigo-400/20 bg-indigo-900/40 text-indigo-300 group-hover:border-indigo-400/40"
+                  )}
+                >
+                  <Icon size={18} strokeWidth={2} />
+                </span>
+                <span className="text-[0.95rem]">{label}</span>
+              </Link>
+            );
+          })}
+        </div>
+      </div>
 
-      {NAV.map(({ href, label, Icon }) => {
-        const active = pathname === href || pathname?.startsWith(href + "/");
-        return (
-          <Link
-            key={href}
-            href={href}
-            onClick={onNavigate}
-            className={cn(
-              "btn-big group",
-              active
-                ? "bg-glass border border-indigo-400/30 text-text-hi shadow-glass"
-                : "border border-transparent text-text-mid hover:bg-indigo-900/40 hover:text-text-hi"
-            )}
-          >
-            <span
-              className={cn(
-                "flex h-9 w-9 items-center justify-center rounded-xl border transition-colors",
-                active
-                  ? "border-cyan/40 bg-cyan/10 text-cyan"
-                  : "border-indigo-400/20 bg-indigo-900/40 text-indigo-300 group-hover:border-indigo-400/40"
-              )}
-            >
-              <Icon size={18} strokeWidth={2} />
-            </span>
-            <span className="text-[0.95rem]">{label}</span>
-          </Link>
-        );
-      })}
-
-      <div className="mt-auto pt-2">
+      {/* Usuario (fijo abajo) */}
+      <div className="shrink-0 border-t border-indigo-400/10 bg-bg/60 px-4 pb-4 pt-3 backdrop-blur-glass">
         <UserMenu onNavigate={onNavigate} />
       </div>
     </nav>
