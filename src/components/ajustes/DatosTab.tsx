@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { descargarCSV, parseCSV } from "@/lib/csv";
+import { formatSupabaseError } from "@/lib/supabase-errors";
 
 type Toast = { kind: "ok" | "err"; msg: string } | null;
 
@@ -112,7 +113,7 @@ export function DatosTab() {
           return copia;
         });
         const { error } = await supabase.from(tabla).insert(limpias);
-        if (error) errores.push(`${clave}: ${error.message}`);
+        if (error) errores.push(`${clave}: ${formatSupabaseError(error)}`);
         else totalInsertados += limpias.length;
       };
 

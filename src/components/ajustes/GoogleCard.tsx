@@ -6,6 +6,8 @@ import { createClient } from "@/lib/supabase/client";
 import { getGoogleConnectionStatus, type GoogleStatus } from "@/app/actions/google";
 import { stopCalendarWatch } from "@/lib/agenda";
 import { formatGoogleError } from "@/lib/google-errors";
+import { formatSupabaseError } from "@/lib/supabase-errors";
+import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { HelpButton, HelpDrawer } from "./HelpDrawer";
 import { GOOGLE_OAUTH_GUIDE } from "./integracionesGuides";
 
@@ -16,6 +18,7 @@ export function GoogleCard() {
   const [busy, setBusy]           = useState(false);
   const [helpOpen, setHelpOpen]   = useState(false);
   const [error, setError]         = useState<string | null>(null);
+  const { confirm: confirmDialog, dialog: confirmDialogNode } = useConfirmDialog();
 
   useEffect(() => {
     let alive = true;
@@ -60,7 +63,13 @@ export function GoogleCard() {
   };
 
   const desconectar = async () => {
-    if (!confirm("¿Desconectar Google? Tendrás que volver a autorizar para sincronizar la agenda.")) return;
+    const ok = await confirmDialog({
+      title: "Desconectar Google",
+      message: "Se borrarán los tokens guardados. Para volver a sincronizar la agenda tendrás que autorizar de nuevo desde tu cuenta de Google.",
+      confirmLabel: "Desconectar",
+      tone: "warning",
+    });
+    if (!ok) return;
     setBusy(true);
     setError(null);
     // 1) Detener el watch channel en Google (si lo había) — best-effort.
@@ -68,7 +77,7 @@ export function GoogleCard() {
     // 2) Borrar tokens. RLS limita a la fila del propio usuario.
     const { error: e } = await supabase.from("google_connections").delete().not("id", "is", null);
     setBusy(false);
-    if (e) { setError(e.message); return; }
+    if (e) { setError(formatSupabaseError(e)); return; }
     setStatus({
       connected: false, email: null, expiresAt: null, scope: null,
       watchActive: false, watchExpiresAt: null,
@@ -157,6 +166,7 @@ export function GoogleCard() {
       </div>
 
       <HelpDrawer open={helpOpen} onClose={() => setHelpOpen(false)} {...GOOGLE_OAUTH_GUIDE} />
+      {confirmDialogNode}
     </article>
   );
 }

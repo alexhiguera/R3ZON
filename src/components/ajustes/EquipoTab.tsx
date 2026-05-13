@@ -12,6 +12,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { InvitarMiembroModal } from "./InvitarMiembroModal";
 
 type Miembro = {
@@ -35,6 +36,7 @@ export function EquipoTab() {
   const [error, setError]     = useState<string | null>(null);
   const [open, setOpen]       = useState(false);
   const [toast, setToast]     = useState<Toast>(null);
+  const { confirm: confirmDialog, dialog: confirmDialogNode } = useConfirmDialog();
 
   const flash = (t: Toast) => {
     setToast(t);
@@ -56,7 +58,13 @@ export function EquipoTab() {
   useEffect(() => { cargar(); }, [cargar]);
 
   const revocar = async (id: string) => {
-    if (!confirm("¿Revocar acceso a este miembro?")) return;
+    const ok = await confirmDialog({
+      title: "Revocar acceso",
+      message: "Este miembro perderá inmediatamente el acceso al negocio. Podrás volver a invitarle más adelante.",
+      confirmLabel: "Revocar",
+      tone: "danger",
+    });
+    if (!ok) return;
     const res = await fetch("/api/team/revoke", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -167,6 +175,7 @@ export function EquipoTab() {
         onClose={() => setOpen(false)}
         onInvited={() => { flash({ kind: "ok", msg: "Invitación enviada." }); cargar(); }}
       />
+      {confirmDialogNode}
     </div>
   );
 }

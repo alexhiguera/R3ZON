@@ -28,6 +28,7 @@ import {
 
 import { createClient } from "@/lib/supabase/client";
 import { Help } from "@/components/ui/Tooltip";
+import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
 import {
   createEvent,
   updateEvent,
@@ -97,6 +98,7 @@ export function EventModal({
   const [error,   setError]   = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const { confirm: confirmDialog, dialog: confirmDialogNode } = useConfirmDialog();
   // El bloque "Adicionales" se abre automáticamente si alguno de sus campos
   // tiene contenido al editar, para que el usuario vea sus datos.
   const [adicionalesOpen, setAdicionalesOpen] = useState<boolean>(
@@ -198,7 +200,13 @@ export function EventModal({
 
   const remove = async () => {
     if (!initial.id) return;
-    if (!confirm("¿Eliminar esta cita? Se borrará también de Google Calendar.")) return;
+    const ok = await confirmDialog({
+      title: "Eliminar cita",
+      message: "La cita se borrará también de Google Calendar si está sincronizada. Esta acción no se puede deshacer.",
+      confirmLabel: "Eliminar",
+      tone: "danger",
+    });
+    if (!ok) return;
     setDeleting(true);
     try {
       await deleteEvent(initial.id);
@@ -497,6 +505,7 @@ export function EventModal({
           </div>
         </div>
       </div>
+      {confirmDialogNode}
     </div>
   );
 }

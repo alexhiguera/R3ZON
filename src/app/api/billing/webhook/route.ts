@@ -20,10 +20,8 @@ export async function POST(request: NextRequest) {
   try {
     event = stripe.webhooks.constructEvent(raw, sig, secret);
   } catch (err) {
-    return NextResponse.json(
-      { error: `Firma inválida: ${(err as Error).message}` },
-      { status: 400 }
-    );
+    console.error("stripe_webhook_invalid_signature", err instanceof Error ? err.message : err);
+    return NextResponse.json({ error: "Firma inválida" }, { status: 400 });
   }
 
   const admin = createAdminClient();
@@ -49,10 +47,8 @@ export async function POST(request: NextRequest) {
         break;
     }
   } catch (err) {
-    return NextResponse.json(
-      { error: (err as Error).message },
-      { status: 500 }
-    );
+    console.error("stripe_webhook_handler_failed", event.type, err instanceof Error ? err.message : err);
+    return NextResponse.json({ error: "Error al procesar el evento" }, { status: 500 });
   }
 
   return NextResponse.json({ received: true });

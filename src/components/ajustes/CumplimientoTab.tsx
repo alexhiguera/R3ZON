@@ -15,6 +15,8 @@ import {
   Ban,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { formatSupabaseError } from "@/lib/supabase-errors";
+import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 type Vigente = {
   id: string;
@@ -61,6 +63,7 @@ export function CumplimientoTab() {
   const [loading, setLoading] = useState(true);
   const [busyTipo, setBusyTipo] = useState<string | null>(null);
   const [toast, setToast] = useState<{ kind: "ok" | "err"; msg: string } | null>(null);
+  const { confirm: confirmDialog, dialog: confirmDialogNode } = useConfirmDialog();
 
   const flash = (t: typeof toast) => {
     setToast(t);
@@ -83,12 +86,18 @@ export function CumplimientoTab() {
   }, []);
 
   const revocar = async (tipo: string) => {
-    if (!confirm(`¿Revocar el consentimiento de "${tipo}"?`)) return;
+    const ok = await confirmDialog({
+      title: "Revocar consentimiento",
+      message: `Dejarás de prestar consentimiento para "${tipo}". Podrás volver a otorgarlo cuando quieras.`,
+      confirmLabel: "Revocar",
+      tone: "warning",
+    });
+    if (!ok) return;
     setBusyTipo(tipo);
     const { error } = await supabase.rpc("revocar_consentimiento", { p_tipo: tipo });
     setBusyTipo(null);
     if (error) {
-      flash({ kind: "err", msg: error.message });
+      flash({ kind: "err", msg: formatSupabaseError(error) });
       return;
     }
     flash({ kind: "ok", msg: "Consentimiento revocado." });
@@ -219,6 +228,7 @@ export function CumplimientoTab() {
           carga de copias de seguridad.
         </p>
       </div>
+      {confirmDialogNode}
     </div>
   );
 }

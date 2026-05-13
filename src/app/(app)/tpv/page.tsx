@@ -20,6 +20,7 @@ import { useNegocioId } from "@/lib/useNegocioId";
 import { useToast } from "@/components/ui/Toast";
 import { useSupabaseQuery } from "@/lib/useSupabaseQuery";
 import { Modal } from "@/components/ui/Modal";
+import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { ActionButton } from "@/components/ui/ActionButton";
 import { Input } from "@/components/ui/Input";
 import {
@@ -76,6 +77,7 @@ export default function TPVPage() {
   const [mesa, setMesa] = useState("");
   const [cobrando, setCobrando] = useState(false);
   const [modalCobro, setModalCobro] = useState(false);
+  const { confirm: confirmDialog, dialog: confirmDialogNode } = useConfirmDialog();
 
   const categorias = useMemo(() => {
     const s = new Set<string>();
@@ -102,9 +104,15 @@ export default function TPVPage() {
     setItems((prev) => añadirItem(prev, p));
   }
 
-  function descartarTicket() {
+  async function descartarTicket() {
     if (items.length === 0) return;
-    if (!confirm("¿Vaciar el ticket en curso?")) return;
+    const ok = await confirmDialog({
+      title: "Vaciar ticket",
+      message: "Se perderá el contenido del ticket en curso.",
+      confirmLabel: "Vaciar",
+      tone: "warning",
+    });
+    if (!ok) return;
     setItems([]);
     setMesa("");
   }
@@ -385,6 +393,7 @@ export default function TPVPage() {
           Al cobrar, el stock se descuenta automáticamente para los productos rastreados.
         </p>
       </Modal>
+      {confirmDialogNode}
     </div>
   );
 }

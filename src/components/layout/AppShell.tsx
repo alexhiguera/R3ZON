@@ -7,6 +7,7 @@ import { Sidebar } from "./Sidebar";
 import { CommandPalette } from "./CommandPalette";
 import { DeviceTracker } from "@/components/auth/DeviceTracker";
 import { ToastProvider } from "@/components/ui/Toast";
+import { OfflineBanner } from "@/components/ui/OfflineBanner";
 
 // Rutas que ocupan todo el ancho disponible (sin el max-w por defecto).
 const FULL_BLEED = ["/citas"];
@@ -20,6 +21,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <ToastProvider>
+    <OfflineBanner />
     <CommandPalette />
     <div className="min-h-[100dvh] lg:grid lg:grid-cols-[280px_1fr]">
       <DeviceTracker />

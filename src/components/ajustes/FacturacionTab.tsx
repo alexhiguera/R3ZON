@@ -5,6 +5,7 @@ import { Plus, Trash2, Star, Loader2, CreditCard } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useNegocioId } from "@/lib/useNegocioId";
 import { useToast } from "@/components/ui/Toast";
+import { formatSupabaseError } from "@/lib/supabase-errors";
 
 export type MetodoPago = {
   id: string;
@@ -44,7 +45,7 @@ export function FacturacionTab() {
         .select("id,etiqueta,tipo,detalle,predeterminado")
         .order("predeterminado", { ascending: false })
         .order("etiqueta");
-      if (error) toast.err(error.message);
+      if (error) toast.err(formatSupabaseError(error));
       else setItems((data ?? []) as MetodoPago[]);
       setCargando(false);
     })();
@@ -67,7 +68,7 @@ export function FacturacionTab() {
       .single();
     setAñadiendo(false);
     if (error || !data) {
-      toast.err(error?.message ?? "Error al guardar");
+      toast.err(formatSupabaseError(error, "No se ha podido guardar el método de pago."));
       return;
     }
     setItems((prev) => [...prev, data as MetodoPago]);
@@ -82,7 +83,7 @@ export function FacturacionTab() {
     const { error } = await supabase.from("metodos_pago").delete().eq("id", id);
     if (error) {
       setItems(prev);
-      toast.err(error.message);
+      toast.err(formatSupabaseError(error));
     }
   }
 
@@ -94,7 +95,7 @@ export function FacturacionTab() {
     const { error } = await supabase.rpc("set_metodo_pago_predeterminado", { p_id: id });
     if (error) {
       setItems(prev);
-      toast.err(error.message);
+      toast.err(formatSupabaseError(error));
     }
   }
 

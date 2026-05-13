@@ -15,6 +15,8 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { createClient } from "@/lib/supabase/client";
+import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { formatSupabaseError } from "@/lib/supabase-errors";
 import { MisCitas } from "@/components/perfil/MisCitas";
 
 const AVATAR_BUCKET = "avatars";
@@ -61,6 +63,7 @@ export default function PerfilPage() {
   const [rol, setRol] = useState<Rol>("owner");
   const [negocio, setNegocio] = useState<string>("");
   const [toast, setToast] = useState<Toast>(null);
+  const { confirm: confirmDialog, dialog: confirmDialogNode } = useConfirmDialog();
 
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -165,12 +168,18 @@ export default function PerfilPage() {
       data: { avatar_url: pub.publicUrl },
     });
     setUploading(false);
-    if (metaErr) flash({ kind: "err", msg: metaErr.message });
+    if (metaErr) flash({ kind: "err", msg: formatSupabaseError(metaErr) });
     else flash({ kind: "ok", msg: "Avatar actualizado." });
   }
 
   async function quitarAvatar() {
-    if (!confirm("¿Eliminar tu avatar?")) return;
+    const ok = await confirmDialog({
+      title: "Eliminar avatar",
+      message: "Tu foto de perfil se quitará de la cuenta. Podrás volver a subir una en cualquier momento.",
+      confirmLabel: "Eliminar",
+      tone: "warning",
+    });
+    if (!ok) return;
     setAvatarUrl(null);
     await supabase.auth.updateUser({ data: { avatar_url: null } });
     flash({ kind: "ok", msg: "Avatar eliminado." });
@@ -324,6 +333,7 @@ export default function PerfilPage() {
           ))}
         </ul>
       </div>
+      {confirmDialogNode}
     </div>
   );
 }

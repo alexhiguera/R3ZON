@@ -10,6 +10,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { HierarchyChart } from "./HierarchyChart";
 import { Tooltip } from "@/components/ui/Tooltip";
+import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
 import type { Contacto } from "./types";
 
 type Vista = "arbol" | "tarjetas";
@@ -46,6 +47,7 @@ export function ContactosTab({
   const [editing, setEditing] = useState<ContactoForm | null>(null);
   const [saving, setSaving] = useState(false);
   const [vista, setVista] = useState<Vista>("arbol");
+  const { confirm: confirmDialog, dialog: confirmDialogNode } = useConfirmDialog();
 
   useEffect(() => {
     const v = typeof window !== "undefined" ? window.localStorage.getItem(VISTA_KEY) : null;
@@ -111,7 +113,13 @@ export function ContactosTab({
   };
 
   const eliminar = async (c: Contacto) => {
-    if (!confirm(`¿Eliminar a ${c.nombre}? Los que reportaban a esta persona quedarán sin superior.`)) return;
+    const ok = await confirmDialog({
+      title: `Eliminar a ${c.nombre}`,
+      message: "Las personas que reportaban a este contacto quedarán sin superior asignado.",
+      confirmLabel: "Eliminar",
+      tone: "danger",
+    });
+    if (!ok) return;
     const supabase = createClient();
     await supabase.from("contactos_cliente").delete().eq("id", c.id);
     onChange(
@@ -272,6 +280,7 @@ export function ContactosTab({
           onClose={() => setEditing(null)}
         />
       )}
+      {confirmDialogNode}
     </div>
   );
 }

@@ -4,12 +4,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/ui/Toast";
+import { formatSupabaseError } from "@/lib/supabase-errors";
 
 // El builder devuelve cualquier query de Supabase (PostgrestFilterBuilder,
 // SingleResponse, etc.). Casteamos `data` a `T | null` al consumir.
 type Builder = (sb: SupabaseClient) => PromiseLike<{
   data: unknown;
-  error: { message: string } | null;
+  error: { message: string; code?: string; details?: string; hint?: string } | null;
 }>;
 
 export type UseSupabaseQueryResult<T> = {
@@ -70,8 +71,9 @@ export function useSupabaseQuery<T>(
     const { data: payload, error: err } = await builderRef.current(supabase);
     if (!aliveRef.current) return;
     if (err) {
-      const msg = context ? `Error al cargar ${context}: ${err.message}` : err.message;
-      setError(err.message);
+      const human = formatSupabaseError(err);
+      const msg = context ? `No se pudo cargar ${context}. ${human}` : human;
+      setError(human);
       toast.err(msg);
     } else {
       setError(null);

@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Tooltip } from "@/components/ui/Tooltip";
+import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { InfoTab } from "@/components/clientes/InfoTab";
 import { ContactosTab } from "@/components/clientes/ContactosTab";
 import { TabHistorial } from "@/components/crm/TabHistorial";
@@ -37,6 +38,7 @@ export default function FichaClientePage() {
   const [tab, setTab] = useState<Tab>("info");
   const [cliente, setCliente] = useState<Cliente | null>(null);
   const [cargando, setCargando] = useState(true);
+  const { confirm: confirmDialog, dialog: confirmDialogNode } = useConfirmDialog();
 
   useEffect(() => {
     (async () => {
@@ -52,7 +54,13 @@ export default function FichaClientePage() {
 
   const eliminar = async () => {
     if (!cliente) return;
-    if (!confirm(`¿Eliminar a ${cliente.nombre}? Esta acción no se puede deshacer.`)) return;
+    const ok = await confirmDialog({
+      title: `Eliminar a ${cliente.nombre}`,
+      message: "Se borrarán también sus contactos y vínculos asociados. Esta acción no se puede deshacer.",
+      confirmLabel: "Eliminar cliente",
+      tone: "danger",
+    });
+    if (!ok) return;
     await supabase.from("clientes").delete().eq("id", id);
     router.push("/clientes");
   };
@@ -184,6 +192,7 @@ export default function FichaClientePage() {
       )}
       {tab === "documentos" && <TabDocumentos clienteId={id} clienteNombre={cliente.nombre} />}
       {tab === "movimientos" && <TabMovimientos clienteId={id} clienteNombre={cliente.nombre} />}
+      {confirmDialogNode}
     </div>
   );
 }

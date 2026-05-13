@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/client";
+import { formatSupabaseError } from "@/lib/supabase-errors";
+import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { HelpButton, HelpDrawer } from "./HelpDrawer";
 import { N8N_API_KEY_GUIDE, N8N_WEBHOOK_GUIDE } from "./integracionesGuides";
 
@@ -46,6 +48,7 @@ export function N8nCard() {
   const [key, setKey] = useState("");
   const [errUrl, setErrUrl] = useState<string | null>(null);
   const [errKey, setErrKey] = useState<string | null>(null);
+  const { confirm: confirmDialog, dialog: confirmDialogNode } = useConfirmDialog();
   const [toast, setToast] = useState<Toast>(null);
   const [helpOpen, setHelpOpen] = useState<WhichGuide>(null);
 
@@ -86,7 +89,7 @@ export function N8nCard() {
       p_metadata: { saved_at: new Date().toISOString() },
     });
     setSavingUrl(false);
-    if (error) { flash({ kind: "err", msg: `No se pudo guardar: ${error.message}` }); return; }
+    if (error) { flash({ kind: "err", msg: `No se pudo guardar: ${formatSupabaseError(error)}` }); return; }
     setSaved((s) => ({ ...s, url: true }));
     setUrl("");
     flash({ kind: "ok", msg: "URL del webhook guardada cifrada." });
@@ -107,20 +110,26 @@ export function N8nCard() {
       p_metadata: { saved_at: new Date().toISOString() },
     });
     setSavingKey(false);
-    if (error) { flash({ kind: "err", msg: `No se pudo guardar: ${error.message}` }); return; }
+    if (error) { flash({ kind: "err", msg: `No se pudo guardar: ${formatSupabaseError(error)}` }); return; }
     setSaved((s) => ({ ...s, key: true }));
     setKey("");
     flash({ kind: "ok", msg: "API Key guardada cifrada." });
   };
 
   const eliminar = async (alias: string) => {
-    if (!confirm("¿Eliminar este valor guardado?")) return;
+    const ok = await confirmDialog({
+      title: "Eliminar valor guardado",
+      message: "Se borrará el valor cifrado guardado en la base de datos. Podrás volver a configurarlo en cualquier momento.",
+      confirmLabel: "Eliminar",
+      tone: "danger",
+    });
+    if (!ok) return;
     const { error } = await supabase
       .from("config_keys")
       .delete()
       .eq("servicio", SERVICIO)
       .eq("alias", alias);
-    if (error) { flash({ kind: "err", msg: error.message }); return; }
+    if (error) { flash({ kind: "err", msg: formatSupabaseError(error) }); return; }
     setSaved((s) => ({ ...s, [alias === ALIAS_URL ? "url" : "key"]: false }));
     flash({ kind: "ok", msg: "Valor eliminado." });
   };
@@ -289,6 +298,7 @@ export function N8nCard() {
         onClose={() => setHelpOpen(null)}
         {...N8N_API_KEY_GUIDE}
       />
+      {confirmDialogNode}
     </article>
   );
 }

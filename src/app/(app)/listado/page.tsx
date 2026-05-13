@@ -28,6 +28,8 @@ import { useToast } from "@/components/ui/Toast";
 import { useSupabaseQuery } from "@/lib/useSupabaseQuery";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Field } from "@/components/ui/Field";
+import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { formatSupabaseError } from "@/lib/supabase-errors";
 import { Input, Select, Textarea } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
 import { BarcodeScanModal } from "@/components/productos/BarcodeScanModal";
@@ -95,6 +97,7 @@ export default function ListadoPage() {
 
   const [busqueda, setBusqueda] = useState("");
   const [filtroTipo, setFiltroTipo] = useState<FiltroTipo>("todos");
+  const { confirm: confirmDialog, dialog: confirmDialogNode } = useConfirmDialog();
   const [filtroCategoria, setFiltroCategoria] = useState<string>("todas");
   const [filtroEstado, setFiltroEstado] = useState<FiltroEstado>("todos");
   const [editando, setEditando] = useState<Partial<Producto> | null>(null);
@@ -171,11 +174,17 @@ export default function ListadoPage() {
   }, [productos, busqueda, filtroTipo, filtroCategoria, filtroEstado, stockMode]);
 
   async function eliminar(p: Producto) {
-    if (!confirm(`¿Eliminar "${p.nombre}"? Esta acción no se puede deshacer.`)) return;
+    const ok = await confirmDialog({
+      title: `Eliminar producto`,
+      message: `Se borrará "${p.nombre}" del catálogo. Esta acción no se puede deshacer.`,
+      confirmLabel: "Eliminar",
+      tone: "danger",
+    });
+    if (!ok) return;
     setData((prev) => prev?.filter((x) => x.id !== p.id) ?? prev);
     const { error } = await supabase.from("productos").delete().eq("id", p.id);
     if (error) {
-      toast.err(`No se pudo eliminar: ${error.message}`);
+      toast.err(`No se pudo eliminar: ${formatSupabaseError(error)}`);
       refresh();
     } else {
       toast.ok(`Eliminado ${p.nombre}`);
@@ -385,6 +394,7 @@ export default function ListadoPage() {
         onCerrar={() => setMovimientoDe(null)}
         onGuardado={() => { setMovimientoDe(null); refresh(); refreshMov(); }}
       />
+      {confirmDialogNode}
     </div>
   );
 }

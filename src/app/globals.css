@@ -91,3 +91,91 @@ body {
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover { background: rgb(var(--indigo-400) / 0.45); }
+
+/* ─── Accesibilidad ────────────────────────────────────────────────────────
+ * Focus visible global: outline cyan con offset para que sea perceptible
+ * sobre cualquier glass o gradient. Solo se aplica cuando el navegador
+ * detecta que el foco vino por teclado (no por mouse), para no ensuciar
+ * la UI con clics. */
+:focus-visible {
+  outline: 2px solid rgb(var(--cyan));
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+button:focus-visible,
+a:focus-visible,
+[role="tab"]:focus-visible,
+[role="button"]:focus-visible,
+[role="menuitem"]:focus-visible {
+  outline-offset: 3px;
+}
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline-offset: 0;
+  box-shadow: 0 0 0 2px rgb(var(--cyan) / 0.35);
+}
+
+/* Reducir movimiento (toggle de Ajustes → Accesibilidad o preferencia del SO). */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+html.reduce-motion *,
+html.reduce-motion *::before,
+html.reduce-motion *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* Toggle "Subrayar enlaces siempre" — aplica un underline visible global. */
+html.underline-links a:not([data-no-underline]) {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* Toggle "Cursor grande". */
+html.large-cursor,
+html.large-cursor * {
+  cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'><path d='M4 2 L4 26 L11 19 L15 28 L19 26 L15 17 L24 17 Z' fill='white' stroke='black' stroke-width='1.5' stroke-linejoin='round'/></svg>") 4 2, auto;
+}
+
+/* Toggle "Alto contraste" — sube el contraste de glass y texto medio
+ * sin destruir la marca; convierte glass en sólido y refuerza bordes. */
+html.alto-contraste .card-glass {
+  background: rgb(var(--indigo-900));
+  border-color: rgb(var(--indigo-400) / 0.55);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+html.alto-contraste {
+  --text-mid: 230 235 250;
+  --text-lo: rgba(220, 230, 255, 0.85);
+  --text-ghost: rgba(220, 230, 255, 0.7);
+}
+html.alto-contraste body {
+  background-image: none;
+  background: rgb(var(--bg));
+}
+
+/* Skip link: visible solo al recibir foco por teclado. */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+  padding: 0.5rem 0.85rem;
+  background: rgb(var(--cyan));
+  color: rgb(var(--bg));
+  font-weight: 700;
+  border-radius: 0 0 12px 0;
+}
+.skip-link:focus {
+  left: 0;
+}

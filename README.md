@@ -246,6 +246,42 @@ npx cap sync
 
 > Resumen de todo lo construido en orden de iteraciones (más reciente → más antiguo).
 
+### Iteración 49 — *2026-05-13* — Auditoría integral v1.1: seguridad endurecida, errores legibles y accesibilidad WCAG AA
+
+Diagnóstico completo en tres frentes (seguridad / gestión de errores / accesibilidad) y ejecución en un único sprint:
+
+**Seguridad — cabeceras HTTP, timing-safe crypto y documentación de secretos**
+
+- **`next.config.mjs`**: añadidos headers `Content-Security-Policy` (con allow-list para Supabase, Stripe, Google y Vercel Analytics, `worker-src blob:` para Tesseract, `frame-ancestors 'none'`), `Strict-Transport-Security`, `X-Content-Type-Options`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin` y `Permissions-Policy` con cámara/micro/geo deshabilitados. No se aplican en modo `output: export` (Capacitor) porque Vercel los strippea en export estático.
+- **`supabase/security_timing_hardening.sql` (nuevo)**: reescribe `find_connection_by_channel(text, text)` con comparación de digests SHA-256 de longitud fija → mitiga timing attacks sobre `channel_token` del webhook de Google Calendar. Restringe `EXECUTE` a `service_role`. Integrado en `setup.sql` tras `security_hardening.sql`.
+- **`.env.local.example`**: documentado cómo generar y rotar `app.config_master_key` (GUC pgcrypto) con `openssl rand -base64 48`. Aclara que la clave vive en Supabase Custom Postgres Config, no en `.env` del frontend, y que la rotación requiere re-cifrar `google_connections`.
+- **`.gitignore`**: verificado — `.env*.local` excluido, ningún archivo de secretos commiteado (`git ls-files | grep env` solo devuelve `.env.local.example`).
+- **`src/app/api/billing/webhook/route.ts`**: sanitizada la respuesta — ya no devuelve `err.message` al cliente (potencial filtrado de stack/detalles internos). Los detalles se loguean en servidor.
+
+**Gestión de errores — todos los errores ahora son legibles y dentro del design system**
+
+- **`src/lib/supabase-errors.ts` (nuevo)**: `formatSupabaseError(err)` mapea códigos PostgREST (`23505`, `23503`, `23502`, `42501`, `22P02`, `PGRST116`, `PGRST301`…), errores de auth (`Invalid login credentials`, `Email rate limit`, `JWT expired`…), Storage (`Payload too large`, `mime type`…), red (`Failed to fetch`, `timeout`…) y HTTP status a mensajes en español. Filtro `looksTechnical()` evita filtrar mensajes con `violates`/`constraint`/`stack` al usuario.
+- **`src/lib/stripe-errors.ts` (nuevo)**: traductor equivalente para Stripe (decline_codes, card_declined, expired_card, etc.).
+- Integrado en **`useSupabaseQuery`** (todas las cargas) y en 5+ tabs de Ajustes: `ListadoTab`, `SeguridadTab` (2), `N8nCard` (3), `FacturacionTab` (4), `DatosTab`, `CumplimientoTab`, `GoogleCard`, `TaskModal`, `ContactosTab`, `proveedores`, `listado`, `perfil`.
+- **`src/app/error.tsx`, `src/app/global-error.tsx`, `src/app/(app)/error.tsx`, `src/app/(app)/loading.tsx` (nuevos)**: boundaries glass con CTAs "Reintentar" y "Ir al panel", coherentes con `not-found.tsx`. `global-error.tsx` incluye estilos inline para funcionar incluso si falla el root layout.
+- **`src/components/ui/ConfirmDialog.tsx` (nuevo)** + hook `useConfirmDialog()`: sustituye las 16 ocurrencias de `window.confirm()` por un modal glass accesible con `tone` (`danger`/`warning`/`info`) y opción `requireTyping` para acciones críticas. Migradas: `EquipoTab`, `SeguridadTab`, `N8nCard`, `CumplimientoTab`, `GoogleCard`, `EventModal`, `TaskModal`, `ColumnManager`, `ContactosTab`, `clientes/[id]`, `proveedores` (×2), `listado`, `perfil`, `tpv`.
+- **`src/components/ui/OfflineBanner.tsx` (nuevo)**: banner sticky en AppShell que aparece cuando `navigator.onLine === false` con `role="status"` y `aria-live="polite"`.
+
+**Accesibilidad — WCAG 2.1 AA y nueva pestaña Accesibilidad en Ajustes**
+
+- **`src/app/globals.css`**: regla global `:focus-visible` con outline cyan (offset 2-3 px), variante específica para inputs con `box-shadow ring`, soporte `prefers-reduced-motion: reduce`, clases `html.reduce-motion`, `html.alto-contraste` (glass → sólido + contraste reforzado), `html.underline-links`, `html.large-cursor` (cursor SVG 32 px) y `.skip-link`.
+- **`src/components/ui/Modal.tsx`**: focus trap completo (Tab/Shift+Tab confinados), focus return al cerrar (`document.activeElement` previo restaurado), `aria-labelledby` automático cuando `title` es string, dialog root `tabIndex={-1}` para recibir foco si no hay elementos focusables internos.
+- **`src/components/ui/Field.tsx`**: refactor breaking-but-compatible — genera `id` con `useId()` si el hijo no lo tiene, `<label htmlFor>` apunta al control, propaga `aria-invalid` y `aria-describedby` al child cuando hay error/hint, mensajes de error con `role="alert"`.
+- **`src/lib/a11y-prefs.ts` (nuevo)**: módulo con `loadA11yPrefs/saveA11yPrefs/applyA11yPrefs` (localStorage + clases en `<html>`) y `A11Y_BOOT_SCRIPT` inline para `layout.tsx` que aplica las clases antes del primer paint (sin FOUC).
+- **`src/components/ajustes/AccesibilidadTab.tsx` (nuevo)** + tab "Accesibilidad" en `SettingsTabs` (entre Apariencia y Listado): selector de tamaño de texto (sm/md/lg/xl, reutiliza `--font-scale`), toggles para Reducir movimiento, Alto contraste, Subrayar enlaces, Cursor grande, y cheat-sheet de atajos de teclado (Cmd+K, Esc, Tab, ↑↓ Enter). Toggle row accesible con `role="switch"` y `aria-checked`. `TabId` extendido en `types.ts`.
+
+**Tests y calidad**
+
+- `npx tsc --noEmit` → 0 errores.
+- `npm run test:run` → **132/132 verde** (test de `<Field>` actualizado para la nueva semántica `htmlFor`+`id` + 1 test nuevo de propagación de `aria-invalid`/`aria-describedby`).
+
+Pendiente para una v1.2: endpoint `/api/account/delete` (RGPD borrado total), rate limiting en `team/invite` y `billing/checkout`, alternativa de teclado en el drag&drop del Kanban (dnd-kit `KeyboardSensor`), tests de a11y con `jest-axe`.
+
 ### Iteración 48 — *2026-05-12* — Endurecimiento de seguridad: RLS en tablas archivo y vistas con `security_invoker`
 
 Auditoría del Database Linter de Supabase. Se resuelven los 8 ERRORES detectados:

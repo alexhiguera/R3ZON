@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Loader2, CheckCircle2, AlertCircle, Boxes } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { formatSupabaseError } from "@/lib/supabase-errors";
 import type { PerfilNegocio } from "./types";
 
 export function ListadoTab({ perfil }: { perfil: PerfilNegocio }) {
@@ -27,7 +28,7 @@ export function ListadoTab({ perfil }: { perfil: PerfilNegocio }) {
     if (error) {
       // Revertir si falla.
       setStockMode(!next);
-      flash({ kind: "err", msg: `No se pudo guardar: ${error.message}` });
+      flash({ kind: "err", msg: `No se pudo guardar: ${formatSupabaseError(error)}` });
       return;
     }
     flash({ kind: "ok", msg: next ? "Modo stock activado." : "Modo stock desactivado." });

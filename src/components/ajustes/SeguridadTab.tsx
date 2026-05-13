@@ -14,6 +14,8 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { formatSupabaseError } from "@/lib/supabase-errors";
+import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 type Device = {
   id: string;
@@ -35,6 +37,7 @@ export function SeguridadTab() {
   const [loadingD, setLoadingD] = useState(true);
   const [logoutAll, setLogoutAll] = useState(false);
   const [toast, setToast] = useState<Toast>(null);
+  const { confirm: confirmDialog, dialog: confirmDialogNode } = useConfirmDialog();
 
   const flash = (t: Toast) => {
     setToast(t);
@@ -61,21 +64,30 @@ export function SeguridadTab() {
   }, [supabase]);
 
   const cerrarTodas = async () => {
-    if (!confirm(
-      "Esto cerrará tu sesión en TODOS los dispositivos (incluido este). " +
-      "Tendrás que volver a iniciar sesión. ¿Continuar?"
-    )) return;
+    const ok = await confirmDialog({
+      title: "Cerrar todas las sesiones",
+      message: "Esto cerrará tu sesión en todos los dispositivos, incluido este. Tendrás que volver a iniciar sesión.",
+      confirmLabel: "Cerrar todas",
+      tone: "danger",
+    });
+    if (!ok) return;
     setLogoutAll(true);
     const { error } = await supabase.auth.signOut({ scope: "global" });
     setLogoutAll(false);
-    if (error) { flash({ kind: "err", msg: error.message }); return; }
+    if (error) { flash({ kind: "err", msg: formatSupabaseError(error) }); return; }
     window.location.href = "/login";
   };
 
   const olvidarDispositivo = async (id: string) => {
-    if (!confirm("¿Olvidar este dispositivo? Si vuelve a iniciar sesión, recibirás un aviso de nuevo dispositivo.")) return;
+    const ok = await confirmDialog({
+      title: "Olvidar dispositivo",
+      message: "Si vuelve a iniciar sesión en este dispositivo, recibirás un aviso de nuevo dispositivo.",
+      confirmLabel: "Olvidar",
+      tone: "warning",
+    });
+    if (!ok) return;
     const { error } = await supabase.from("dispositivos_conocidos").delete().eq("id", id);
-    if (error) { flash({ kind: "err", msg: error.message }); return; }
+    if (error) { flash({ kind: "err", msg: formatSupabaseError(error) }); return; }
     setDevices((d) => d.filter((x) => x.id !== id));
     flash({ kind: "ok", msg: "Dispositivo olvidado." });
   };
@@ -207,6 +219,7 @@ export function SeguridadTab() {
           </ul>
         )}
       </div>
+      {confirmDialogNode}
     </div>
   );
 }

@@ -19,6 +19,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { X, Plus, Trash2, Check, GripVertical } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Tooltip } from "@/components/ui/Tooltip";
+import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { COLORES_COLUMNA, type Columna } from "@/lib/kanban";
 
 type Props = {
@@ -44,6 +45,7 @@ export function ColumnManager({ columnas, onClose, onUpdate }: Props) {
   const [nuevoNombre, setNuevoNombre] = useState("");
   const [nuevoColor, setNuevoColor] = useState(COLORES_COLUMNA[0]);
   const [saving, setSaving] = useState(false);
+  const { confirm: confirmDialog, dialog: confirmDialogNode } = useConfirmDialog();
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } })
@@ -123,12 +125,13 @@ export function ColumnManager({ columnas, onClose, onUpdate }: Props) {
       .eq("columna", slug);
     const n = count.count ?? 0;
     if (n > 0) {
-      if (
-        !confirm(
-          `Esta columna tiene ${n} tarea(s). Al eliminarla, las tareas quedarán sin columna. ¿Continuar?`
-        )
-      )
-        return;
+      const ok = await confirmDialog({
+        title: "Eliminar columna con tareas",
+        message: `Esta columna contiene ${n} tarea${n === 1 ? "" : "s"}. Al eliminarla, esas tareas quedarán sin columna asignada.`,
+        confirmLabel: "Eliminar columna",
+        tone: "warning",
+      });
+      if (!ok) return;
     }
     await supabase.from("kanban_columnas").delete().eq("id", id);
     const updated = cols.filter((c) => c.id !== id);
@@ -214,6 +217,7 @@ export function ColumnManager({ columnas, onClose, onUpdate }: Props) {
           </div>
         </div>
       </div>
+      {confirmDialogNode}
     </div>
   );
 }

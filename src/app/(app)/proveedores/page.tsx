@@ -20,6 +20,8 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Field } from "@/components/ui/Field";
 import { Input, Select, Textarea } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
+import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { formatSupabaseError } from "@/lib/supabase-errors";
 import { eur } from "@/lib/formato";
 import {
   ESTADO_GASTO_BADGE,
@@ -95,6 +97,7 @@ function TabProveedores() {
   const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState("");
   const [editando, setEditando] = useState<Partial<Proveedor> | null>(null);
+  const { confirm: confirmDialog, dialog: confirmDialogNode } = useConfirmDialog();
 
   useEffect(() => {
     let alive = true;
@@ -119,9 +122,15 @@ function TabProveedores() {
   );
 
   async function eliminar(p: Proveedor) {
-    if (!confirm(`¿Eliminar el proveedor "${p.nombre}"?`)) return;
+    const ok = await confirmDialog({
+      title: `Eliminar proveedor`,
+      message: `Se eliminará "${p.nombre}". Sus gastos asociados quedarán sin proveedor.`,
+      confirmLabel: "Eliminar",
+      tone: "danger",
+    });
+    if (!ok) return;
     const { error } = await supabase.from("proveedores").delete().eq("id", p.id);
-    if (error) toast.err(error.message);
+    if (error) toast.err(formatSupabaseError(error));
     else {
       setItems((prev) => prev.filter((x) => x.id !== p.id));
       toast.ok("Proveedor eliminado");
@@ -212,6 +221,7 @@ function TabProveedores() {
           setEditando(null);
         }}
       />
+      {confirmDialogNode}
     </div>
   );
 }
@@ -336,6 +346,7 @@ function TabGastos({ tipo }: { tipo: Exclude<TabId, "proveedores"> }) {
   const [proveedores, setProveedores] = useState<Proveedor[]>([]);
   const [loading, setLoading] = useState(true);
   const [editando, setEditando] = useState<Partial<GastoProveedor> | null>(null);
+  const { confirm: confirmDialog, dialog: confirmDialogNode } = useConfirmDialog();
 
   useEffect(() => {
     let alive = true;
@@ -356,9 +367,15 @@ function TabGastos({ tipo }: { tipo: Exclude<TabId, "proveedores"> }) {
   }, [supabase, toast, tipo]);
 
   async function eliminar(g: GastoProveedor) {
-    if (!confirm(`¿Eliminar "${g.concepto}"?`)) return;
+    const ok = await confirmDialog({
+      title: "Eliminar gasto",
+      message: `Se eliminará "${g.concepto}" del registro de gastos.`,
+      confirmLabel: "Eliminar",
+      tone: "danger",
+    });
+    if (!ok) return;
     const { error } = await supabase.from("gastos_proveedor").delete().eq("id", g.id);
-    if (error) toast.err(error.message);
+    if (error) toast.err(formatSupabaseError(error));
     else { setGastos((prev) => prev.filter((x) => x.id !== g.id)); toast.ok("Eliminado"); }
   }
 
@@ -475,6 +492,7 @@ function TabGastos({ tipo }: { tipo: Exclude<TabId, "proveedores"> }) {
           setEditando(null);
         }}
       />
+      {confirmDialogNode}
     </div>
   );
 }

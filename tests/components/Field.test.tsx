@@ -16,15 +16,30 @@ describe("<Field>", () => {
     expect(screen.getByTestId("ctl")).toBeTruthy();
   });
 
-  it("envuelve el control en un <label>, lo que asocia label↔control sin htmlFor", () => {
+  it("asocia label↔control mediante htmlFor + id autogenerado", () => {
     const { container } = render(
       <Field label="CIF">
         <input data-testid="ctl-cif" />
       </Field>,
     );
     const label = container.querySelector("label");
+    const input = screen.getByTestId("ctl-cif");
     expect(label).toBeTruthy();
-    expect(label?.contains(screen.getByTestId("ctl-cif"))).toBe(true);
+    expect(input.id).toBeTruthy();
+    expect(label?.getAttribute("for")).toBe(input.id);
+  });
+
+  it("propaga aria-invalid y aria-describedby al control cuando hay error", () => {
+    render(
+      <Field label="Email" error="Email inválido">
+        <input data-testid="ctl-email" />
+      </Field>,
+    );
+    const input = screen.getByTestId("ctl-email") as HTMLInputElement;
+    expect(input.getAttribute("aria-invalid")).toBe("true");
+    const describedBy = input.getAttribute("aria-describedby");
+    expect(describedBy).toBeTruthy();
+    expect(document.getElementById(describedBy!)?.textContent).toBe("Email inválido");
   });
 
   it("muestra el hint cuando se pasa", () => {

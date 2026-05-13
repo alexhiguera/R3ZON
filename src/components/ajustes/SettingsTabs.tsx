@@ -12,6 +12,7 @@ import {
   Boxes,
   Scale,
   Database,
+  Accessibility,
   type LucideIcon,
 } from "lucide-react";
 import { NegocioTab } from "./NegocioTab";
@@ -21,6 +22,7 @@ import { EquipoTab } from "./EquipoTab";
 import { SeguridadTab } from "./SeguridadTab";
 import { SuscripcionTab } from "./SuscripcionTab";
 import { AparienciaTab } from "./AparienciaTab";
+import { AccesibilidadTab } from "./AccesibilidadTab";
 import { ListadoTab } from "./ListadoTab";
 import { CumplimientoTab } from "./CumplimientoTab";
 import { DatosTab } from "./DatosTab";
@@ -29,6 +31,7 @@ import type { PerfilNegocio, TabId } from "./types";
 const TABS: { id: TabId; label: string; Icon: LucideIcon }[] = [
   { id: "negocio",       label: "Negocio",       Icon: Building2 },
   { id: "apariencia",    label: "Apariencia",    Icon: Palette },
+  { id: "accesibilidad", label: "Accesibilidad", Icon: Accessibility },
   { id: "listado",       label: "Listado",       Icon: Boxes },
   { id: "facturacion",   label: "Facturación",   Icon: Receipt },
   { id: "integraciones", label: "Integraciones", Icon: Plug },
@@ -82,6 +85,7 @@ export function SettingsTabs({ perfil }: { perfil: PerfilNegocio }) {
       >
         {active === "negocio"       && <NegocioTab perfil={perfil} />}
         {active === "apariencia"    && <AparienciaTab />}
+        {active === "accesibilidad" && <AccesibilidadTab />}
         {active === "listado"       && <ListadoTab perfil={perfil} />}
         {active === "facturacion"   && <FacturacionTab />}
         {active === "integraciones" && <IntegracionesTab />}

@@ -7,6 +7,8 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { useNegocioId } from "@/lib/useNegocioId";
 import { Help, Tooltip } from "@/components/ui/Tooltip";
+import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { formatSupabaseError } from "@/lib/supabase-errors";
 import { PRIORIDAD_META, type Columna, type Tarea } from "@/lib/kanban";
 
 type Props = {
@@ -32,6 +34,7 @@ export function TaskModal({ tarea, columnaActual, columnas, onClose, onSave, onD
   const [completada, setCompletada] = useState(tarea?.completada ?? false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { confirm: confirmDialog, dialog: confirmDialogNode } = useConfirmDialog();
 
   // Cerrar con Escape
   useEffect(() => {
@@ -66,7 +69,7 @@ export function TaskModal({ tarea, columnaActual, columnas, onClose, onSave, onD
         .select()
         .single();
       setLoading(false);
-      if (error) return setError(error.message);
+      if (error) return setError(formatSupabaseError(error));
       onSave(data as Tarea);
     } else {
       const { data, error } = await supabase
@@ -76,7 +79,7 @@ export function TaskModal({ tarea, columnaActual, columnas, onClose, onSave, onD
         .select()
         .single();
       setLoading(false);
-      if (error) return setError(error.message);
+      if (error) return setError(formatSupabaseError(error));
       onSave(data as Tarea);
     }
     onClose();
@@ -84,7 +87,13 @@ export function TaskModal({ tarea, columnaActual, columnas, onClose, onSave, onD
 
   const eliminar = async () => {
     if (!tarea?.id) return;
-    if (!confirm("¿Eliminar esta tarea?")) return;
+    const ok = await confirmDialog({
+      title: "Eliminar tarea",
+      message: "La tarea se borrará definitivamente del tablero.",
+      confirmLabel: "Eliminar",
+      tone: "danger",
+    });
+    if (!ok) return;
     await supabase.from("tareas_kanban").delete().eq("id", tarea.id);
     onDelete(tarea.id);
     onClose();
@@ -248,6 +257,7 @@ export function TaskModal({ tarea, columnaActual, columnas, onClose, onSave, onD
           </button>
         </div>
       </div>
+      {confirmDialogNode}
     </div>
   );
 }
