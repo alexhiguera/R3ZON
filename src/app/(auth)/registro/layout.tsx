@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Crear cuenta",
-  description: "Empieza a usar R3ZON Business OS gratis.",
+  description: "Empieza a usar R3ZON ANTARES gratis.",
   robots: { index: true, follow: true },
 };
 

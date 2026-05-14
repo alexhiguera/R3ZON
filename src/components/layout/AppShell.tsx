@@ -125,7 +125,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           >
             {open ? <X size={20} /> : <Menu size={20} />}
           </button>
-          <div className="font-display text-lg font-extrabold tracking-tight">R3ZON</div>
+          <div className="font-display text-lg font-extrabold tracking-tight">R3ZON ANTARES</div>
           <div className="accent-bar ml-1" style={{ width: 40, height: 2 }} />
         </header>
 

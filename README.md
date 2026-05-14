@@ -1,5 +1,5 @@
 <div align="center">
-  <h1>R3ZON Business OS</h1>
+  <h1>R3ZON ANTARES</h1>
   <p>
     <strong>Sistema operativo de negocio para autónomos y pequeñas empresas.</strong><br/>
     <em>Coste de servidor 0€ · Procesamiento client-side · Multi-tenant · Glassmorphism</em>
@@ -256,6 +256,39 @@ npx cap sync
 ## 📒 Bitácora de iteraciones
 
 > Resumen de todo lo construido en orden de iteraciones (más reciente → más antiguo).
+
+### Iteración 62 — *2026-05-14* — Corrección: la empresa es R3ZON (no «R3ZON Intelligence»)
+
+«R3ZON Intelligence» no es una entidad real — la empresa se llama simplemente **R3ZON** y el producto es **R3ZON ANTARES** / **ANTARES**. Sustituidas todas las menciones a `R3ZON Intelligence` por `R3ZON`.
+
+- [src/app/legal/layout.tsx](src/app/legal/layout.tsx) — footer: `© AAAA R3ZON · Versión vigente: …`.
+- [src/app/legal/privacidad/page.tsx](src/app/legal/privacidad/page.tsx) — apertura: `En R3ZON protegemos tus datos…` (se elimina el alias `("R3ZON")` que quedaba redundante).
+- [src/app/legal/terminos/page.tsx](src/app/legal/terminos/page.tsx) — preámbulo: `…entre el usuario y R3ZON.` (mismo motivo).
+
+### Iteración 61 — *2026-05-14* — Renombrado del producto a R3ZON ANTARES
+
+El producto pasa a llamarse **R3ZON ANTARES** (o **ANTARES** en formas cortas). Se han actualizado todas las referencias visibles al usuario, manteniendo intactos los identificadores técnicos para no romper datos guardados (`localStorage` `r3zon:*`, clases CSS `r3zon-calendar` / `r3zon-color-*`, el identificador de paleta `r3zon`, dominios `@r3zon.app` y el id de Capacitor `com.r3zon.app`). La entidad legal sigue siendo **R3ZON**.
+
+- [package.json](package.json) — `name`: `r3zon-business-os` → `r3zon-antares`.
+- [public/manifest.json](public/manifest.json) — `name`: `R3ZON ANTARES`, `short_name`: `ANTARES`.
+- [src/app/layout.tsx](src/app/layout.tsx) — metadata `title.default`, `title.template`, `applicationName`, `authors`, `openGraph.siteName/title`, `twitter.title` actualizados a `R3ZON ANTARES` / `ANTARES`.
+- [src/app/not-found.tsx](src/app/not-found.tsx) — `metadata.title` → `Página no encontrada · ANTARES`.
+- [src/app/global-error.tsx](src/app/global-error.tsx) — copy de error: `inicializar ANTARES`.
+- [src/app/(auth)/layout.tsx](src/app/(auth)/layout.tsx) — logo de auth: `R3ZON ANTARES`.
+- [src/app/(auth)/login/layout.tsx](src/app/(auth)/login/layout.tsx), [src/app/(auth)/registro/layout.tsx](src/app/(auth)/registro/layout.tsx) — descripciones SEO actualizadas.
+- [src/app/(app)/onboarding/layout.tsx](src/app/(app)/onboarding/layout.tsx), [src/app/(app)/onboarding/page.tsx](src/app/(app)/onboarding/page.tsx) — copy de onboarding usa `ANTARES`.
+- [src/app/(app)/perfil/page.tsx](src/app/(app)/perfil/page.tsx) — etiqueta «Alta en R3ZON» → «Alta en ANTARES».
+- [src/app/(app)/2fa/configurar/page.tsx](src/app/(app)/2fa/configurar/page.tsx) — `friendlyName` del enrolment TOTP: `ANTARES · YYYY-MM-DD`.
+- [src/app/legal/layout.tsx](src/app/legal/layout.tsx) — header del wrapper legal: `R3ZON ANTARES` (footer mantiene `R3ZON`).
+- [src/app/legal/aviso-legal/page.tsx](src/app/legal/aviso-legal/page.tsx), [src/app/legal/terminos/page.tsx](src/app/legal/terminos/page.tsx), [src/app/legal/privacidad/page.tsx](src/app/legal/privacidad/page.tsx), [src/app/legal/cookies/page.tsx](src/app/legal/cookies/page.tsx) — titles SEO y referencias al producto migradas a `ANTARES` / `R3ZON ANTARES`. Las menciones a la entidad legal `R3ZON` y al alias contractual `R3ZON` definido en los términos se conservan.
+- [src/components/layout/Sidebar.tsx](src/components/layout/Sidebar.tsx), [src/components/layout/AppShell.tsx](src/components/layout/AppShell.tsx) — texto del logo (desktop sidebar y header móvil) → `R3ZON ANTARES`.
+- [src/components/documentos/PlantillaDocumento.tsx](src/components/documentos/PlantillaDocumento.tsx) — pie de los PDFs generados: `Documento generado con R3ZON ANTARES`.
+- [src/components/ajustes/SuscripcionTab.tsx](src/components/ajustes/SuscripcionTab.tsx), [src/components/ajustes/DatosTab.tsx](src/components/ajustes/DatosTab.tsx), [src/components/ajustes/CumplimientoTab.tsx](src/components/ajustes/CumplimientoTab.tsx), [src/components/ajustes/integracionesGuides.ts](src/components/ajustes/integracionesGuides.ts) — copy de pagos, exportación, cumplimiento y guías de integración usan `ANTARES` / `R3ZON ANTARES`.
+- [src/lib/rgpd/exportar-datos.ts](src/lib/rgpd/exportar-datos.ts) — cabecera del README del ZIP RGPD: `R3ZON ANTARES — Exportación RGPD`.
+- [src/lib/theme/theme-schema.json](src/lib/theme/theme-schema.json) — `title` del schema y `label` de la paleta por defecto pasan a `ANTARES`; el `value` (`"r3zon"`) se mantiene para no invalidar temas guardados.
+- [supabase/functions/notify-new-device/index.ts](supabase/functions/notify-new-device/index.ts) — asunto y cuerpo del email de nuevo dispositivo usan `R3ZON ANTARES`.
+
+> Identificadores técnicos preservados intencionalmente: `localStorage` (`r3zon:theme:v1`, `r3zon:a11y:v1`, `r3zon:sidebar-collapsed`), clases CSS (`r3zon-calendar`, `r3zon-color-*`), nombre del fichero de exportación RGPD (`r3zon-datos-*.zip`), dominios `@r3zon.app` y el id Capacitor `com.r3zon.app`. Tocar cualquiera de estos rompería preferencias guardadas, fingerprints OAuth o el matching de selectores CSS.
 
 ### Iteración 60 — *2026-05-14* — 404 con eyebrow «Error 404» + sidebar colapsable en desktop
 

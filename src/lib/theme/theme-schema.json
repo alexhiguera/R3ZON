@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft-07/schema#",
-  "title": "R3ZON Theme Engine",
+  "title": "R3ZON ANTARES Theme Engine",
   "description": "Schema-First: cualquier control de personalización del usuario debe declararse aquí. El consumidor (AparienciaTab + ThemeProvider) lee este JSON para renderizar controles e inyectar CSS variables en :root.",
   "version": 1,
   "controls": [
@@ -22,7 +22,7 @@
       "options": [
         {
           "value": "r3zon",
-          "label": "R3ZON (cyan · fuchsia)",
+          "label": "ANTARES (cyan · fuchsia)",
           "vars": {
             "--bg":          "#080714",
             "--indigo-900":  "#1e1b4b",

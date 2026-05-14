@@ -8,12 +8,12 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://r3zon.com";
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "R3ZON Business OS",
-    template: "%s · R3ZON",
+    default: "R3ZON ANTARES",
+    template: "%s · ANTARES",
   },
   description:
     "Sistema operativo de negocio para autónomos y pequeñas empresas: clientes, agenda, tareas, finanzas y OCR de tickets en un único panel.",
-  applicationName: "R3ZON",
+  applicationName: "ANTARES",
   keywords: [
     "CRM",
     "autónomos",
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     "gestión negocio",
     "pymes",
   ],
-  authors: [{ name: "R3ZON" }],
+  authors: [{ name: "R3ZON ANTARES" }],
   manifest: "/manifest.json",
   alternates: {
     canonical: "/",
@@ -33,14 +33,14 @@ export const metadata: Metadata = {
     type: "website",
     locale: "es_ES",
     url: SITE_URL,
-    siteName: "R3ZON Business OS",
-    title: "R3ZON Business OS",
+    siteName: "R3ZON ANTARES",
+    title: "R3ZON ANTARES",
     description:
       "Clientes, agenda, tareas y finanzas en un único panel. Procesamiento local, sin coste de servidor.",
   },
   twitter: {
     card: "summary",
-    title: "R3ZON Business OS",
+    title: "R3ZON ANTARES",
     description:
       "Sistema integral de gestión para autónomos y pequeñas empresas.",
   },

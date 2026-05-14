@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Home, ArrowLeft, Compass } from "lucide-react";
 
 export const metadata = {
-  title: "Página no encontrada · r3zon",
+  title: "Página no encontrada · ANTARES",
 };
 
 export default function NotFound() {

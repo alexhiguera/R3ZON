@@ -277,7 +277,7 @@ export default function PerfilPage() {
             <Field label="Email" hint="Solo lectura — se cambia desde Ajustes › Seguridad.">
               <Input value={email} disabled />
             </Field>
-            <Field label="Alta en R3ZON">
+            <Field label="Alta en ANTARES">
               <Input value={altaFmt} disabled />
             </Field>
             <Field label="Teléfono">

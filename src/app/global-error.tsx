@@ -50,7 +50,7 @@ export default function GlobalError({
               No hemos podido cargar la aplicación
             </h1>
             <p style={{ marginTop: "1rem", color: "rgba(240, 244, 255, 0.7)", fontSize: "0.95rem" }}>
-              Algo ha fallado al inicializar R3ZON. Por favor, recarga la página o
+              Algo ha fallado al inicializar ANTARES. Por favor, recarga la página o
               vuelve a intentarlo en unos segundos.
             </p>
             {error?.digest && (

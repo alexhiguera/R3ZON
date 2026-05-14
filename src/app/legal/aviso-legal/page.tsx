@@ -1,6 +1,6 @@
 import { LegalDoc, H2 } from "@/components/legal/LegalDoc";
 
-export const metadata = { title: "Aviso Legal · R3ZON" };
+export const metadata = { title: "Aviso Legal · ANTARES" };
 
 export default function Page() {
   return (
@@ -24,7 +24,7 @@ export default function Page() {
       <H2>2. Objeto</H2>
       <p>
         El presente aviso legal regula el uso del sitio web y la aplicación
-        R3ZON Business OS (en adelante, "la Plataforma"), una herramienta SaaS
+        R3ZON ANTARES (en adelante, "la Plataforma"), una herramienta SaaS
         destinada a la gestión integral de pequeños negocios y profesionales
         autónomos.
       </p>

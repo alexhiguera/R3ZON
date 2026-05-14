@@ -1,6 +1,6 @@
 import { LegalDoc, H2, UL } from "@/components/legal/LegalDoc";
 
-export const metadata = { title: "Política de Cookies · R3ZON" };
+export const metadata = { title: "Política de Cookies · ANTARES" };
 
 export default function Page() {
   return (
@@ -8,7 +8,7 @@ export default function Page() {
       <p>
         De acuerdo con el artículo 22.2 de la <b>LSSI-CE</b> y la <b>Guía sobre
         el uso de las cookies</b> de la Agencia Española de Protección de
-        Datos, te informamos de las cookies que utiliza R3ZON.
+        Datos, te informamos de las cookies que utiliza ANTARES.
       </p>
 
       <H2>1. ¿Qué es una cookie?</H2>
@@ -68,7 +68,7 @@ export default function Page() {
         </li>
       </UL>
       <p>
-        <b>R3ZON no utiliza cookies publicitarias ni de seguimiento de
+        <b>ANTARES no utiliza cookies publicitarias ni de seguimiento de
         terceros.</b>
       </p>
 

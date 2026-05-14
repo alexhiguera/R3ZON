@@ -87,7 +87,7 @@ export default function OnboardingPage() {
           </h1>
           <div className="accent-bar mt-3" />
           <p className="mt-3 text-sm text-text-mid">
-            R3ZON cumple con el <b>RGPD</b> y la <b>LOPDGDD</b>. Para activar tu
+            ANTARES cumple con el <b>RGPD</b> y la <b>LOPDGDD</b>. Para activar tu
             cuenta necesitamos tu consentimiento explícito.
           </p>
 

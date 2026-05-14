@@ -467,7 +467,7 @@ function HistorialPagos({ pagos }: { pagos: Pago[] }) {
         <div>
           <div className="section-label mb-0.5">Facturación</div>
           <p className="text-xs text-text-mid">
-            Últimos pagos a r3zon. Para gestión completa de facturas usa «Gestionar suscripción».
+            Últimos pagos a ANTARES. Para gestión completa de facturas usa «Gestionar suscripción».
           </p>
         </div>
       </div>

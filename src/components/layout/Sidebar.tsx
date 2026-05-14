@@ -67,7 +67,7 @@ export function Sidebar({
           {!collapsed && (
             <div>
               <div className="font-display text-xl font-extrabold tracking-tight text-text-hi">
-                R3ZON
+                R3ZON ANTARES
               </div>
               <div className="accent-bar mt-1" style={{ width: 56 }} />
             </div>

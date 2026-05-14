@@ -1,6 +1,6 @@
 {
-  "name": "R3ZON Business OS",
-  "short_name": "R3ZON",
+  "name": "R3ZON ANTARES",
+  "short_name": "ANTARES",
   "description": "Sistema operativo de negocio para autónomos y pequeñas empresas: clientes, agenda, tareas, finanzas y OCR de tickets en un único panel.",
   "start_url": "/dashboard",
   "scope": "/",

@@ -26,7 +26,7 @@ export default function Configurar2FA() {
       }
       const { data, error } = await supabase.auth.mfa.enroll({
         factorType: "totp",
-        friendlyName: "R3ZON · " + new Date().toISOString().slice(0, 10),
+        friendlyName: "ANTARES · " + new Date().toISOString().slice(0, 10),
       });
       if (error) return setError(error.message);
       setFactorId(data.id);

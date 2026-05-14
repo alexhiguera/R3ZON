@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Configurar tu cuenta",
-  description: "Acepta los consentimientos legales para empezar a usar R3ZON.",
+  description: "Acepta los consentimientos legales para empezar a usar ANTARES.",
   robots: { index: false, follow: false },
 };
 

@@ -1,12 +1,12 @@
 import { LegalDoc, H2, UL } from "@/components/legal/LegalDoc";
 
-export const metadata = { title: "Política de Privacidad · R3ZON" };
+export const metadata = { title: "Política de Privacidad · ANTARES" };
 
 export default function Page() {
   return (
     <LegalDoc eyebrow="RGPD · LOPDGDD" title="Política de Privacidad">
       <p>
-        En R3ZON Intelligence ("R3ZON") protegemos tus datos personales conforme
+        En R3ZON protegemos tus datos personales conforme
         al <b>Reglamento (UE) 2016/679 (RGPD)</b> y la{" "}
         <b>
           Ley Orgánica 3/2018, de 5 de diciembre, de Protección de Datos

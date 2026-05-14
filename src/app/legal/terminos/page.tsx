@@ -1,14 +1,14 @@
 import { LegalDoc, H2, UL } from "@/components/legal/LegalDoc";
 
-export const metadata = { title: "Términos y Condiciones · R3ZON" };
+export const metadata = { title: "Términos y Condiciones · ANTARES" };
 
 export default function Page() {
   return (
     <LegalDoc eyebrow="Contrato de servicio" title="Términos y Condiciones">
       <p>
         Las presentes condiciones regulan el uso de la plataforma <b>R3ZON
-        Business OS</b> ("el Servicio") y constituyen un contrato vinculante
-        entre el usuario y R3ZON Intelligence ("R3ZON").
+        ANTARES</b> ("el Servicio") y constituyen un contrato vinculante
+        entre el usuario y R3ZON.
       </p>
 
       <H2>1. Aceptación</H2>

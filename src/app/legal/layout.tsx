@@ -14,7 +14,7 @@ export default function LegalLayout({ children }: { children: React.ReactNode })
         <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-indigo-800 shadow-glow">
           <span className="font-display text-sm font-extrabold text-white">R3</span>
         </div>
-        <span className="font-display text-lg font-extrabold tracking-tight">R3ZON</span>
+        <span className="font-display text-lg font-extrabold tracking-tight">R3ZON ANTARES</span>
       </Link>
 
       <nav className="mb-8 flex flex-wrap gap-2">
@@ -35,7 +35,7 @@ export default function LegalLayout({ children }: { children: React.ReactNode })
       </article>
 
       <p className="mt-6 text-center text-xs text-text-lo">
-        © {new Date().getFullYear()} R3ZON Intelligence · Versión vigente: 2026-04-28
+        © {new Date().getFullYear()} R3ZON · Versión vigente: 2026-04-28
       </p>
     </div>
   );

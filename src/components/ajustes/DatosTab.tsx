@@ -60,7 +60,7 @@ export function DatosTab() {
       });
       archivos["consentimientos.json"] = encode(resultados[RECURSOS_EXPORT.length].data ?? []);
       archivos["exportado.txt"] = strToU8(
-        `Exportación R3ZON Business OS — ${fecha}\nFormato: JSON.\n`,
+        `Exportación R3ZON ANTARES — ${fecha}\nFormato: JSON.\n`,
       );
       const zip = zipSync(archivos);
       descargarBlob(new Blob([zip.buffer as ArrayBuffer], { type: "application/zip" }), `r3zon-mis-datos-${fecha}.zip`);
@@ -249,7 +249,7 @@ export function DatosTab() {
               <FileJson size={15} className="text-fuchsia" /> JSON
             </div>
             <p className="mb-3 text-xs text-text-mid">
-              Restaura desde un archivo generado por R3ZON. Acepta tanto el JSON
+              Restaura desde un archivo generado por ANTARES. Acepta tanto el JSON
               individual de una tabla como el agrupado (`{`{clientes:[...], ...}`}`).
             </p>
             <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-fuchsia/40 bg-fuchsia/10 px-3 py-2 text-xs font-semibold text-fuchsia hover:bg-fuchsia/20">

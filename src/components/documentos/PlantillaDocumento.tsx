@@ -183,7 +183,7 @@ function PlantillaA4(
       )}
 
       <footer style={stylesA4.footer}>
-        Documento generado con R3ZON Business OS
+        Documento generado con R3ZON ANTARES
       </footer>
     </div>
   );

@@ -51,7 +51,7 @@ const DOCS: { href: string; label: string; desc: string; Icon: typeof FileText }
   {
     href: "/legal/terminos",
     label: "Términos del servicio",
-    desc: "Condiciones contractuales de R3ZON Business OS.",
+    desc: "Condiciones contractuales de R3ZON ANTARES.",
     Icon: ScrollText,
   },
 ];

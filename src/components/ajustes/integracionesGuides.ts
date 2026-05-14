@@ -8,11 +8,11 @@ export const GOOGLE_OAUTH_GUIDE: {
 } = {
   title: "Cómo conectar Google Workspace",
   intro:
-    "Conectar tu cuenta de Google permite a r3zon leer y crear eventos en tu Calendar y subir archivos a Drive en tu nombre. Sólo accede a lo que autorizas explícitamente.",
+    "Conectar tu cuenta de Google permite a ANTARES leer y crear eventos en tu Calendar y subir archivos a Drive en tu nombre. Sólo accede a lo que autorizas explícitamente.",
   steps: [
     {
       title: "Pulsa «Conectar Google»",
-      body: "Te llevará a la pantalla oficial de Google. Esto ocurre en google.com — r3zon nunca ve tu contraseña.",
+      body: "Te llevará a la pantalla oficial de Google. Esto ocurre en google.com — ANTARES nunca ve tu contraseña.",
     },
     {
       title: "Elige la cuenta correcta",

@@ -35,7 +35,7 @@ Deno.serve(async (req) => {
       </h1>
       <div style="height:3px;width:60px;background:linear-gradient(90deg,#22d3ee,#e879f9);border-radius:2px;margin:0 0 20px"></div>
       <p style="color:#c7d2fe;font-size:14px;line-height:1.6">
-        Hemos detectado un acceso a tu cuenta R3ZON desde un dispositivo nuevo.
+        Hemos detectado un acceso a tu cuenta R3ZON ANTARES desde un dispositivo nuevo.
       </p>
       <div style="background:rgba(49,46,129,0.4);border:1px solid rgba(129,140,248,0.2);border-radius:14px;padding:16px;margin:16px 0">
         <p style="margin:0 0 4px;font-size:12px;color:rgba(165,180,252,0.5);text-transform:uppercase;letter-spacing:0.15em">Dispositivo</p>
@@ -59,7 +59,7 @@ Deno.serve(async (req) => {
     body: JSON.stringify({
       from: Deno.env.get("RESEND_FROM"),
       to: userRes.user.email,
-      subject: "Nuevo inicio de sesión en R3ZON",
+      subject: "Nuevo inicio de sesión en R3ZON ANTARES",
       html,
     }),
   });

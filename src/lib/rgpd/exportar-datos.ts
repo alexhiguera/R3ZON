@@ -78,7 +78,7 @@ export async function exportarMisDatos(): Promise<ResultadoExport> {
   }
 
   const readme = [
-    "R3ZON Business OS — Exportación RGPD",
+    "R3ZON ANTARES — Exportación RGPD",
     "====================================",
     "",
     `Fecha de generación: ${fechaIso()}`,
