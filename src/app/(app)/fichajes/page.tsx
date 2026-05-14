@@ -25,22 +25,50 @@ import {
   formatearDuracion,
   siguientesPermitidos,
 } from "@/lib/fichajes";
+import { PanelAdmin } from "@/components/fichajes/PanelAdmin";
 
 type Coords = { lat: number; lng: number; accuracy: number };
 
-function obtenerGPS(timeoutMs = 8000): Promise<Coords | null> {
+type GpsResult =
+  | { ok: true; coords: Coords }
+  | { ok: false; code: "no_soportado" | "denegado" | "no_disponible" | "timeout"; message: string };
+
+function obtenerGPS(timeoutMs = 10000): Promise<GpsResult> {
   if (typeof navigator === "undefined" || !navigator.geolocation) {
-    return Promise.resolve(null);
+    return Promise.resolve({
+      ok: false,
+      code: "no_soportado",
+      message: "Este dispositivo no soporta geolocalización.",
+    });
   }
   return new Promise((resolve) => {
     navigator.geolocation.getCurrentPosition(
       (pos) =>
         resolve({
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude,
-          accuracy: pos.coords.accuracy,
+          ok: true,
+          coords: {
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude,
+            accuracy: pos.coords.accuracy,
+          },
         }),
-      () => resolve(null),
+      (err) => {
+        const code =
+          err.code === err.PERMISSION_DENIED
+            ? "denegado"
+            : err.code === err.POSITION_UNAVAILABLE
+            ? "no_disponible"
+            : "timeout";
+        const message =
+          code === "denegado"
+            ? "Has denegado el acceso a tu ubicación. El GPS es obligatorio para fichar (RD-ley 8/2019). Acepta el permiso en tu navegador y vuelve a intentarlo."
+            : code === "no_disponible"
+            ? "No se pudo obtener una señal GPS. Comprueba que la ubicación está activada."
+            : code === "timeout"
+            ? "El GPS tardó demasiado en responder. Inténtalo de nuevo."
+            : "No se pudo capturar la ubicación.";
+        resolve({ ok: false, code, message });
+      },
       { enableHighAccuracy: true, timeout: timeoutMs, maximumAge: 0 },
     );
   });
@@ -61,6 +89,9 @@ export default function FichajesPage() {
   const [enviando, setEnviando] = useState<TipoFichaje | null>(null);
   const [fichajes, setFichajes] = useState<Fichaje[]>([]);
   const [tick, setTick] = useState(0);
+  const [ownerNegocio, setOwnerNegocio] = useState<
+    { id: string; horas_default: number } | null
+  >(null);
 
   // Refresca el contador de jornada cada minuto.
   useEffect(() => {
@@ -89,6 +120,26 @@ export default function FichajesPage() {
 
   useEffect(() => { cargar(); }, [cargar]);
 
+  // Detectar si el usuario es owner de un negocio (para mostrar el panel admin).
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || !alive) return;
+      const { data } = await supabase
+        .from("perfiles_negocio")
+        .select("id,horas_objetivo_dia_default")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (!alive || !data) return;
+      setOwnerNegocio({
+        id: data.id as string,
+        horas_default: Number(data.horas_objetivo_dia_default ?? 8),
+      });
+    })();
+    return () => { alive = false; };
+  }, [supabase]);
+
   const ultimoTipo: TipoFichaje | null = fichajes[0]?.tipo ?? null;
   const estado = estadoTrabajador(ultimoTipo);
   const permitidos = siguientesPermitidos(ultimoTipo);
@@ -106,13 +157,17 @@ export default function FichajesPage() {
     setEnviando(tipo);
 
     const gps = await obtenerGPS();
-    if (!gps) toast.info("GPS no disponible — fichaje sin coordenadas.");
+    if (!gps.ok) {
+      setEnviando(null);
+      toast.err(gps.message);
+      return;
+    }
 
     const { data, error } = await supabase.rpc("registrar_fichaje", {
       p_tipo: tipo,
-      p_gps_lat: gps?.lat ?? null,
-      p_gps_lng: gps?.lng ?? null,
-      p_gps_accuracy_m: gps?.accuracy ?? null,
+      p_gps_lat: gps.coords.lat,
+      p_gps_lng: gps.coords.lng,
+      p_gps_accuracy_m: gps.coords.accuracy,
       p_user_agent:
         typeof navigator !== "undefined" ? navigator.userAgent.slice(0, 500) : null,
     });
@@ -120,7 +175,9 @@ export default function FichajesPage() {
     setEnviando(null);
 
     if (error) {
-      const msg = error.message.includes("TRANSICION_INVALIDA")
+      const msg = error.message.includes("GPS_REQUERIDO")
+        ? "El servidor rechazó el fichaje: GPS obligatorio."
+        : error.message.includes("TRANSICION_INVALIDA")
         ? "Ese fichaje no está permitido en tu estado actual."
         : error.message;
       toast.err(msg);
@@ -136,8 +193,17 @@ export default function FichajesPage() {
       <PageHeader
         eyebrow="Recursos humanos"
         title="Fichajes"
-        description="Registro de jornada conforme al Real Decreto-ley 8/2019. La marca temporal la fija el servidor; la ubicación la captura el dispositivo en el momento del fichaje."
+        description="Registro de jornada conforme al Real Decreto-ley 8/2019. La marca temporal la fija el servidor; la ubicación la captura el dispositivo en el momento del fichaje y es obligatoria."
       />
+
+      <div className="flex items-start gap-2 rounded-2xl border border-amber-400/30 bg-amber-500/10 px-4 py-3 text-xs text-amber-200">
+        <AlertTriangle size={14} className="mt-0.5 shrink-0" />
+        <span>
+          Para fichar es <strong>obligatorio compartir tu ubicación</strong>. Si tu
+          navegador la pide, acéptala — es el justificante de presencia exigido
+          por la Inspección de Trabajo.
+        </span>
+      </div>
 
       {cargando ? (
         <div className="card-glass flex h-48 items-center justify-center text-text-lo">
@@ -188,6 +254,13 @@ export default function FichajesPage() {
           </div>
 
           <ListaFichajes fichajes={fichajes} />
+
+          {ownerNegocio && (
+            <PanelAdmin
+              negocioId={ownerNegocio.id}
+              horasDefaultInicial={ownerNegocio.horas_default}
+            />
+          )}
         </>
       )}
     </div>

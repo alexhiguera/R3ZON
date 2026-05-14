@@ -257,6 +257,22 @@ npx cap sync
 
 > Resumen de todo lo construido en orden de iteraciones (más reciente → más antiguo).
 
+### Iteración 57 — *2026-05-14* — Fichajes: GPS obligatorio + panel admin para el owner
+
+- **Migración [supabase/migrations/20260514130000_fichajes_admin.sql](supabase/migrations/20260514130000_fichajes_admin.sql)** (idempotente, `begin/commit`):
+  - `perfiles_negocio.horas_objetivo_dia_default` `numeric(4,2) not null default 8.00` (check 0–24).
+  - `miembros_negocio.horas_objetivo_dia` `numeric(4,2)` nullable (override por trabajador).
+  - `registrar_fichaje()` ahora **rechaza** `p_gps_lat`/`p_gps_lng` nulos con `GPS_REQUERIDO` (RD-ley 8/2019: acreditación de presencia). El resto de la máquina de estados queda igual.
+  - Nuevos RPC `set_horas_objetivo_default(numeric)` y `set_horas_objetivo_miembro(uuid, numeric)`, ambos `security definer`, autorizan vía `perfiles_negocio.user_id = auth.uid()` (solo owner). El de miembro acepta null para limpiar el override.
+- **Cliente [src/app/(app)/fichajes/page.tsx](src/app/(app)/fichajes/page.tsx)**:
+  - `obtenerGPS()` distingue 4 errores (`no_soportado`, `denegado`, `no_disponible`, `timeout`) y devuelve `GpsResult` discriminado. Si el usuario deniega permiso, se bloquea el fichaje y se muestra un toast explicando que es obligatorio.
+  - Aviso permanente en cabecera advirtiendo de la obligatoriedad del GPS.
+  - Detección de owner consultando `perfiles_negocio` por `user_id`; si existe, se renderiza `<PanelAdmin>` al final de la página.
+- **Nuevo [src/components/fichajes/PanelAdmin.tsx](src/components/fichajes/PanelAdmin.tsx)**:
+  - Input para las horas/día por defecto (RPC `set_horas_objetivo_default`).
+  - Selector de periodo (hoy / 7 días / 30 días) y listado de miembros desde `v_equipo_negocio`. Para cada uno: total trabajado en el periodo y % vs objetivo (color verde/ámbar/rojo). Reutiliza `calcularJornada` y `fichajesDelDia` de [src/lib/fichajes.ts](src/lib/fichajes.ts).
+  - Filas expandibles con override de horas por trabajador (RPC `set_horas_objetivo_miembro`, blanco = usar default) y detalle día a día.
+
 ### Iteración 56 — *2026-05-14* — Ajustes móvil colapsables + menú de usuario opaco + verificación de citas
 
 - **[src/components/ajustes/SettingsTabs.tsx](src/components/ajustes/SettingsTabs.tsx)** — en móvil (<lg) se renderiza un acordeón con las 11 secciones colapsadas; al pulsar se despliega solo la activa. En desktop se mantienen las pestañas laterales (220px + panel). Se extrajo `renderPanel()` para reutilizar el switch entre ambos layouts y se eliminó el scroll horizontal del nav, que era el origen del responsive roto.
