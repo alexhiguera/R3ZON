@@ -1,6 +1,6 @@
 "use client";
 
-import { Activity, FileText, Mail, MessageCircle, Zap } from "lucide-react";
+import { Activity, FileText, Mail, MessageCircle } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 export type DashboardActivityItem = {
@@ -16,7 +16,6 @@ const TIPO_META: Record<string, { Icon: LucideIcon; label: string; tint: string 
   nota:           { Icon: FileText,      label: "Nota",       tint: "border-indigo-400/30 bg-indigo-400/10 text-indigo-300" },
   email_click:    { Icon: Mail,          label: "Email",      tint: "border-cyan/30 bg-cyan/10 text-cyan" },
   whatsapp_click: { Icon: MessageCircle, label: "WhatsApp",   tint: "border-emerald-400/30 bg-emerald-400/10 text-emerald-300" },
-  webhook_fire:   { Icon: Zap,           label: "Webhook",    tint: "border-fuchsia/30 bg-fuchsia/10 text-fuchsia" },
 };
 
 function relativo(iso: string) {

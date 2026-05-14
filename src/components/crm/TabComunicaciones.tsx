@@ -21,7 +21,6 @@ const TIPO_META: Record<string, { icon: LucideIcon; label: string; color: string
   nota:            { icon: StickyNote,     label: "Nota",          color: "text-indigo-300" },
   email_click:     { icon: Mail,           label: "Email enviado", color: "text-cyan" },
   whatsapp_click:  { icon: MessageCircle,  label: "WhatsApp",      color: "text-ok" },
-  webhook_fire:    { icon: Send,           label: "Automatización",color: "text-fuchsia" },
 };
 
 export function TabComunicaciones({

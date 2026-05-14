@@ -1,7 +1,6 @@
 "use client";
 
 import { GoogleCard } from "./GoogleCard";
-import { N8nCard } from "./N8nCard";
 
 export function IntegracionesTab() {
   return (
@@ -16,7 +15,6 @@ export function IntegracionesTab() {
 
       <div className="grid gap-5 lg:grid-cols-2">
         <GoogleCard />
-        <N8nCard />
       </div>
     </div>
   );

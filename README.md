@@ -257,6 +257,23 @@ npx cap sync
 
 > Resumen de todo lo construido en orden de iteraciones (más reciente → más antiguo).
 
+### Iteración 58 — *2026-05-14* — Retirada de la integración n8n
+
+- **Archivos eliminados**:
+  - `src/components/ajustes/N8nCard.tsx` — tarjeta de Integraciones › n8n (URL + API Key con `set_config_key`/`get_config_key`).
+  - `src/components/crm/TabAutomatizacion.tsx` — pestaña «Automatización» en la ficha de cliente (huérfana: el detalle de cliente ya solo monta 6 tabs).
+- **Componentes actualizados**:
+  - [src/components/ajustes/IntegracionesTab.tsx](src/components/ajustes/IntegracionesTab.tsx) — solo monta `<GoogleCard />`.
+  - [src/components/ajustes/integracionesGuides.ts](src/components/ajustes/integracionesGuides.ts) — `N8N_WEBHOOK_GUIDE` y `N8N_API_KEY_GUIDE` eliminadas; se mantiene `GOOGLE_OAUTH_GUIDE`.
+  - [src/components/crm/TabComunicaciones.tsx](src/components/crm/TabComunicaciones.tsx) y [src/components/dashboard/RecentActivity.tsx](src/components/dashboard/RecentActivity.tsx) — quitado el mapping de `webhook_fire` (icono y label). Import de `Zap` retirado en RecentActivity.
+  - [src/lib/stripe.ts](src/lib/stripe.ts) y [src/components/ajustes/SuscripcionTab.tsx](src/components/ajustes/SuscripcionTab.tsx) — feature «Integración n8n + webhooks» retirada del plan Business.
+- **Base de datos** ([supabase/migrations/20260514140000_drop_n8n_webhooks.sql](supabase/migrations/20260514140000_drop_n8n_webhooks.sql), idempotente):
+  - `alter table public.clientes drop column if exists webhook_url, webhook_activo`.
+  - `delete from public.config_keys where servicio = 'n8n'`.
+  - Los registros históricos en `comunicaciones` con `tipo = 'webhook_fire'` se conservan; la UI ya no genera nuevos eventos de ese tipo.
+- **Sincronización del schema base**: eliminadas las columnas y comentarios sobre n8n en [supabase/schema.sql](supabase/schema.sql), [supabase/migrations/20260514000000_initial_schema.sql](supabase/migrations/20260514000000_initial_schema.sql) y [supabase/crm_kanban_ext.sql](supabase/crm_kanban_ext.sql). [src/lib/database.types.ts](src/lib/database.types.ts) actualizado a mano (Row/Insert/Update sin `webhook_url`/`webhook_activo`).
+- **Verificación**: `npx tsc --noEmit` limpio. Búsqueda `grep -ri "n8n"` solo devuelve referencias en la migración de retirada y en esta entrada del README.
+
 ### Iteración 57 — *2026-05-14* — Fichajes: GPS obligatorio + panel admin para el owner
 
 - **Migración [supabase/migrations/20260514130000_fichajes_admin.sql](supabase/migrations/20260514130000_fichajes_admin.sql)** (idempotente, `begin/commit`):

@@ -75,10 +75,6 @@ create table if not exists public.clientes (
   etiquetas         text[] default '{}',
   logo_url          text,
 
-  -- Automatización (n8n / Make)
-  webhook_url       text,
-  webhook_activo    boolean not null default false,
-
   created_at        timestamptz not null default now(),
   updated_at        timestamptz not null default now(),
 

@@ -8,7 +8,7 @@ create table if not exists public.comunicaciones (
   id          uuid primary key default uuid_generate_v4(),
   negocio_id  uuid not null references public.perfiles_negocio(id) on delete cascade,
   cliente_id  uuid not null references public.clientes(id) on delete cascade,
-  tipo        text not null, -- nota|email_click|whatsapp_click|webhook_fire|llamada|cita
+  tipo        text not null, -- nota|email_click|whatsapp_click|llamada|cita
   asunto      text,
   contenido   text,
   metadata    jsonb default '{}',   -- url, status_code, etc.
@@ -25,7 +25,6 @@ create policy tenant_isolation on public.comunicaciones
   with check         (negocio_id = public.current_negocio_id());
 
 -- 2. KANBAN_COLUMNAS (columnas personalizadas por negocio)
--- (Las columnas webhook_url / webhook_activo de clientes ya están en schema.sql)
 create table if not exists public.kanban_columnas (
   id         uuid primary key default uuid_generate_v4(),
   negocio_id uuid not null references public.perfiles_negocio(id) on delete cascade,

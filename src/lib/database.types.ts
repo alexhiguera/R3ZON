@@ -174,8 +174,6 @@ export type Database = {
           sitio_web: string | null
           telefono: string | null
           updated_at: string
-          webhook_activo: boolean
-          webhook_url: string | null
         }
         Insert: {
           cif?: string | null
@@ -198,8 +196,6 @@ export type Database = {
           sitio_web?: string | null
           telefono?: string | null
           updated_at?: string
-          webhook_activo?: boolean
-          webhook_url?: string | null
         }
         Update: {
           cif?: string | null
@@ -222,8 +218,6 @@ export type Database = {
           sitio_web?: string | null
           telefono?: string | null
           updated_at?: string
-          webhook_activo?: boolean
-          webhook_url?: string | null
         }
         Relationships: [
           {

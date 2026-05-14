@@ -50,7 +50,6 @@ export const PLANS: Plan[] = [
       "Clientes ilimitados",
       "Hasta 10 miembros del equipo",
       "OCR ilimitado",
-      "Integración n8n + webhooks",
       "Soporte prioritario",
       "Auditoría legal completa",
     ],
