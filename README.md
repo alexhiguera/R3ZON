@@ -1099,6 +1099,16 @@ Cuatro bugs reportados. Causa raíz unificada: tablas B2C antiguas referenciadas
 
 Dependencias añadidas: `@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities`.
 
+### Iteración 8 — *2026-05-14* — Hardening Storage/admin_global + script de bootstrap dev
+- **Nuevo `supabase/security_storage_hardening.sql`** (idempotente). Cierra los 3 hallazgos de la auditoría anterior:
+  1. Bucket `logos`: la policy `using (bucket_id = 'logos')` permitía lectura **anónima** de logos de cualquier tenant. Pasa a `storage_path_is_in_my_negocio(name)`; para compartir el logo en una factura externa, la app debe generar **signed URLs** (`createSignedUrl`).
+  2. Bucket `producto-imagenes`: mismo fix por tenant.
+  3. Bucket `avatars`: cerrado a usuarios autenticados (los avatares son per-user, no per-tenant).
+  4. `admin_global.admin_global_self_read` redefinida a `using (user_id = auth.uid())` — cada admin sólo se ve a sí mismo.
+- **Helper** `public.storage_path_is_in_my_negocio(text)` con `SECURITY DEFINER` + `search_path` fijo; valida que la primera carpeta del path coincida con el `negocio_id` del usuario (titular en `perfiles_negocio` o miembro activo en `miembros_negocio`). `revoke from public, anon`, sólo `authenticated` ejecuta.
+- **Nuevo `scripts/dev-setup.sh`** (también `npm run dev:setup`). Pasos: comprueba Node/Docker, arranca colima si hace falta, `npm install`, verifica que `.env.local` apunta a localhost (si apunta a prod respalda en `.env.production.local.backup` y aborta), `supabase start`, `migration up` (o `db reset` con `--reset`), **sincroniza** las claves `sb_publishable_*`/`sb_secret_*` que genera el CLI sobre `.env.local` automáticamente, `npm run seed:admin`. Idempotente.
+- Migración local regenerada al final con el hardening incluido — verificado vía `pg_policies`: 13 policies en su estado correcto (las `*_public_read` ya no existen).
+
 ### Iteración 7 — *2026-05-14* — Auditoría RLS + paridad local↔prod + guard anti-prod
 - **Paridad completa**: la migración local `20260514000000_initial_schema.sql` ahora consolida los **22 archivos `.sql`** del directorio (faltaban 7 en la iteración previa: `documentos_recibo_logos`, `inventario_imagenes`, `proveedores`, `listado`, `perfil_usuario`, `theme`, `rgpd`). Orden corregido: `fix_tenant_defaults` se aplica ANTES de `proveedores_ext` porque éste último crea triggers que llaman a `tg_fill_negocio_id()`.
 - **`scripts/seed-admin.mjs` blindado**: rechaza ejecutarse si `NEXT_PUBLIC_SUPABASE_URL` no apunta a `127.0.0.1` / `localhost`. Para forzarlo contra otro entorno: `ALLOW_PROD_SEED=1 npm run seed:admin`. Probado contra una URL de producción simulada (sale con `exit 1`).
