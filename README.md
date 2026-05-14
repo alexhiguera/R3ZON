@@ -257,6 +257,34 @@ npx cap sync
 
 > Resumen de todo lo construido en orden de iteraciones (más reciente → más antiguo).
 
+### Iteración 55 — *2026-05-14* — Migraciones de seguridad y rendimiento del linter de Supabase
+
+- **`supabase/migrations/20260514120000_security_fixes.sql`** (nuevo, 88 líneas, idempotente y en `begin/commit`): re-crea las 3 vistas que el linter marcaba.
+  - `v_fichaje_estado_actual` y `v_consentimientos_negocio` con `with (security_invoker = on)` para que respeten la RLS del rol que las consulta (cierra el lint `security_definer_view`).
+  - `v_equipo_negocio` sin JOIN a `auth.users` — el email del titular viene de `perfiles_negocio.email_contacto` y el de los miembros de `miembros_negocio.email` (cierra `auth_users_exposed`).
+  - `grant select … to authenticated` en las tres.
+- **`supabase/migrations/20260514120100_performance_fixes.sql`** (nuevo, 257 líneas, idempotente):
+  - **RLS init plan**: 7 policies recreadas sustituyendo `auth.uid()` por `(select auth.uid())` para que Postgres lo evalúe UNA vez por consulta en lugar de por fila (`perfiles_owner`, `devices_owner`, `google_owner`, `pagos_owner`, `user_prefs_owner`, `fichajes_self_insert`, y las consolidadas).
+  - **Consolidación de policies permisivas duplicadas**: `fichajes` (`miembros_owner_read` + `miembros_self_read` → `fichajes_read` con OR), `miembros_negocio` (`miembros_owner` + `miembros_self_read` → `miembros_read` + `miembros_write` separadas por acción), `terminos_versiones` (RLS habilitada + `terminos_read_all` lectura authenticated + INSERT/UPDATE/DELETE restringidas a `es_admin_global()`).
+  - **13 índices nuevos en FKs**: `documentos(cliente_id, finanza_id)`, `finanzas(cliente_id)`, `tareas_kanban(cliente_id, columna_id)`, `tpv_ventas(cliente_id, user_id)`, `tpv_venta_items(negocio_id, producto_id)`, `stock_movimientos(user_id)`, `gastos_proveedor(proveedor_id)`, `miembros_negocio(invited_by)`, `fichajes(corrige_a)`.
+  - **Drop de 12 índices base + 8 de tablas `_archivo` no usados** (cobertura defensiva con dos convenciones de nombre por si Postgres los autogeneró con sufijo `_idx`).
+- **Validación**: `npx supabase db reset` aplicó todas las migraciones sin errores (solo NOTICE de `if exists`). `npx tsc --noEmit` limpio tras sustituir el `@ts-expect-error` de `src/lib/rgpd/exportar-datos.ts` por un cast `as never` (más estable a futuro porque no rompe si Supabase ajusta los tipos generados).
+
+---
+
+### Iteración 54 — *2026-05-14* — Exportación RGPD ZIP, fallback de degradación si Supabase cae y arreglo de columnas reales en Cmd+K
+
+- **`src/lib/rgpd/exportar-datos.ts`** (nuevo): helper que descarga las tablas del usuario (`clientes`, `agenda_eventos`, `tareas_kanban`, `finanzas`, `documentos`, `comunicaciones`, `perfiles_negocio`, `consentimientos_rgpd`) y las empaqueta con `fflate` (`zipSync`) en un ZIP con un `README.txt` que incluye fecha ISO, email del usuario, lista de archivos generados, incidencias por tabla fallida y un resumen de derechos RGPD (Arts. 15-22). Si una tabla falla en el `select`, se omite su JSON y la incidencia queda anotada en el README en lugar de abortar la exportación. Nombre del fichero: `r3zon-datos-YYYY-MM-DD.zip`.
+- **`src/components/ajustes/ExportarDatosButton.tsx`** (nuevo): botón glass cyan con spinner de `Loader2`, deshabilitado durante la generación; al terminar dispara la descarga con un `<a download>` + `URL.createObjectURL` y libera la URL al cabo de 1 s. Errores mostrados inline en banda rosa.
+- **`src/components/ajustes/CumplimientoTab.tsx`**: la card *Portabilidad de datos* deja de remitir a la pestaña Datos y embebe directamente el nuevo botón con una descripción del contenido del ZIP.
+- **`src/components/ui/DatabaseUnavailable.tsx`** (nuevo): pantalla glass centrada con icono `DatabaseZap` fuchsia, copy "No se puede conectar con la base de datos" + "Comprueba tu conexión a internet…" y botón "Reintentar" que ejecuta `window.location.reload()`.
+- **`src/components/layout/AppShell.tsx`**: al montar dispara `supabase.auth.getSession()` con `Promise.race` contra un timeout de 5 s. Estado local `"checking" | "ok" | "down"`; si la promesa falla, devuelve error o supera el timeout, renderiza `<DatabaseUnavailable />` (dentro del `ToastProvider`) en lugar de los `children`. El `CommandPalette` se sigue montando como singleton al nivel del shell.
+- **`src/components/layout/CommandPalette.tsx`**: corregidos los nombres de columna que estaban inventados. Ahora `agenda_eventos` busca por `title` y `description`, `tareas_kanban` añade `descripcion` al `or()` y la muestra como subtítulo, y `finanzas` usa `concepto` + `numero_factura` (en lugar de los inexistentes `descripcion`, `referencia` e `importe`) y muestra fecha · nº factura · total como subtítulo. El atajo Cmd/Ctrl+K, la navegación con flechas, Enter y Esc ya estaban implementados correctamente.
+
+Decisiones: timeout de 5 s elegido por consistencia con `OfflineBanner`; el ZIP se genera 100% client-side (cero coste de servidor, política R3ZON); para evitar el tipado literal estricto de Supabase en el bucle de tablas dinámicas se usa un único `@ts-expect-error` localizado, ya que la RLS garantiza el filtrado por tenant sin necesidad de `where` extra.
+
+---
+
 ### Iteración 53 — *2026-05-13* — Módulo de Ajustes responsive en móvil
 
 - **`src/components/ajustes/EquipoTab.tsx`**: tabla de miembros envuelta en `overflow-x-auto` con `min-w-[640px]`, botón "Invitar miembro" `w-full sm:w-auto`, descripción de cabecera con `sm:max-w-lg`.

@@ -105,17 +105,17 @@ export function CommandPalette() {
           .or(`nombre.ilike.${like},email.ilike.${like}`)
           .limit(5),
         supabase.from("agenda_eventos")
-          .select("id, titulo, start_time")
-          .ilike("titulo", like)
+          .select("id, title, description, start_time")
+          .or(`title.ilike.${like},description.ilike.${like}`)
           .order("start_time", { ascending: false })
           .limit(5),
         supabase.from("tareas_kanban")
-          .select("id, titulo")
-          .ilike("titulo", like)
+          .select("id, titulo, descripcion")
+          .or(`titulo.ilike.${like},descripcion.ilike.${like}`)
           .limit(5),
         supabase.from("finanzas")
-          .select("id, descripcion, importe, fecha")
-          .ilike("descripcion", like)
+          .select("id, concepto, numero_factura, total, fecha")
+          .or(`concepto.ilike.${like},numero_factura.ilike.${like}`)
           .order("fecha", { ascending: false })
           .limit(5),
         supabase.from("documentos")
@@ -128,14 +128,19 @@ export function CommandPalette() {
       for (const c of (clientes.data ?? []) as { id: string; nombre: string; email: string | null }[]) {
         out.push({ id: `cli-${c.id}`, tipo: "cliente", titulo: c.nombre, subtitulo: c.email ?? undefined, href: `/clientes/${c.id}`, Icon: ICON_TIPO.cliente });
       }
-      for (const c of (citas.data ?? []) as { id: string; titulo: string; start_time: string }[]) {
-        out.push({ id: `cit-${c.id}`, tipo: "cita", titulo: c.titulo, subtitulo: new Date(c.start_time).toLocaleString("es-ES"), href: `/citas?event=${c.id}`, Icon: ICON_TIPO.cita });
+      for (const c of (citas.data ?? []) as { id: string; title: string; description: string | null; start_time: string }[]) {
+        out.push({ id: `cit-${c.id}`, tipo: "cita", titulo: c.title, subtitulo: new Date(c.start_time).toLocaleString("es-ES"), href: `/citas?event=${c.id}`, Icon: ICON_TIPO.cita });
       }
-      for (const t of (tareas.data ?? []) as { id: string; titulo: string }[]) {
-        out.push({ id: `tar-${t.id}`, tipo: "tarea", titulo: t.titulo, href: `/tareas`, Icon: ICON_TIPO.tarea });
+      for (const t of (tareas.data ?? []) as { id: string; titulo: string; descripcion: string | null }[]) {
+        out.push({ id: `tar-${t.id}`, tipo: "tarea", titulo: t.titulo, subtitulo: t.descripcion ?? undefined, href: `/tareas`, Icon: ICON_TIPO.tarea });
       }
-      for (const f of (finanzas.data ?? []) as { id: string; descripcion: string; importe: number; fecha: string }[]) {
-        out.push({ id: `fin-${f.id}`, tipo: "finanza", titulo: f.descripcion ?? "Movimiento", subtitulo: `${new Date(f.fecha).toLocaleDateString("es-ES")} · ${f.importe} €`, href: `/finanzas`, Icon: ICON_TIPO.finanza });
+      for (const f of (finanzas.data ?? []) as { id: string; concepto: string; numero_factura: string | null; total: number | null; fecha: string }[]) {
+        const sub = [
+          new Date(f.fecha).toLocaleDateString("es-ES"),
+          f.numero_factura ?? null,
+          f.total != null ? `${f.total} €` : null,
+        ].filter(Boolean).join(" · ");
+        out.push({ id: `fin-${f.id}`, tipo: "finanza", titulo: f.concepto ?? "Movimiento", subtitulo: sub, href: `/finanzas`, Icon: ICON_TIPO.finanza });
       }
       for (const d of (documentos.data ?? []) as { id: string; referencia: string | null; tipo: string }[]) {
         out.push({ id: `doc-${d.id}`, tipo: "documento", titulo: d.referencia ?? d.tipo, subtitulo: d.tipo, href: `/documentos/${d.id}`, Icon: ICON_TIPO.documento });

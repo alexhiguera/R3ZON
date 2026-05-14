@@ -17,6 +17,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { formatSupabaseError } from "@/lib/supabase-errors";
 import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { ExportarDatosButton } from "./ExportarDatosButton";
 
 type Vigente = {
   id: string;
@@ -221,12 +222,14 @@ export function CumplimientoTab() {
       </div>
       <div className="card-glass p-5 sm:p-7">
         <div className="section-label mb-2">Portabilidad de datos</div>
-        <p className="text-xs text-text-mid">
-          La exportación e importación de datos se ha movido a la pestaña{" "}
-          <strong className="text-text-hi">Datos</strong>. Allí encontrarás la
-          descarga ZIP completa (Art. 20 RGPD), exportación CSV por recurso y
-          carga de copias de seguridad.
+        <p className="mb-4 text-xs text-text-mid">
+          Descarga un ZIP con todos tus datos personales (Art. 20 RGPD). El
+          archivo incluye un JSON por recurso (clientes, citas, tareas,
+          finanzas, documentos, comunicaciones, perfil y consentimientos) y un
+          README con la lista de archivos, la fecha de generación y un resumen
+          de tus derechos.
         </p>
+        <ExportarDatosButton />
       </div>
       {confirmDialogNode}
     </div>

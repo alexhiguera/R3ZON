@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { Sidebar } from "./Sidebar";
@@ -8,16 +8,59 @@ import { CommandPalette } from "./CommandPalette";
 import { DeviceTracker } from "@/components/auth/DeviceTracker";
 import { ToastProvider } from "@/components/ui/Toast";
 import { OfflineBanner } from "@/components/ui/OfflineBanner";
+import { DatabaseUnavailable } from "@/components/ui/DatabaseUnavailable";
+import { createClient } from "@/lib/supabase/client";
 
 // Rutas que ocupan todo el ancho disponible (sin el max-w por defecto).
 const FULL_BLEED = ["/citas"];
 
+type EstadoConexion = "checking" | "ok" | "down";
+
+const TIMEOUT_MS = 5000;
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
+  const [estadoConexion, setEstadoConexion] = useState<EstadoConexion>("checking");
   const pathname = usePathname() ?? "";
   const fullBleed = FULL_BLEED.some(
     (p) => pathname === p || pathname.startsWith(p + "/")
   );
+
+  useEffect(() => {
+    let cancelado = false;
+    const supabase = createClient();
+    const ping = supabase.auth.getSession();
+    const timeout = new Promise<{ error: { message: string } }>((resolve) => {
+      setTimeout(
+        () => resolve({ error: { message: "timeout" } }),
+        TIMEOUT_MS
+      );
+    });
+    Promise.race([ping, timeout])
+      .then((res) => {
+        if (cancelado) return;
+        const error = (res as { error?: unknown }).error;
+        if (error) {
+          setEstadoConexion("down");
+        } else {
+          setEstadoConexion("ok");
+        }
+      })
+      .catch(() => {
+        if (!cancelado) setEstadoConexion("down");
+      });
+    return () => {
+      cancelado = true;
+    };
+  }, []);
+
+  if (estadoConexion === "down") {
+    return (
+      <ToastProvider>
+        <DatabaseUnavailable />
+      </ToastProvider>
+    );
+  }
 
   return (
     <ToastProvider>
