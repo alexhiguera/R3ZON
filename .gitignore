@@ -2,6 +2,9 @@ node_modules
 .next
 out
 .env*.local
+.env*.backup
+supabase/.branches
+supabase/.temp
 .DS_Store
 *.tsbuildinfo
 next-env.d.ts

@@ -146,10 +146,21 @@ cp .env.local.example .env.local
 # Rellenar todos los valores — ver comentarios en .env.local.example
 
 # 3. Base de datos
-# Opción A (dev): abrir Supabase SQL Editor y pegar setup.sql completo.
-#   setup.sql hace wipe + reload de todo en el orden correcto.
+# Opción A (dev local — recomendada, NO toca producción):
+#   Stack completo de Supabase (Postgres + Auth + Storage + API) en Docker.
+#   Requiere Docker (o colima) corriendo.
+#     npm run db:start    # levanta el stack, aplica migraciones de supabase/migrations/
+#     npm run db:status   # muestra URL/keys
+#     npm run db:reset    # vuelve a aplicar migraciones desde cero
+#     npm run db:stop     # para los contenedores
+#   El .env.local del repo ya apunta a localhost:54321.
+#   Las credenciales de PRODUCCIÓN quedaron salvadas en .env.production.local.backup
+#   (restáuralas con: cp .env.production.local.backup .env.local).
 #
-# Opción B (producción o incremental): ejecutar en este orden exacto:
+# Opción B (producción Supabase): abrir Supabase SQL Editor y pegar setup.sql
+#   completo. setup.sql hace wipe + reload de todo en el orden correcto.
+#
+# Opción C (producción o incremental): ejecutar en este orden exacto:
 #   1.  schema.sql                    # tablas base, RLS, triggers
 #   2.  auth_extension.sql            # onboarding, dispositivos, RPCs TOTP
 #   3.  crm_kanban_ext.sql            # comunicaciones, kanban_columnas, RPCs batch
@@ -1087,6 +1098,22 @@ Cuatro bugs reportados. Causa raíz unificada: tablas B2C antiguas referenciadas
 - `TaskModal` — creación/edición: título, descripción, columna, prioridad, fecha límite, checkbox "completada". Tareas vencidas con borde rojo.
 
 Dependencias añadidas: `@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities`.
+
+### Iteración 7 — *2026-05-14* — Auditoría RLS + paridad local↔prod + guard anti-prod
+- **Paridad completa**: la migración local `20260514000000_initial_schema.sql` ahora consolida los **22 archivos `.sql`** del directorio (faltaban 7 en la iteración previa: `documentos_recibo_logos`, `inventario_imagenes`, `proveedores`, `listado`, `perfil_usuario`, `theme`, `rgpd`). Orden corregido: `fix_tenant_defaults` se aplica ANTES de `proveedores_ext` porque éste último crea triggers que llaman a `tg_fill_negocio_id()`.
+- **`scripts/seed-admin.mjs` blindado**: rechaza ejecutarse si `NEXT_PUBLIC_SUPABASE_URL` no apunta a `127.0.0.1` / `localhost`. Para forzarlo contra otro entorno: `ALLOW_PROD_SEED=1 npm run seed:admin`. Probado contra una URL de producción simulada (sale con `exit 1`).
+- **Auditoría RLS** sobre los 22 SQL: 27 tablas con RLS habilitada y policies por tenant, 14 funciones `SECURITY DEFINER` con `search_path` fijo, 0 grants a `anon`/`public` sobre tablas de dominio. Hallazgos documentados como recomendaciones (ver más abajo) — no se modificó código de producción sin autorización.
+
+### Iteración 6 — *2026-05-14* — Supabase local en Docker para desarrollo
+- **Problema**: tras desplegar en Vercel, el `.env.local` apuntaba a producción y cualquier prueba en `localhost` impactaba la base de datos real.
+- **Solución**: stack completo de Supabase (Postgres 15, GoTrue, PostgREST, Storage, Realtime) levantado en Docker vía Supabase CLI.
+- **Nuevos artefactos**:
+  - `supabase/config.toml` — configuración del stack local (puertos 54321 API, 54322 DB, 54324 inbucket). Studio desactivado por defecto por incompatibilidad de colima al hacer `chown` en `supabase/snippets`.
+  - `supabase/migrations/20260514000000_initial_schema.sql` — consolidación de los `.sql` del repo (schema + extensiones + retention + hardening) que `supabase db reset` aplica de un golpe. Se corrigió el `search_path` de la función `find_connection_by_channel` para incluir `extensions` (donde vive `digest()` en local).
+  - `supabase/seed.sql` — copia de `seed_clientes.sql`; idempotente, salta si no hay perfiles.
+  - Scripts npm: `db:start`, `db:stop`, `db:reset`, `db:status`, `db:studio`.
+- **`.env.local`**: reescrito para apuntar a `http://127.0.0.1:54321` con las claves `sb_publishable_*` / `sb_secret_*` generadas por `supabase start`. Las credenciales de producción quedaron salvadas en `.env.production.local.backup` (ignorado por git con la nueva regla `.env*.backup`).
+- **Validación**: stack arrancado, migración aplicada sin errores, `auth/v1/health` OK, `rest/v1/clientes` responde 200 con la apikey local, `npm run seed:admin` creó `admin@r3zon.dev`.
 
 ### Iteración 5 — *2026-04-28* — Bitácora en README
 - Reescrito `README.md` con el estado real del proyecto, estructura de carpetas y tabla de módulos.

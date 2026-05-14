@@ -32,6 +32,18 @@ if (!URL || !KEY) {
   process.exit(1);
 }
 
+// Guard anti-producción: este script es destructivo (crea usuarios con
+// contraseñas hardcoded). Solo se permite contra el stack local de Supabase
+// CLI. Para forzar contra otro entorno: ALLOW_PROD_SEED=1 npm run seed:admin
+const isLocal = /^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?(\/|$)/.test(URL);
+if (!isLocal && process.env.ALLOW_PROD_SEED !== "1") {
+  console.error("✗ seed:admin solo se ejecuta contra Supabase local.");
+  console.error("  URL actual:", URL);
+  console.error("  Si REALMENTE quieres ejecutarlo contra ese entorno:");
+  console.error("    ALLOW_PROD_SEED=1 npm run seed:admin");
+  process.exit(1);
+}
+
 const { createClient } = await import("@supabase/supabase-js");
 const sb = createClient(URL, KEY, { auth: { persistSession: false } });
 
