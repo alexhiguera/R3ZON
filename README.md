@@ -257,6 +257,12 @@ npx cap sync
 
 > Resumen de todo lo construido en orden de iteraciones (más reciente → más antiguo).
 
+### Iteración 56 — *2026-05-14* — Ajustes móvil colapsables + menú de usuario opaco + verificación de citas
+
+- **[src/components/ajustes/SettingsTabs.tsx](src/components/ajustes/SettingsTabs.tsx)** — en móvil (<lg) se renderiza un acordeón con las 11 secciones colapsadas; al pulsar se despliega solo la activa. En desktop se mantienen las pestañas laterales (220px + panel). Se extrajo `renderPanel()` para reutilizar el switch entre ambos layouts y se eliminó el scroll horizontal del nav, que era el origen del responsive roto.
+- **[src/components/layout/UserMenu.tsx](src/components/layout/UserMenu.tsx)** — el dropdown del usuario (móvil y desktop) deja de usar `card-glass` (semitransparente con `backdrop-blur`) y pasa a `bg-[#13123a]` opaco con borde `indigo-400/25` y `shadow-2xl`. Se mantienen color, animación de chevron y comportamiento (click-fuera, Escape, Mi perfil / Cambiar cuenta / Cerrar sesión).
+- **Verificación de citas** — comprobado que [src/components/agenda/CitasLista.tsx](src/components/agenda/CitasLista.tsx) (vista de lista), [src/components/perfil/MisCitas.tsx](src/components/perfil/MisCitas.tsx) (perfil de usuario) y [src/components/crm/TabHistorial.tsx](src/components/crm/TabHistorial.tsx) (histórico por cliente) leen la misma tabla `agenda_eventos`. Una cita con `cliente_id` aparece en las tres vistas; sin cliente vinculado aparece en lista y perfil pero no en el histórico (por diseño — el histórico es por cliente individual).
+
 ### Iteración 55 — *2026-05-14* — Migraciones de seguridad y rendimiento del linter de Supabase
 
 - **`supabase/migrations/20260514120000_security_fixes.sql`** (nuevo, 88 líneas, idempotente y en `begin/commit`): re-crea las 3 vistas que el linter marcaba.

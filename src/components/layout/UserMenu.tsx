@@ -80,7 +80,7 @@ export function UserMenu({ onNavigate }: { onNavigate?: () => void }) {
       {open && (
         <div
           role="menu"
-          className="card-glass absolute bottom-full left-0 right-0 z-50 mb-2 overflow-hidden p-1.5 shadow-glass"
+          className="absolute bottom-full left-0 right-0 z-50 mb-2 overflow-hidden rounded-2xl border border-indigo-400/25 bg-[#13123a] p-1.5 shadow-2xl"
         >
           <Link
             href="/perfil"
