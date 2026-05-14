@@ -18,9 +18,28 @@ type EstadoConexion = "checking" | "ok" | "down";
 
 const TIMEOUT_MS = 5000;
 
+const COLLAPSED_KEY = "r3zon:sidebar-collapsed";
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const [estadoConexion, setEstadoConexion] = useState<EstadoConexion>("checking");
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const v = window.localStorage.getItem(COLLAPSED_KEY);
+    if (v === "1") setCollapsed(true);
+  }, []);
+
+  const toggleCollapsed = () => {
+    setCollapsed((v) => {
+      const next = !v;
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(COLLAPSED_KEY, next ? "1" : "0");
+      }
+      return next;
+    });
+  };
   const pathname = usePathname() ?? "";
   const fullBleed = FULL_BLEED.some(
     (p) => pathname === p || pathname.startsWith(p + "/")
@@ -66,11 +85,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <ToastProvider>
     <OfflineBanner />
     <CommandPalette />
-    <div className="min-h-[100dvh] lg:grid lg:grid-cols-[280px_1fr]">
+    <div
+      className={`min-h-[100dvh] lg:grid ${
+        collapsed ? "lg:grid-cols-[76px_1fr]" : "lg:grid-cols-[280px_1fr]"
+      }`}
+    >
       <DeviceTracker />
       {/* Sidebar desktop */}
       <aside className="sticky top-0 hidden h-[100dvh] border-r border-indigo-400/10 bg-bg/60 backdrop-blur-glass lg:block">
-        <Sidebar />
+        <Sidebar collapsed={collapsed} onToggleCollapsed={toggleCollapsed} />
       </aside>
 
       {/* Sidebar mobile (drawer) */}

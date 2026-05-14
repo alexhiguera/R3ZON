@@ -19,7 +19,11 @@ export default function NotFound() {
             <Compass size={28} />
           </div>
 
-          <div className="mt-6 font-display text-7xl font-extrabold leading-none tracking-tight text-transparent sm:text-8xl"
+          <div className="mt-5 text-[0.65rem] font-semibold uppercase tracking-[0.25em] text-cyan">
+            Error 404
+          </div>
+
+          <div className="mt-3 font-display text-7xl font-extrabold leading-none tracking-tight text-transparent sm:text-8xl"
                style={{ backgroundImage: "linear-gradient(90deg, var(--cyan, #22d3ee), var(--fuchsia, #e879f9))", WebkitBackgroundClip: "text", backgroundClip: "text" }}>
             404
           </div>

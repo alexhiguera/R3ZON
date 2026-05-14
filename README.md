@@ -257,6 +257,18 @@ npx cap sync
 
 > Resumen de todo lo construido en orden de iteraciones (más reciente → más antiguo).
 
+### Iteración 60 — *2026-05-14* — 404 con eyebrow «Error 404» + sidebar colapsable en desktop
+
+- [src/app/not-found.tsx](src/app/not-found.tsx) — añadido eyebrow `Error 404` en cian uppercase entre el icono Compass y el dígito grande 404.
+- [src/components/layout/AppShell.tsx](src/components/layout/AppShell.tsx) — nuevo estado `collapsed` (default expandida) persistido en `localStorage` (`r3zon:sidebar-collapsed`). El grid alterna `lg:grid-cols-[280px_1fr]` ↔ `lg:grid-cols-[76px_1fr]`.
+- [src/components/layout/Sidebar.tsx](src/components/layout/Sidebar.tsx) — acepta `collapsed` y `onToggleCollapsed`. Botón discreto (`PanelLeftClose`/`PanelLeftOpen`, 8×8, `border-indigo-400/15`) arriba a la derecha del logo en desktop; en colapsado se centra debajo. Cuando está colapsada, los items muestran solo el icono cuadrado con `title`/`aria-label` para tooltip y accesibilidad. El drawer móvil siempre va expandido.
+- [src/components/layout/UserMenu.tsx](src/components/layout/UserMenu.tsx) — nueva prop `compact` que oculta nombre, plan y chevron cuando la sidebar está colapsada, mostrando solo el avatar; el dropdown sigue funcionando igual.
+
+### Iteración 59 — *2026-05-14* — Ajustes movido del sidebar al menú de usuario
+
+- [src/components/layout/Sidebar.tsx](src/components/layout/Sidebar.tsx) — retirado el ítem `/ajustes` del array `NAV` y el icono `Settings` del import.
+- [src/components/layout/UserMenu.tsx](src/components/layout/UserMenu.tsx) — añadido enlace «Ajustes» en el dropdown, justo bajo «Mi perfil», con el mismo patrón (cierra el menú y dispara `onNavigate?.()` para el drawer móvil).
+
 ### Iteración 58 — *2026-05-14* — Retirada de la integración n8n
 
 - **Archivos eliminados**:

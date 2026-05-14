@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronDown, LogOut, User, Repeat, Loader2 } from "lucide-react";
+import { ChevronDown, LogOut, User, Repeat, Loader2, Settings } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 type UserInfo = {
@@ -14,7 +14,13 @@ type UserInfo = {
   plan: string;
 };
 
-export function UserMenu({ onNavigate }: { onNavigate?: () => void }) {
+export function UserMenu({
+  onNavigate,
+  compact = false,
+}: {
+  onNavigate?: () => void;
+  compact?: boolean;
+}) {
   const supabase = useMemo(() => createClient(), []);
   const [user, setUser]   = useState<UserInfo | null>(null);
   const [open, setOpen]   = useState(false);
@@ -90,6 +96,14 @@ export function UserMenu({ onNavigate }: { onNavigate?: () => void }) {
           >
             <User size={15} className="text-indigo-300" /> Mi perfil
           </Link>
+          <Link
+            href="/ajustes"
+            onClick={() => { setOpen(false); onNavigate?.(); }}
+            className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-text-hi transition hover:bg-indigo-900/40"
+            role="menuitem"
+          >
+            <Settings size={15} className="text-indigo-300" /> Ajustes
+          </Link>
           <button
             type="button"
             onClick={cambiarCuenta}
@@ -116,9 +130,14 @@ export function UserMenu({ onNavigate }: { onNavigate?: () => void }) {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center gap-3 rounded-2xl border border-indigo-400/20 bg-glass p-3 text-left transition hover:border-indigo-400/40"
+        className={
+          compact
+            ? "flex w-full items-center justify-center rounded-2xl border border-indigo-400/20 bg-glass p-1.5 transition hover:border-indigo-400/40"
+            : "flex w-full items-center gap-3 rounded-2xl border border-indigo-400/20 bg-glass p-3 text-left transition hover:border-indigo-400/40"
+        }
         aria-haspopup="menu"
         aria-expanded={open}
+        title={compact ? user?.displayName ?? "Usuario" : undefined}
       >
         <span className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-cyan/30 bg-gradient-to-br from-cyan/15 to-fuchsia/15 text-cyan">
           {user?.avatarUrl ? (
@@ -133,18 +152,22 @@ export function UserMenu({ onNavigate }: { onNavigate?: () => void }) {
             <span className="font-display text-sm font-bold">{initials}</span>
           )}
         </span>
-        <div className="min-w-0 flex-1">
-          <div className="truncate text-sm font-semibold text-text-hi">
-            {user?.displayName ?? "Cargando…"}
-          </div>
-          <div className="truncate text-[0.7rem] text-text-lo">
-            {user?.plan ? `Plan ${user.plan}` : ""}
-          </div>
-        </div>
-        <ChevronDown
-          size={15}
-          className={`text-text-mid transition-transform ${open ? "rotate-180" : ""}`}
-        />
+        {!compact && (
+          <>
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-sm font-semibold text-text-hi">
+                {user?.displayName ?? "Cargando…"}
+              </div>
+              <div className="truncate text-[0.7rem] text-text-lo">
+                {user?.plan ? `Plan ${user.plan}` : ""}
+              </div>
+            </div>
+            <ChevronDown
+              size={15}
+              className={`text-text-mid transition-transform ${open ? "rotate-180" : ""}`}
+            />
+          </>
+        )}
       </button>
     </div>
   );

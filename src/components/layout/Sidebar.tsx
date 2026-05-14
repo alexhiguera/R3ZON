@@ -13,7 +13,8 @@ import {
   ShoppingCart,
   Wallet,
   Truck,
-  Settings,
+  PanelLeftClose,
+  PanelLeftOpen,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -32,35 +33,66 @@ const NAV: NavItem[] = [
   { href: "/tpv",       label: "TPV",           Icon: ShoppingCart },
   { href: "/documentos", label: "Documentos",   Icon: FileText },
   { href: "/finanzas",  label: "Finanzas",      Icon: Wallet },
-  { href: "/ajustes",   label: "Ajustes",       Icon: Settings },
 ];
 
-export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
+export function Sidebar({
+  onNavigate,
+  collapsed = false,
+  onToggleCollapsed,
+}: {
+  onNavigate?: () => void;
+  collapsed?: boolean;
+  onToggleCollapsed?: () => void;
+}) {
   const pathname = usePathname();
 
   return (
     <nav className="flex h-full flex-col">
-      {/* Logo (fijo arriba) */}
-      <Link
-        href="/dashboard"
-        onClick={onNavigate}
-        className="flex shrink-0 items-center gap-3 px-6 pt-4 pb-3"
+      {/* Cabecera: logo + botón colapsar (solo desktop) */}
+      <div
+        className={cn(
+          "flex shrink-0 items-center pt-4 pb-3",
+          collapsed ? "flex-col gap-3 px-3" : "gap-3 px-6",
+        )}
       >
-        <div className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-600 to-indigo-800 shadow-glow">
-          <span className="font-display text-lg font-extrabold text-white">R3</span>
-          <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-cyan shadow-[0_0_10px_#22d3ee]" />
-        </div>
-        <div>
-          <div className="font-display text-xl font-extrabold tracking-tight text-text-hi">
-            R3ZON
+        <Link
+          href="/dashboard"
+          onClick={onNavigate}
+          className={cn("flex items-center gap-3", collapsed && "justify-center")}
+        >
+          <div className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-600 to-indigo-800 shadow-glow">
+            <span className="font-display text-lg font-extrabold text-white">R3</span>
+            <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-cyan shadow-[0_0_10px_#22d3ee]" />
           </div>
-          <div className="accent-bar mt-1" style={{ width: 56 }} />
-        </div>
-      </Link>
+          {!collapsed && (
+            <div>
+              <div className="font-display text-xl font-extrabold tracking-tight text-text-hi">
+                R3ZON
+              </div>
+              <div className="accent-bar mt-1" style={{ width: 56 }} />
+            </div>
+          )}
+        </Link>
+
+        {onToggleCollapsed && (
+          <button
+            type="button"
+            onClick={onToggleCollapsed}
+            aria-label={collapsed ? "Expandir barra lateral" : "Colapsar barra lateral"}
+            title={collapsed ? "Expandir" : "Colapsar"}
+            className={cn(
+              "hidden h-8 w-8 items-center justify-center rounded-lg border border-indigo-400/15 bg-indigo-900/30 text-text-mid transition hover:border-indigo-400/40 hover:text-text-hi lg:flex",
+              !collapsed && "ml-auto",
+            )}
+          >
+            {collapsed ? <PanelLeftOpen size={15} /> : <PanelLeftClose size={15} />}
+          </button>
+        )}
+      </div>
 
       {/* Navegación (scrolleable) */}
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-2">
-        <div className="section-label mb-1 px-3">Navegación</div>
+      <div className={cn("min-h-0 flex-1 overflow-y-auto overscroll-contain pb-2", collapsed ? "px-2" : "px-4")}>
+        {!collapsed && <div className="section-label mb-1 px-3">Navegación</div>}
         <div className="flex flex-col gap-1.5">
           {NAV.map(({ href, label, Icon }) => {
             const active = pathname === href || pathname?.startsWith(href + "/");
@@ -69,11 +101,20 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                 key={href}
                 href={href}
                 onClick={onNavigate}
+                title={collapsed ? label : undefined}
+                aria-label={collapsed ? label : undefined}
                 className={cn(
-                  "btn-big group",
+                  "group",
+                  collapsed
+                    ? "flex items-center justify-center rounded-xl p-1.5"
+                    : "btn-big",
                   active
-                    ? "bg-glass border border-indigo-400/30 text-text-hi shadow-glass"
-                    : "border border-transparent text-text-mid hover:bg-indigo-900/40 hover:text-text-hi"
+                    ? collapsed
+                      ? ""
+                      : "bg-glass border border-indigo-400/30 text-text-hi shadow-glass"
+                    : collapsed
+                    ? "hover:bg-indigo-900/40"
+                    : "border border-transparent text-text-mid hover:bg-indigo-900/40 hover:text-text-hi",
                 )}
               >
                 <span
@@ -81,12 +122,12 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                     "flex h-9 w-9 items-center justify-center rounded-xl border transition-colors",
                     active
                       ? "border-cyan/40 bg-cyan/10 text-cyan"
-                      : "border-indigo-400/20 bg-indigo-900/40 text-indigo-300 group-hover:border-indigo-400/40"
+                      : "border-indigo-400/20 bg-indigo-900/40 text-indigo-300 group-hover:border-indigo-400/40",
                   )}
                 >
                   <Icon size={18} strokeWidth={2} />
                 </span>
-                <span className="text-[0.95rem]">{label}</span>
+                {!collapsed && <span className="text-[0.95rem]">{label}</span>}
               </Link>
             );
           })}
@@ -94,8 +135,13 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
       </div>
 
       {/* Usuario (fijo abajo) */}
-      <div className="shrink-0 border-t border-indigo-400/10 bg-bg/60 px-4 pb-4 pt-3 backdrop-blur-glass">
-        <UserMenu onNavigate={onNavigate} />
+      <div
+        className={cn(
+          "shrink-0 border-t border-indigo-400/10 bg-bg/60 pb-4 pt-3 backdrop-blur-glass",
+          collapsed ? "px-2" : "px-4",
+        )}
+      >
+        <UserMenu onNavigate={onNavigate} compact={collapsed} />
       </div>
     </nav>
   );
