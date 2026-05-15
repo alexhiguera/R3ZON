@@ -1,0 +1,90 @@
+# =============================================================================
+# CI — lint, typecheck, build
+# =============================================================================
+# Se ejecuta en cada PR y en cada push a main. Si algo falla, el job de Discord
+# se ejecuta con `if: always()` y reporta éxito/fallo + autor del commit.
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Lint · Types · Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build
+        # Variables públicas mínimas para que `next build` no peste durante el
+        # análisis estático. Si tu build necesita más vars, añádelas como
+        # secretos en el repo y referénciales aquí.
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+        run: npm run build
+
+  notify:
+    name: Notify Discord
+    needs: quality
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Discord notification
+        env:
+          WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          STATUS: ${{ needs.quality.result }}
+          AUTHOR: ${{ github.actor }}
+          REPO: ${{ github.repository }}
+          BRANCH: ${{ github.ref_name }}
+          COMMIT: ${{ github.sha }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          COMMIT_MSG: ${{ github.event.head_commit.message }}
+        run: |
+          # Color verde si success, rojo si failure, gris si cancelled/skipped.
+          case "$STATUS" in
+            success)   COLOR=3066993 ; EMOJI="✅" ;;
+            failure)   COLOR=15158332; EMOJI="❌" ;;
+            cancelled) COLOR=10070709; EMOJI="🚫" ;;
+            *)         COLOR=9807270 ; EMOJI="ℹ️" ;;
+          esac
+
+          SHORT_SHA="${COMMIT:0:7}"
+          TITLE="$EMOJI CI $STATUS — $REPO@$BRANCH"
+
+          # Construimos el payload con jq para escapar correctamente.
+          PAYLOAD=$(jq -n \
+            --arg title "$TITLE" \
+            --arg desc  "**Commit:** \`$SHORT_SHA\`  ·  **Autor:** $AUTHOR\n${COMMIT_MSG:-(sin mensaje)}" \
+            --arg url   "$RUN_URL" \
+            --argjson color "$COLOR" \
+            '{embeds:[{title:$title, description:$desc, url:$url, color:$color}]}')
+
+          curl -sS -H "Content-Type: application/json" \
+            -X POST -d "$PAYLOAD" "$WEBHOOK"

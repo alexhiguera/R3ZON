@@ -1,0 +1,84 @@
+# =============================================================================
+# Backup diario de tablas críticas de Supabase
+# =============================================================================
+# Cron: todos los días a las 03:00 UTC. Exporta las tablas listadas vía la
+# REST API de Supabase (PostgREST) usando la SERVICE ROLE KEY (necesaria para
+# saltarse RLS y leer todos los negocios). Los JSON se commitean en /backups
+# en una rama orphan dedicada para no inflar el historial de main.
+name: Supabase backup
+
+on:
+  schedule:
+    - cron: "0 3 * * *" # 03:00 UTC diario
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    env:
+      # Tablas a respaldar. Ajusta esta lista según tu modelo.
+      TABLES: "clientes configuracion negocios"
+    steps:
+      - name: Checkout backups branch
+        uses: actions/checkout@v4
+        with:
+          ref: backups
+          # Si la rama no existe aún, créala manualmente la primera vez:
+          #   git checkout --orphan backups && git rm -rf . && \
+          #   git commit --allow-empty -m "init backups" && git push -u origin backups
+          token: ${{ secrets.GH_PAT }}
+
+      - name: Export tables from Supabase
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          set -euo pipefail
+          DATE=$(date -u +'%Y-%m-%d')
+          DIR="backups/$DATE"
+          mkdir -p "$DIR"
+
+          for TABLE in $TABLES; do
+            echo "→ Exportando $TABLE"
+            curl -sS --fail \
+              -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
+              -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
+              -H "Accept: application/json" \
+              "$SUPABASE_URL/rest/v1/$TABLE?select=*" \
+              -o "$DIR/$TABLE.json"
+            echo "   $(wc -c < "$DIR/$TABLE.json") bytes"
+          done
+
+      - name: Upload as workflow artifact (retención 30d)
+        uses: actions/upload-artifact@v4
+        with:
+          name: supabase-backup-${{ github.run_id }}
+          path: backups/
+          retention-days: 30
+
+      - name: Commit backup to repo
+        run: |
+          git config user.name  "r3zon-bot"
+          git config user.email "bot@r3zon.dev"
+          git add backups/
+          if git diff --cached --quiet; then
+            echo "Sin cambios en backups."
+            exit 0
+          fi
+          git commit -m "chore(backup): supabase snapshot $(date -u +'%Y-%m-%d')"
+          git push
+
+      - name: Notify Discord on failure
+        if: failure()
+        env:
+          WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: |
+          PAYLOAD=$(jq -n \
+            --arg title "❌ Backup Supabase falló" \
+            --arg desc  "Revisa el run en GitHub Actions." \
+            --arg url   "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            '{embeds:[{title:$title, description:$desc, url:$url, color:15158332}]}')
+          curl -sS -H "Content-Type: application/json" -X POST -d "$PAYLOAD" "$WEBHOOK"
