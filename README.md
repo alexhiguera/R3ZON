@@ -257,6 +257,23 @@ npx cap sync
 
 > Resumen de todo lo construido en orden de iteraciones (más reciente → más antiguo).
 
+### Iteración 63 — *2026-05-15* — Sitio público (landing + servicios + precios + descargas)
+
+Hasta ahora `/` redirigía directamente a `/dashboard` y la app vivía completamente tras el login. Añadido un **sitio de marketing público** dentro del mismo repo (no proyecto aparte) usando route groups de App Router para mantener una sola pipeline, dominio y design system.
+
+- **Nuevo grupo** [src/app/(marketing)/](src/app/(marketing)/) con su propio `layout.tsx` (Server Component que detecta sesión via `createClient()` server). Sin AppShell ni sidebar.
+  - [src/app/(marketing)/page.tsx](src/app/(marketing)/page.tsx) — landing: hero con gradiente cyan→fuchsia, grid de 7 módulos, bloque «por qué», CTA final con `rainbow-bar`.
+  - [src/app/(marketing)/servicios/page.tsx](src/app/(marketing)/servicios/page.tsx) — 9 cards con bullets por módulo.
+  - [src/app/(marketing)/precios/page.tsx](src/app/(marketing)/precios/page.tsx) — Pro 29€ / Business 79€, plan destacado con ring cyan, CTA `/registro?plan=…`.
+  - [src/app/(marketing)/descargas/page.tsx](src/app/(marketing)/descargas/page.tsx) — Android (APK) / macOS (DMG) / Windows (EXE). URLs hardcodeadas a `null` → badge «Próximamente» hasta que se publiquen las builds en **GitHub Releases**.
+- **Componentes de marketing** ([src/components/marketing/](src/components/marketing/)):
+  - `MarketingNavbar` (Client) — sticky `backdrop-blur-glass`, links con estado activo via `usePathname()`, botón pill cyan que muta entre **Acceso** (`/login`) e **Ir al panel** (`/dashboard`) según `hasSession`. Drawer móvil con hamburguesa.
+  - `MarketingFooter` — 3 columnas (Producto / Cuenta / Legal) + copyright dinámico.
+- **Catálogo de planes refactorizado**: extraído `PLANS_PUBLIC` a [src/lib/plans.ts](src/lib/plans.ts) para que la pestaña Suscripción de la app y la página pública `/precios` lean del mismo origen y no se desincronicen del checkout Stripe real.
+- **Middleware** [src/lib/supabase/middleware.ts](src/lib/supabase/middleware.ts) — añadidos `/servicios`, `/precios`, `/descargas` a la lista de rutas públicas.
+- **Eliminado** `src/app/page.tsx` (el `redirect("/dashboard")`); ahora `/` la sirve `(marketing)/page.tsx`. Si el usuario está logueado **se queda en la landing** y el botón del navbar le ofrece ir al panel.
+- **Verificación**: `npm run build` verde (44 rutas, antes 40); `tsc --noEmit` limpio; `curl` a `/`, `/servicios`, `/precios`, `/descargas` → 200, contenido y precios correctos.
+
 ### Iteración 62 — *2026-05-14* — Corrección: la empresa es R3ZON (no «R3ZON Intelligence»)
 
 «R3ZON Intelligence» no es una entidad real — la empresa se llama simplemente **R3ZON** y el producto es **R3ZON ANTARES** / **ANTARES**. Sustituidas todas las menciones a `R3ZON Intelligence` por `R3ZON`.

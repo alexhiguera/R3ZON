@@ -13,6 +13,7 @@ import {
   Plus,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { PLANS_PUBLIC } from "@/lib/plans";
 
 type Pago = {
   id: string;
@@ -33,38 +34,6 @@ type Sub = {
   subscription_cancel_at_period_end: boolean;
   stripe_customer_id: string | null;
 };
-
-// Catálogo replicado en cliente (los Price IDs viven en server).
-const PLANS_PUBLIC = [
-  {
-    id: "pro" as const,
-    nombre: "Pro",
-    precio_eur_mes: 29,
-    tagline: "Para autónomos y micro-empresas",
-    features: [
-      "Hasta 1.000 clientes",
-      "Calendario + sync Google",
-      "Kanban de tareas",
-      "OCR de tickets (50/mes)",
-      "Soporte por email",
-    ],
-    destacado: false,
-  },
-  {
-    id: "business" as const,
-    nombre: "Business",
-    precio_eur_mes: 79,
-    tagline: "Para equipos en crecimiento",
-    features: [
-      "Clientes ilimitados",
-      "Hasta 10 miembros del equipo",
-      "OCR ilimitado",
-      "Soporte prioritario",
-      "Auditoría legal completa",
-    ],
-    destacado: true,
-  },
-];
 
 type Toast = { kind: "ok" | "err"; msg: string } | null;
 
