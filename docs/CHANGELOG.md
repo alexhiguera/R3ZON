@@ -7,6 +7,23 @@ Historial cronológico de **R3ZON ANTARES** ordenado de más reciente a más ant
 ---
 
 
+### Iteración 65 — *2026-05-15* — GitHub Actions: CI, wiki sync, backup Supabase, seguridad + fix primer run
+
+Se automatizan los flujos críticos del repo mediante GitHub Actions. Cuatro workflows en [.github/workflows/](.github/workflows/), todos sobre `ubuntu-latest` y con notificaciones a Discord en los puntos relevantes. Tras pushear, las primeras runs fallaron — se diagnosticaron vía API pública de GitHub y se repararon en una segunda pasada.
+
+- **[.github/workflows/ci.yml](.github/workflows/ci.yml)** — en cada PR y push a `main`: `npm ci`, `npm run typecheck` (nuevo script `tsc --noEmit`), `npm run build`. Job `notify` con `if: always()` que reporta éxito/fallo a Discord (embed coloreado + autor + commit + link al run). Concurrency group para cancelar runs obsoletos. **Lint deshabilitado**: Next 16 eliminó `next lint` y `eslint-config-next` arrastra peer deps incompatibles con ESLint 9. Reactivar cuando el ecosistema estabilice.
+- **[.github/workflows/wiki-sync.yml](.github/workflows/wiki-sync.yml)** — disparado por cambios en `docs/**` en `main`. Ejecuta [scripts/sync-wiki.sh](scripts/sync-wiki.sh) inyectando `WIKI_REMOTE` con `GH_PAT` para autenticar el push al repo `<repo>.wiki.git`. **Requiere primera página manual en la pestaña Wiki** para que el repo `.wiki.git` exista.
+- **[.github/workflows/supabase-backup.yml](.github/workflows/supabase-backup.yml)** — cron diario `0 3 * * *`. Exporta tablas críticas (`clientes`, `configuracion`, `negocios`) vía REST API de Supabase con `SUPABASE_SERVICE_ROLE_KEY`, sube artifact (30d retención) y commitea snapshots en rama orphan `backups` con `GH_PAT`. Notifica a Discord en caso de fallo.
+- **[.github/workflows/security.yml](.github/workflows/security.yml)** — `npm audit --audit-level=high` (con `--ignore-scripts` para evitar postinstall malicioso) + CodeQL JS/TS. Disparo en PR/push + cron semanal lunes 06:00 UTC.
+- **Fixes aplicados tras detectar fallos de la primera run:**
+  - `package-lock.json` regenerado (estaba desincronizado de `package.json`, 127 paquetes divergentes).
+  - 13 CVEs en Next.js 16.0.0–16.2.5 resueltos vía `npm audit fix` (DoS, cache poisoning, middleware bypass, SSRF, XSS en CSP nonces…).
+  - `@vercel/analytics` reinstalado (los `.d.ts` del subpath `/next` venían vacíos en la instalación inicial).
+  - `@xyflow/system` añadido como peer faltante de `@xyflow/react` (rompía Turbopack).
+  - `origin` actualizado a `git@github.com:alexhiguera/R3ZON-ANTARES.git` (el repo se había renombrado de `R3ZON` y el remote local seguía apuntando al alias).
+- **Verificación local previa al push**: `npm run typecheck` ✅ · `npm run build` ✅ · `npm audit` → 0 vulnerabilidades.
+
+
 ### Iteración 64 — *2026-05-15* — Refactor de documentación: `docs/` + bitácora separada + sync con la wiki
 
 El README había crecido a 1.299 líneas (66 iteraciones de bitácora dentro), inservible como punto de entrada. Refactor en dos ejes: (1) sacar la documentación a `docs/` con archivos temáticos y (2) automatizar la publicación en la wiki de GitHub.
