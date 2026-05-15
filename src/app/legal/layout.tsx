@@ -11,9 +11,16 @@ export default function LegalLayout({ children }: { children: React.ReactNode })
   return (
     <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
       <Link href="/" className="mb-6 inline-flex items-center gap-2">
-        <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-indigo-800 shadow-glow">
-          <span className="font-display text-sm font-extrabold text-white">R3</span>
-        </div>
+        <img
+          src="/R3ZON-ANTARES-negativo.svg"
+          alt="R3ZON ANTARES"
+          className="h-10 w-10 dark:block hidden"
+        />
+        <img
+          src="/R3ZON-ANTARES.svg"
+          alt="R3ZON ANTARES"
+          className="h-10 w-10 dark:hidden block"
+        />
         <span className="font-display text-lg font-extrabold tracking-tight">R3ZON ANTARES</span>
       </Link>
 

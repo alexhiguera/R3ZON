@@ -60,14 +60,22 @@ export function Sidebar({
           onClick={onNavigate}
           className={cn("flex items-center gap-3", collapsed && "justify-center")}
         >
-          <div className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-600 to-indigo-800 shadow-glow">
-            <span className="font-display text-lg font-extrabold text-white">R3</span>
-            <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-cyan shadow-[0_0_10px_#22d3ee]" />
+          <div className="relative h-12 w-12 shrink-0">
+            <img
+              src="/R3ZON-ANTARES-negativo.svg"
+              alt="R3ZON ANTARES"
+              className="h-12 w-12 dark:block hidden"
+            />
+            <img
+              src="/R3ZON-ANTARES.svg"
+              alt="R3ZON ANTARES"
+              className="h-12 w-12 dark:hidden block"
+            />
           </div>
           {!collapsed && (
             <div>
               <div className="font-display text-xl font-extrabold tracking-tight text-text-hi">
-                R3ZON ANTARES
+                ANTARES
               </div>
               <div className="accent-bar mt-1" style={{ width: 56 }} />
             </div>

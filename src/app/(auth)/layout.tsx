@@ -6,9 +6,17 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="mb-8 flex flex-col items-center gap-3">
-          <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-600 to-indigo-800 shadow-glow">
-            <span className="font-display text-xl font-extrabold text-white">R3</span>
-            <span className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-cyan shadow-[0_0_10px_#22d3ee]" />
+          <div className="relative h-14 w-14">
+            <img
+              src="/R3ZON-ANTARES-negativo.svg"
+              alt="R3ZON ANTARES"
+              className="h-14 w-14 dark:block hidden"
+            />
+            <img
+              src="/R3ZON-ANTARES.svg"
+              alt="R3ZON ANTARES"
+              className="h-14 w-14 dark:hidden block"
+            />
           </div>
           <div className="text-center">
             <div className="font-display text-2xl font-extrabold tracking-tight">
