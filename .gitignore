@@ -1,12 +1,99 @@
-node_modules
-.next
-out
-.env*.local
-.env*.backup
-supabase/.branches
-supabase/.temp
-.DS_Store
-*.tsbuildinfo
+# =============================================================================
+# R3ZON ANTARES — .gitignore
+# =============================================================================
+# Organizado por capa. Si añades una herramienta nueva (Playwright, Sentry…)
+# añade su bloque aquí en lugar de meter patrones sueltos al final.
+
+# --- Dependencias --------------------------------------------------------------
+node_modules/
+.pnp
+.pnp.*
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnpm-store/
+
+# --- Build / cache de Next.js --------------------------------------------------
+.next/
+out/
+.turbo/
+.swc/
 next-env.d.ts
-ios
-android
+
+# --- Tipos / TypeScript --------------------------------------------------------
+*.tsbuildinfo
+.tscache/
+
+# --- Tests / coverage ----------------------------------------------------------
+coverage/
+.nyc_output/
+.vitest-cache/
+playwright-report/
+test-results/
+
+# --- Variables de entorno (NUNCA commitear secretos) ---------------------------
+.env
+.env.*
+!.env.local.example
+.env*.backup
+
+# --- Vercel --------------------------------------------------------------------
+.vercel/
+
+# --- Supabase ------------------------------------------------------------------
+supabase/.branches/
+supabase/.temp/
+supabase/snippets/
+# Logs locales del stack en Docker
+supabase/logs/
+
+# --- Capacitor / móvil ---------------------------------------------------------
+ios/
+android/
+capacitor.config.*.local.*
+
+# --- Logs ----------------------------------------------------------------------
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# --- Editores e IDEs -----------------------------------------------------------
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.shared.json
+.idea/
+.fleet/
+*.swp
+*.swo
+*~
+
+# --- Sistema operativo ---------------------------------------------------------
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# macOS / iCloud Drive (duplicados al sincronizar)
+*.icloud
+* 2
+* 2.*
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux
+.directory
+
+# --- Misc ----------------------------------------------------------------------
+*.tgz
+.eslintcache
+.stylelintcache
