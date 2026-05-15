@@ -1,0 +1,41 @@
+# =============================================================================
+# Sync docs/ → GitHub Wiki
+# =============================================================================
+# Cada vez que cambian los .md de docs/ en main, regenera el wiki ejecutando
+# scripts/sync-wiki.sh. El script clona <repo>.wiki.git, transforma los enlaces
+# y hace push usando el GH_PAT (necesita permiso de escritura sobre el wiki).
+name: Wiki sync
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - "scripts/sync-wiki.sh"
+      - ".github/workflows/wiki-sync.yml"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure git identity
+        run: |
+          git config --global user.name  "r3zon-bot"
+          git config --global user.email "bot@r3zon.dev"
+
+      - name: Run wiki sync script
+        env:
+          # GH_PAT debe tener scope 'repo' (el wiki vive bajo el mismo repo).
+          GH_PAT: ${{ secrets.GH_PAT }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          WIKI_REMOTE: https://x-access-token:${{ secrets.GH_PAT }}@github.com/${{ github.repository }}.wiki.git
+        run: bash scripts/sync-wiki.sh
