@@ -32,6 +32,18 @@ export default function OCRPage() {
     try {
       const texto = await ocrImagen(file, setProgress);
       const parsed = parseSpanishReceipt(texto);
+      const algoUtil =
+        parsed.total !== null ||
+        parsed.base !== null ||
+        parsed.fecha !== null ||
+        parsed.cif !== null;
+      if (!algoUtil && texto.trim().length < 10) {
+        setError(
+          "No hemos podido leer texto en la imagen. Asegúrate de que está enfocada, con buena luz y que el ticket cabe entero.",
+        );
+        setEstado("idle");
+        return;
+      }
       setDatos(parsed);
       setEstado("revisar");
     } catch (e) {
@@ -105,7 +117,7 @@ export default function OCRPage() {
       <input
         ref={fileRef}
         type="file"
-        accept="image/*,application/pdf"
+        accept="image/*"
         className="hidden"
         onChange={(e) => {
           const f = e.target.files?.[0];
@@ -113,6 +125,12 @@ export default function OCRPage() {
           if (f) procesar(f);
         }}
       />
+
+      {estado === "idle" && error && (
+        <div className="rounded-xl border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger">
+          {error}
+        </div>
+      )}
 
       {estado === "idle" && (
         <div className="grid gap-4 sm:grid-cols-2">
@@ -126,7 +144,7 @@ export default function OCRPage() {
           <ActionCard
             Icon={Upload}
             label="Subir imagen"
-            sub="JPG, PNG o PDF"
+            sub="JPG o PNG"
             onClick={() => fileRef.current?.click()}
             accent="fuchsia"
           />

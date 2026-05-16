@@ -7,6 +7,16 @@ Historial cronológico de **R3ZON ANTARES** ordenado de más reciente a más ant
 ---
 
 
+### Iteración 73 — *2026-05-16* — OCR roto: CSP bloqueaba Tesseract + errores silenciosos en idle
+
+El OCR no funcionaba ni en móvil ni en PC. Causa raíz: la CSP de [next.config.mjs](next.config.mjs) no permitía los hosts de los que `tesseract.js` carga su worker y los modelos `.traineddata.gz`, así que el `createWorker` fallaba en producción y la excepción se tragaba.
+
+- **CSP** — añadido `https://cdn.jsdelivr.net` a `script-src` (worker + `tesseract-core.wasm.js`) y a `connect-src`, y `https://tessdata.projectnaptha.com` a `connect-src` (modelos `spa.traineddata.gz` + `eng.traineddata.gz`). El `worker-src 'self' blob:` ya estaba bien.
+- **Engine** ([src/lib/ocr/engine.ts](src/lib/ocr/engine.ts)) — borrado el `_workerPromise` muerto (se declaraba pero no se usaba), envuelta `recognize` en try/catch que re-lanza un `Error` legible en castellano en vez del stack de Tesseract, y se rechazan PDFs por adelantado con un mensaje claro (Tesseract.js no procesa PDFs nativamente, antes hacía `recognize` sobre el blob y se quedaba colgado).
+- **UI** ([src/app/(app)/ocr/page.tsx](src/app/(app)/ocr/page.tsx)) — el `setError(msg)` se hacía pero el panel de error solo se renderizaba en `estado === "revisar"`, así que en `idle` el usuario veía un parpadeo y luego nada. Añadido un panel de error en `idle`. Detección extra: si Tesseract devuelve menos de 10 caracteres y el parser no extrae fecha/CIF/base/total, se muestra "no hemos podido leer texto en la imagen, enfoca y prueba otra vez" en vez de empujar al usuario a una pantalla de revisión vacía. PDF retirado del `accept` y del sub-label del action card (`"JPG o PNG"`).
+- **Verificación**: lint ✅ · typecheck ✅. En prod hace falta `Cmd-Shift-R` después del deploy para que el navegador recargue la cabecera CSP.
+
+
 ### Iteración 72 — *2026-05-16* — Favicon, anti-spam de fichajes y OCR móvil
 
 Tres fixes pedidos por usuario en pestañas/RR.HH./captura.

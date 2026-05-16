@@ -5,7 +5,8 @@ const isExport = process.env.NEXT_OUTPUT_MODE === "export";
 const CSP_DIRECTIVES = [
   "default-src 'self'",
   // Next.js inline runtime + Stripe.js + Vercel Analytics + scripts de boot (theme/a11y).
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.stripe.com https://js.stripe.com https://va.vercel-scripts.com",
+  // jsDelivr es el CDN por defecto de tesseract.js (worker + tesseract-core wasm-glue).
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.stripe.com https://js.stripe.com https://va.vercel-scripts.com https://cdn.jsdelivr.net",
   // Tailwind inline + estilos de FullCalendar/recharts.
   "style-src 'self' 'unsafe-inline'",
   // Logos, avatares, imágenes de producto vía Supabase Storage + data: para inline SVG/blobs (OCR).
@@ -14,7 +15,8 @@ const CSP_DIRECTIVES = [
   "worker-src 'self' blob:",
   "font-src 'self' data:",
   // Supabase REST + Realtime + Stripe + Google APIs.
-  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.stripe.com https://api.stripe.com https://accounts.google.com https://oauth2.googleapis.com https://www.googleapis.com https://va.vercel-scripts.com https://vitals.vercel-insights.com",
+  // tesseract.js descarga el worker desde jsDelivr y los modelos `*.traineddata.gz` desde tessdata.projectnaptha.com.
+  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.stripe.com https://api.stripe.com https://accounts.google.com https://oauth2.googleapis.com https://www.googleapis.com https://va.vercel-scripts.com https://vitals.vercel-insights.com https://cdn.jsdelivr.net https://tessdata.projectnaptha.com",
   // Stripe Checkout / Customer Portal abren ventanas e iframes.
   "frame-src https://*.stripe.com https://js.stripe.com https://hooks.stripe.com https://checkout.stripe.com",
   "frame-ancestors 'none'",
