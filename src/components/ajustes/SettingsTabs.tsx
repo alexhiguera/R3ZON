@@ -7,6 +7,7 @@ import {
   ChevronDown,
   CreditCard,
   Database,
+  LifeBuoy,
   type LucideIcon,
   Palette,
   Plug,
@@ -25,6 +26,7 @@ import { FacturacionTab } from "./FacturacionTab";
 import { IntegracionesTab } from "./IntegracionesTab";
 import { ListadoTab } from "./ListadoTab";
 import { NegocioTab } from "./NegocioTab";
+import { ReportesTab } from "./ReportesTab";
 import { SeguridadTab } from "./SeguridadTab";
 import { SuscripcionTab } from "./SuscripcionTab";
 import type { PerfilNegocio, TabId } from "./types";
@@ -41,6 +43,7 @@ const TABS: { id: TabId; label: string; Icon: LucideIcon }[] = [
   { id: "seguridad", label: "Seguridad", Icon: ShieldCheck },
   { id: "datos", label: "Datos", Icon: Database },
   { id: "cumplimiento", label: "Cumplimiento", Icon: Scale },
+  { id: "reportes", label: "Reportes", Icon: LifeBuoy },
 ];
 
 function renderPanel(id: TabId, perfil: PerfilNegocio) {
@@ -67,6 +70,8 @@ function renderPanel(id: TabId, perfil: PerfilNegocio) {
       return <DatosTab />;
     case "cumplimiento":
       return <CumplimientoTab />;
+    case "reportes":
+      return <ReportesTab />;
   }
 }
 

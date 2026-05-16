@@ -7,6 +7,16 @@ Historial cronológico de **R3ZON ANTARES** ordenado de más reciente a más ant
 ---
 
 
+### Iteración 75 — *2026-05-16* — Sección de Reportes en Ajustes (canal a info@r3zon.com)
+
+Añadida una pestaña nueva al final de Ajustes para que el usuario pueda reportar problemas sin salir de la app.
+
+- **Nuevo tab** ([src/components/ajustes/ReportesTab.tsx](src/components/ajustes/ReportesTab.tsx)) — Tipos (Bug / Sugerencia / Pregunta / Otro), título (max 120 char), detalle (max 4000 char con contador) y un checkbox "adjuntar información técnica" que añade URL, viewport, user-agent, idioma, plataforma y hora local al cuerpo del email. El asunto sale como `[ANTARES · <tipo>] <título>` para que sea fácil filtrar en la bandeja. El botón principal abre `mailto:info@r3zon.com` con el contenido prellenado vía `window.location.href`; el botón secundario ("Copiar") usa `navigator.clipboard.writeText` por si el cliente de correo no se abre (móviles sin app asignada, escritorios sin handler).
+- **Registro en la navegación** — [src/components/ajustes/types.ts](src/components/ajustes/types.ts) añade `"reportes"` al union `TabId`; [src/components/ajustes/SettingsTabs.tsx](src/components/ajustes/SettingsTabs.tsx) lo añade al array `TABS` al final (después de Cumplimiento) con icono `LifeBuoy` y al `renderPanel` switch.
+- **Decisiones**: nada se manda a un endpoint propio — todo el flujo es client-side abriendo el cliente de correo del usuario. Esto evita montar una edge function adicional, no requiere otra API key de Resend, y deja el log en la bandeja de info@r3zon.com como única fuente de verdad. Si en el futuro se quiere persistir reportes en BBDD, basta con cambiar el `enviar()` para hacer un `supabase.from("reportes").insert(...)` antes del mailto.
+- **Verificación**: lint ✅ · typecheck ✅.
+
+
 ### Iteración 74 — *2026-05-16* — Cookie banner con gating real, health-check de Resend y modo claro WCAG AA
 
 Tres tareas pedidas: privacidad, mail y accesibilidad.
