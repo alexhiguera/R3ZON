@@ -57,21 +57,51 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: |
-          set -euo pipefail
+          # Sin `set -e` global: queremos seguir con las demás tablas si una falla
+          # y reportar al final un resumen para diagnosticar.
+          set -uo pipefail
           DATE=$(date -u +'%Y-%m-%d')
           DIR="backups/$DATE"
           mkdir -p "$DIR"
 
+          # Sanity check: el secreto debe existir.
+          if [[ -z "${SUPABASE_URL:-}" || -z "${SUPABASE_SERVICE_ROLE_KEY:-}" ]]; then
+            echo "❌ SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY no están definidos como secret."
+            exit 1
+          fi
+
+          # Normaliza URL (quita trailing slash).
+          BASE="${SUPABASE_URL%/}"
+
+          FALLOS=()
+          OK=0
           for TABLE in $TABLES; do
-            echo "→ Exportando $TABLE"
-            curl -sS --fail \
+            # `Prefer: count=exact` + `Range-Unit: items` para paginar si hace falta
+            # (el default de PostgREST es 1000 filas — suficiente para v1).
+            HTTP=$(curl -sS -o "$DIR/$TABLE.json" -w "%{http_code}" \
               -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
               -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
               -H "Accept: application/json" \
-              "$SUPABASE_URL/rest/v1/$TABLE?select=*" \
-              -o "$DIR/$TABLE.json"
-            echo "   $(wc -c < "$DIR/$TABLE.json") bytes"
+              "$BASE/rest/v1/$TABLE?select=*")
+
+            if [[ "$HTTP" == "200" ]]; then
+              SIZE=$(wc -c < "$DIR/$TABLE.json" | tr -d ' ')
+              echo "✅ $TABLE — ${SIZE} bytes"
+              OK=$((OK+1))
+            else
+              echo "❌ $TABLE — HTTP $HTTP"
+              echo "   respuesta: $(head -c 200 "$DIR/$TABLE.json")"
+              rm -f "$DIR/$TABLE.json"
+              FALLOS+=("$TABLE($HTTP)")
+            fi
           done
+
+          echo ""
+          echo "Resumen: $OK ok, ${#FALLOS[@]} fallos."
+          if (( ${#FALLOS[@]} > 0 )); then
+            echo "Fallos: ${FALLOS[*]}"
+            exit 1
+          fi
 
       - name: Upload as workflow artifact (retención 30d)
         uses: actions/upload-artifact@v4
