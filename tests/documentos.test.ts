@@ -170,3 +170,68 @@ describe("validarParaGenerar", () => {
     expect(r).toContain("El descuento debe estar entre 0 % y 100 %.");
   });
 });
+
+describe("buildMailtoUrl", () => {
+  const base = {
+    tipo: "factura" as const,
+    referencia: "F2026-0001",
+    emisorNombre: "Mi Negocio SL",
+    clienteNombre: "Alex",
+    total: 121,
+  };
+
+  it("usa el email cuando es válido", async () => {
+    const { buildMailtoUrl } = await import("@/lib/documentos");
+    const url = buildMailtoUrl({ ...base, clienteEmail: "alex@example.com" });
+    expect(url.startsWith("mailto:alex%40example.com?")).toBe(true);
+    expect(url).toContain("subject=");
+    expect(url).toContain("body=");
+  });
+
+  it("deja el destinatario vacío si el email no es válido", async () => {
+    const { buildMailtoUrl } = await import("@/lib/documentos");
+    const url = buildMailtoUrl({ ...base, clienteEmail: "no-es-un-email" });
+    expect(url.startsWith("mailto:?")).toBe(true);
+  });
+
+  it("bloquea header injection con CRLF en el email", async () => {
+    const { buildMailtoUrl } = await import("@/lib/documentos");
+    // Intento de inyectar Bcc adicional via salto de línea.
+    const malicioso = "victim@a.com\r\nBcc: attacker@evil.com";
+    const url = buildMailtoUrl({ ...base, clienteEmail: malicioso });
+    // El email contiene espacios/CRLF → no pasa la regex → destinatario vacío.
+    expect(url.startsWith("mailto:?")).toBe(true);
+    expect(url).not.toContain("attacker");
+    expect(url).not.toContain("Bcc");
+  });
+
+  it("bloquea header injection con &cc= en el email", async () => {
+    const { buildMailtoUrl } = await import("@/lib/documentos");
+    const malicioso = "victim@a.com&cc=attacker@evil.com";
+    const url = buildMailtoUrl({ ...base, clienteEmail: malicioso });
+    // El & no rompe la regex pero `encodeURIComponent` lo escapa.
+    // O bien es rechazado por la regex (no contiene caracteres prohibidos en el email),
+    // o bien se codifica como %26 y &cc= no se interpreta literalmente.
+    expect(url).not.toMatch(/[?&]cc=attacker/i);
+  });
+
+  it("escapa caracteres especiales del nombre del cliente en el body", async () => {
+    const { buildMailtoUrl } = await import("@/lib/documentos");
+    const url = buildMailtoUrl({
+      ...base,
+      clienteEmail: "a@b.com",
+      clienteNombre: "Alex & Co\n<script>",
+    });
+    // < > y los saltos de línea van codificados en el body.
+    expect(url).toContain("body=");
+    expect(url).not.toContain("<script>");
+  });
+
+  it("trata null/undefined de email como destinatario vacío", async () => {
+    const { buildMailtoUrl } = await import("@/lib/documentos");
+    const a = buildMailtoUrl({ ...base, clienteEmail: null });
+    const b = buildMailtoUrl({ ...base, clienteEmail: undefined });
+    expect(a.startsWith("mailto:?")).toBe(true);
+    expect(b.startsWith("mailto:?")).toBe(true);
+  });
+});

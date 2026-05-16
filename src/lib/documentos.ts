@@ -216,3 +216,32 @@ export function validarParaGenerar(d: {
     errores.push("El descuento debe estar entre 0 % y 100 %.");
   return errores;
 }
+
+/**
+ * Construye una URL `mailto:` segura para enviar un documento generado.
+ * Sanitiza el destinatario con regex + `encodeURIComponent` para evitar
+ * header injection (CRLF, `&cc=`, `&bcc=`). Si el email no es válido,
+ * deja el destinatario vacío en lugar de propagar input no confiable.
+ */
+export function buildMailtoUrl(input: {
+  tipo: TipoDocumento;
+  referencia: string;
+  clienteEmail: string | null | undefined;
+  clienteNombre: string | null | undefined;
+  emisorNombre: string;
+  total: number;
+}): string {
+  const emailRaw = (input.clienteEmail ?? "").trim();
+  const emailValido = /^[^\s<>"'`]+@[^\s<>"'`]+\.[^\s<>"'`]+$/.test(emailRaw);
+  const destinatario = emailValido ? encodeURIComponent(emailRaw) : "";
+  const asunto = encodeURIComponent(
+    `${ETIQUETA_TIPO[input.tipo]} ${input.referencia} — ${input.emisorNombre}`,
+  );
+  const cuerpo = encodeURIComponent(
+    `Hola${input.clienteNombre ? ` ${input.clienteNombre}` : ""},\n\n` +
+      `Adjunto te envío la ${ETIQUETA_TIPO[input.tipo].toLowerCase()} ${input.referencia} ` +
+      `por importe de ${eur(input.total)}.\n\n` +
+      `Un saludo,\n${input.emisorNombre}`,
+  );
+  return `mailto:${destinatario}?subject=${asunto}&body=${cuerpo}`;
+}

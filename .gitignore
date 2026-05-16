@@ -98,3 +98,4 @@ Desktop.ini
 .eslintcache
 .stylelintcache
 .vercel
+.env*.local

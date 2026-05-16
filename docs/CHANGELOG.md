@@ -7,6 +7,24 @@ Historial cronológico de **R3ZON ANTARES** ordenado de más reciente a más ant
 ---
 
 
+### Iteración 69 — *2026-05-16* — Refactor de los dos componentes gigantes + tests de mailto
+
+Los dos archivos más grandes del proyecto, ambos críticos del flujo comercial, partidos en hooks + componentes sin cambios de comportamiento.
+
+- **`documentos/nuevo/page.tsx`: 1145 → 57 líneas** (composer). Extracción en [src/components/documentos/](src/components/documentos/):
+  - [useDocumentoEditor.ts](src/components/documentos/useDocumentoEditor.ts) — hook con todo el estado (emisor, cliente, productos, líneas, pago, notas, generación) + acciones (`generar` con RPC atómica, `enviarPorEmail`, `añadirAFinanzas`).
+  - [TipoSelector.tsx](src/components/documentos/TipoSelector.tsx) — paso 1 (grid de tipos de documento).
+  - [EditorForm.tsx](src/components/documentos/EditorForm.tsx) — form izquierdo: cliente + cabecera colapsable + contenido + pago colapsable + notas. Sub-secciones internas (`ClienteSection`, `ContenidoSection`, `PagoSection`).
+  - [EditorPreview.tsx](src/components/documentos/EditorPreview.tsx) — preview derecho + apertura de ventana de impresión + modal fullscreen + CTA post-generación.
+  - [EditorUiBits.tsx](src/components/documentos/EditorUiBits.tsx) — `Card`, `ResumenColapsable`, `NumInput`, `AccionBtn`, `inputCls`.
+- **`listado/page.tsx`: 1074 → 375 líneas** (composer). Extracción en [src/components/inventario/](src/components/inventario/):
+  - [useMovimientosStock.ts](src/components/inventario/useMovimientosStock.ts) — hook de paginación de movimientos (página de 50, cursor por `ts`).
+  - [FilaProducto.tsx](src/components/inventario/FilaProducto.tsx), [ProductoModal.tsx](src/components/inventario/ProductoModal.tsx) (modal de edición con subida de imagen a Storage), [MovimientoModal.tsx](src/components/inventario/MovimientoModal.tsx), [KpiCard.tsx](src/components/inventario/KpiCard.tsx), [EmptyState.tsx](src/components/inventario/EmptyState.tsx).
+- **Nuevo helper puro y 6 tests** — `buildMailtoUrl` ([src/lib/documentos.ts](src/lib/documentos.ts)) extraído del hook como función pura. Tests añadidos en [tests/documentos.test.ts](tests/documentos.test.ts) cubren: email válido, email inválido → destinatario vacío, **bloqueo de header injection vía CRLF**, **bloqueo de `&cc=` injection**, escape de `<script>` y caracteres especiales en el body, null/undefined.
+- **Sin cambios funcionales**: el JSX y la lógica son idénticos al original — la única diferencia visible es el helper exportable y testeado para mailto. Verificación: lint ✅ · typecheck ✅ · 138/138 tests ✅ (6 nuevos) · build ✅ · 0 vulns.
+- **Resultado**: ningún archivo del proyecto pasa de 428 líneas (`EditorForm.tsx`). Cualquier futuro cambio queda confinado a una sub-pieza con responsabilidad clara, no a un dump de 1000+ líneas.
+
+
 ### Iteración 68 — *2026-05-16* — Lint con Biome, CI completo, backup con tablas reales
 
 Tras la auditoría, varias tareas de plataforma agrupadas en una sesión.
