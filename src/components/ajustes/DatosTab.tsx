@@ -1,41 +1,41 @@
 "use client";
 
-import { useRef, useState } from "react";
 import {
-  Archive,
-  Download,
-  Upload,
-  Loader2,
-  CheckCircle2,
   AlertCircle,
+  Archive,
+  CheckCircle2,
+  Download,
   FileJson,
   FileSpreadsheet,
   Info,
+  Loader2,
+  Upload,
 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
+import { useRef, useState } from "react";
 import { descargarCSV, parseCSV } from "@/lib/csv";
+import { createClient } from "@/lib/supabase/client";
 import { formatSupabaseError } from "@/lib/supabase-errors";
 
 type Toast = { kind: "ok" | "err"; msg: string } | null;
 
 const RECURSOS_EXPORT = [
-  { key: "clientes",       label: "Clientes",       tabla: "clientes" },
-  { key: "finanzas",       label: "Finanzas",       tabla: "finanzas" },
-  { key: "tareas",         label: "Tareas",         tabla: "tareas_kanban" },
-  { key: "documentos",     label: "Documentos",     tabla: "documentos" },
-  { key: "citas",          label: "Citas",          tabla: "agenda_eventos" },
+  { key: "clientes", label: "Clientes", tabla: "clientes" },
+  { key: "finanzas", label: "Finanzas", tabla: "finanzas" },
+  { key: "tareas", label: "Tareas", tabla: "tareas_kanban" },
+  { key: "documentos", label: "Documentos", tabla: "documentos" },
+  { key: "citas", label: "Citas", tabla: "agenda_eventos" },
   { key: "comunicaciones", label: "Comunicaciones", tabla: "comunicaciones" },
 ] as const;
 
 export function DatosTab() {
   const supabase = createClient();
-  const [exportandoZip, setExportandoZip]   = useState(false);
-  const [exportandoCSV, setExportandoCSV]   = useState<string | null>(null);
+  const [exportandoZip, setExportandoZip] = useState(false);
+  const [exportandoCSV, setExportandoCSV] = useState<string | null>(null);
   const [importandoJSON, setImportandoJSON] = useState(false);
-  const [importandoCSV, setImportandoCSV]   = useState(false);
-  const [toast, setToast]                   = useState<Toast>(null);
+  const [importandoCSV, setImportandoCSV] = useState(false);
+  const [toast, setToast] = useState<Toast>(null);
   const refJson = useRef<HTMLInputElement>(null);
-  const refCsv  = useRef<HTMLInputElement>(null);
+  const refCsv = useRef<HTMLInputElement>(null);
 
   const flash = (t: Toast) => {
     setToast(t);
@@ -45,9 +45,7 @@ export function DatosTab() {
   const exportarZIP = async () => {
     setExportandoZip(true);
     try {
-      const peticiones = RECURSOS_EXPORT.map((r) =>
-        supabase.from(r.tabla).select("*"),
-      );
+      const peticiones = RECURSOS_EXPORT.map((r) => supabase.from(r.tabla).select("*"));
       peticiones.push(supabase.from("v_consentimientos_negocio").select("*"));
       const resultados = await Promise.all(peticiones);
 
@@ -59,11 +57,12 @@ export function DatosTab() {
         archivos[`${r.key}.json`] = encode(resultados[idx].data ?? []);
       });
       archivos["consentimientos.json"] = encode(resultados[RECURSOS_EXPORT.length].data ?? []);
-      archivos["exportado.txt"] = strToU8(
-        `Exportación R3ZON ANTARES — ${fecha}\nFormato: JSON.\n`,
-      );
+      archivos["exportado.txt"] = strToU8(`Exportación R3ZON ANTARES — ${fecha}\nFormato: JSON.\n`);
       const zip = zipSync(archivos);
-      descargarBlob(new Blob([zip.buffer as ArrayBuffer], { type: "application/zip" }), `r3zon-mis-datos-${fecha}.zip`);
+      descargarBlob(
+        new Blob([zip.buffer as ArrayBuffer], { type: "application/zip" }),
+        `r3zon-mis-datos-${fecha}.zip`,
+      );
       flash({ kind: "ok", msg: "Exportación completada." });
     } catch {
       flash({ kind: "err", msg: "No se pudo generar el ZIP." });
@@ -71,7 +70,7 @@ export function DatosTab() {
     setExportandoZip(false);
   };
 
-  const exportarCSV = async (key: typeof RECURSOS_EXPORT[number]["key"]) => {
+  const exportarCSV = async (key: (typeof RECURSOS_EXPORT)[number]["key"]) => {
     const meta = RECURSOS_EXPORT.find((r) => r.key === key)!;
     setExportandoCSV(key);
     const { data, error } = await supabase.from(meta.tabla).select("*");
@@ -80,7 +79,10 @@ export function DatosTab() {
       setExportandoCSV(null);
       return;
     }
-    descargarCSV(data as Record<string, unknown>[], `${meta.key}-${new Date().toISOString().slice(0, 10)}.csv`);
+    descargarCSV(
+      data as Record<string, unknown>[],
+      `${meta.key}-${new Date().toISOString().slice(0, 10)}.csv`,
+    );
     setExportandoCSV(null);
   };
 
@@ -95,9 +97,9 @@ export function DatosTab() {
       const errores: string[] = [];
 
       const tablasImportables: Record<string, string> = {
-        clientes:       "clientes",
-        finanzas:       "finanzas",
-        tareas:         "tareas_kanban",
+        clientes: "clientes",
+        finanzas: "finanzas",
+        tareas: "tareas_kanban",
         comunicaciones: "comunicaciones",
       };
 
@@ -127,7 +129,10 @@ export function DatosTab() {
       }
 
       if (errores.length > 0) {
-        flash({ kind: "err", msg: `Importación parcial (${totalInsertados} filas). ${errores[0]}` });
+        flash({
+          kind: "err",
+          msg: `Importación parcial (${totalInsertados} filas). ${errores[0]}`,
+        });
       } else {
         flash({ kind: "ok", msg: `${totalInsertados} filas importadas correctamente.` });
       }
@@ -148,7 +153,8 @@ export function DatosTab() {
       const cabeceras = Object.keys(filas[0]);
       let tabla = "clientes";
       if (cabeceras.includes("importe") || cabeceras.includes("monto")) tabla = "finanzas";
-      else if (cabeceras.includes("titulo") && !cabeceras.includes("nombre")) tabla = "tareas_kanban";
+      else if (cabeceras.includes("titulo") && !cabeceras.includes("nombre"))
+        tabla = "tareas_kanban";
 
       // Sanea columnas no esperables.
       const limpias = filas.map((f) => {
@@ -192,9 +198,9 @@ export function DatosTab() {
       <div className="card-glass p-5 sm:p-7">
         <div className="section-label mb-2">Exportación completa (RGPD)</div>
         <p className="mb-4 text-xs text-text-mid">
-          Descarga un archivo ZIP con todos los datos del negocio en formato JSON.
-          Incluye clientes, finanzas, tareas, documentos, citas, comunicaciones y
-          consentimientos.           Sirve como copia de seguridad.
+          Descarga un archivo ZIP con todos los datos del negocio en formato JSON. Incluye clientes,
+          finanzas, tareas, documentos, citas, comunicaciones y consentimientos. Sirve como copia de
+          seguridad.
         </p>
         <button
           type="button"
@@ -202,9 +208,15 @@ export function DatosTab() {
           disabled={exportandoZip}
           className="flex items-center gap-2 rounded-xl border border-cyan/40 bg-cyan/10 px-4 py-2.5 text-sm font-semibold text-cyan hover:bg-cyan/20 disabled:opacity-50"
         >
-          {exportandoZip
-            ? <><Loader2 className="animate-spin" size={15} /> Generando ZIP…</>
-            : <><Archive size={15} /> Exportar ZIP completo</>}
+          {exportandoZip ? (
+            <>
+              <Loader2 className="animate-spin" size={15} /> Generando ZIP…
+            </>
+          ) : (
+            <>
+              <Archive size={15} /> Exportar ZIP completo
+            </>
+          )}
         </button>
       </div>
 
@@ -212,8 +224,8 @@ export function DatosTab() {
       <div className="card-glass p-5 sm:p-7">
         <div className="section-label mb-2">Exportar por recurso (CSV)</div>
         <p className="mb-4 text-xs text-text-mid">
-          Descarga cada tabla individualmente en CSV. Útil para importar en Excel,
-          Google Sheets o contabilidades externas.
+          Descarga cada tabla individualmente en CSV. Útil para importar en Excel, Google Sheets o
+          contabilidades externas.
         </p>
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {RECURSOS_EXPORT.map((r) => (
@@ -224,8 +236,14 @@ export function DatosTab() {
               disabled={exportandoCSV === r.key}
               className="flex items-center justify-between gap-2 rounded-xl border border-indigo-400/25 bg-indigo-900/30 px-3 py-2.5 text-sm text-text-hi transition hover:border-cyan/40 hover:text-cyan disabled:opacity-50"
             >
-              <span className="flex items-center gap-2"><FileSpreadsheet size={14} /> {r.label}</span>
-              {exportandoCSV === r.key ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
+              <span className="flex items-center gap-2">
+                <FileSpreadsheet size={14} /> {r.label}
+              </span>
+              {exportandoCSV === r.key ? (
+                <Loader2 size={13} className="animate-spin" />
+              ) : (
+                <Download size={13} />
+              )}
             </button>
           ))}
         </div>
@@ -237,9 +255,9 @@ export function DatosTab() {
         <div className="mb-4 flex items-start gap-2 rounded-xl border border-amber-400/30 bg-amber-500/5 p-3 text-xs text-amber-200">
           <Info size={14} className="mt-0.5 shrink-0" />
           <div>
-            Las importaciones añaden filas, <strong>no sobrescriben</strong>. Si
-            importas un export anterior, podrías duplicar registros. Para
-            migraciones grandes, revisa primero un fragmento.
+            Las importaciones añaden filas, <strong>no sobrescriben</strong>. Si importas un export
+            anterior, podrías duplicar registros. Para migraciones grandes, revisa primero un
+            fragmento.
           </div>
         </div>
 
@@ -249,19 +267,28 @@ export function DatosTab() {
               <FileJson size={15} className="text-fuchsia" /> JSON
             </div>
             <p className="mb-3 text-xs text-text-mid">
-              Restaura desde un archivo generado por ANTARES. Acepta tanto el JSON
-              individual de una tabla como el agrupado (`{`{clientes:[...], ...}`}`).
+              Restaura desde un archivo generado por ANTARES. Acepta tanto el JSON individual de una
+              tabla como el agrupado (`{`{clientes:[...], ...}`}`).
             </p>
             <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-fuchsia/40 bg-fuchsia/10 px-3 py-2 text-xs font-semibold text-fuchsia hover:bg-fuchsia/20">
-              {importandoJSON
-                ? <><Loader2 size={13} className="animate-spin" /> Importando…</>
-                : <><Upload size={13} /> Seleccionar JSON</>}
+              {importandoJSON ? (
+                <>
+                  <Loader2 size={13} className="animate-spin" /> Importando…
+                </>
+              ) : (
+                <>
+                  <Upload size={13} /> Seleccionar JSON
+                </>
+              )}
               <input
                 ref={refJson}
                 type="file"
                 accept="application/json,.json"
                 hidden
-                onChange={(e) => { const f = e.target.files?.[0]; if (f) void importarJSON(f); }}
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) void importarJSON(f);
+                }}
               />
             </label>
           </div>
@@ -271,19 +298,28 @@ export function DatosTab() {
               <FileSpreadsheet size={15} className="text-cyan" /> CSV / hoja de cálculo
             </div>
             <p className="mb-3 text-xs text-text-mid">
-              Acepta CSV con separador <code>,</code> o <code>;</code>. La tabla
-              destino se infiere de las cabeceras (clientes, finanzas, tareas).
+              Acepta CSV con separador <code>,</code> o <code>;</code>. La tabla destino se infiere
+              de las cabeceras (clientes, finanzas, tareas).
             </p>
             <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-cyan/40 bg-cyan/10 px-3 py-2 text-xs font-semibold text-cyan hover:bg-cyan/20">
-              {importandoCSV
-                ? <><Loader2 size={13} className="animate-spin" /> Importando…</>
-                : <><Upload size={13} /> Seleccionar CSV</>}
+              {importandoCSV ? (
+                <>
+                  <Loader2 size={13} className="animate-spin" /> Importando…
+                </>
+              ) : (
+                <>
+                  <Upload size={13} /> Seleccionar CSV
+                </>
+              )}
               <input
                 ref={refCsv}
                 type="file"
                 accept=".csv,text/csv"
                 hidden
-                onChange={(e) => { const f = e.target.files?.[0]; if (f) void importarCSV(f); }}
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) void importarCSV(f);
+                }}
               />
             </label>
           </div>

@@ -1,15 +1,15 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import { Activity, AlertTriangle, Building2, Calendar, RefreshCcw, Wallet } from "lucide-react";
-import { PageHeader } from "@/components/ui/PageHeader";
+import dynamic from "next/dynamic";
 import { KpiCard } from "@/components/dashboard/KpiCard";
-import { UpcomingAppointments } from "@/components/dashboard/UpcomingAppointments";
 import { PendingTasks } from "@/components/dashboard/PendingTasks";
-import { RecentClients } from "@/components/dashboard/RecentClients";
 import { RecentActivity } from "@/components/dashboard/RecentActivity";
-import { useDashboardData } from "@/lib/useDashboardData";
+import { RecentClients } from "@/components/dashboard/RecentClients";
+import { UpcomingAppointments } from "@/components/dashboard/UpcomingAppointments";
+import { PageHeader } from "@/components/ui/PageHeader";
 import { eur } from "@/lib/finanzas";
+import { useDashboardData } from "@/lib/useDashboardData";
 
 // Recharts (~95 KB gz) se difiere para que no entre en el initial JS de la home.
 const FinanceSummary = dynamic(
@@ -26,7 +26,7 @@ const FinanceSummary = dynamic(
 
 function saludo() {
   const h = new Date().getHours();
-  if (h < 6)  return "Buenas noches";
+  if (h < 6) return "Buenas noches";
   if (h < 13) return "Buenos días";
   if (h < 21) return "Buenas tardes";
   return "Buenas noches";

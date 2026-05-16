@@ -1,11 +1,11 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
   calcularTotales,
   eur,
+  type LineaDocumento,
   lineaVacia,
   referenciaDocumento,
   validarParaGenerar,
-  type LineaDocumento,
 } from "@/lib/documentos";
 
 const linea = (over: Partial<LineaDocumento> = {}): LineaDocumento => ({
@@ -47,7 +47,7 @@ describe("calcularTotales", () => {
     const r = calcularTotales([
       linea({ cantidad: 1, precio_unit: 100, iva_pct: 21 }),
       linea({ cantidad: 1, precio_unit: 100, iva_pct: 10 }),
-      linea({ cantidad: 2, precio_unit: 50,  iva_pct: 21 }),
+      linea({ cantidad: 2, precio_unit: 50, iva_pct: 21 }),
     ]);
     expect(r.subtotal).toBe(300);
     expect(r.iva_total).toBe(21 + 10 + 21);
@@ -58,14 +58,11 @@ describe("calcularTotales", () => {
   });
 
   it("retiene IRPF sobre la base imponible (no sobre el total)", () => {
-    const r = calcularTotales(
-      [linea({ cantidad: 1, precio_unit: 1000, iva_pct: 21 })],
-      15,
-    );
+    const r = calcularTotales([linea({ cantidad: 1, precio_unit: 1000, iva_pct: 21 })], 15);
     expect(r.base_imponible).toBe(1000);
     expect(r.iva_total).toBe(210);
-    expect(r.irpf_total).toBe(150);   // 1000 × 15 %
-    expect(r.total).toBe(1060);       // 1000 + 210 − 150
+    expect(r.irpf_total).toBe(150); // 1000 × 15 %
+    expect(r.total).toBe(1060); // 1000 + 210 − 150
   });
 
   it("trata valores no numéricos como cero", () => {
@@ -96,9 +93,7 @@ describe("referenciaDocumento", () => {
   it("produce el mismo formato que la columna generada", () => {
     expect(referenciaDocumento("factura", "A", 2026, 7)).toBe("factura-A-2026-00007");
     expect(referenciaDocumento("ticket", "B", 2025, null)).toBe("ticket-B-2025-00000");
-    expect(referenciaDocumento("presupuesto", "A", 2026, 12345)).toBe(
-      "presupuesto-A-2026-12345",
-    );
+    expect(referenciaDocumento("presupuesto", "A", 2026, 12345)).toBe("presupuesto-A-2026-12345");
   });
 });
 

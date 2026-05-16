@@ -20,13 +20,12 @@ export function useNegocioId(): string | null {
     let alive = true;
     (async () => {
       const supabase = createClient();
-      const { data } = await supabase
-        .from("perfiles_negocio")
-        .select("id")
-        .single();
+      const { data } = await supabase.from("perfiles_negocio").select("id").single();
       if (alive) setId((data?.id as string | undefined) ?? null);
     })();
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+    };
   }, []);
 
   return id;

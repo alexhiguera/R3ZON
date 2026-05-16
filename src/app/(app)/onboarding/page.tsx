@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { CheckCircle, Loader2, ShieldCheck } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 const VERSION = "2026-04-28";
@@ -52,9 +52,7 @@ export default function OnboardingPage() {
       // Defensa en profundidad: el botón ya está deshabilitado, pero si por
       // accesibilidad alguien lo activa con teclado bloqueamos aquí también.
       setError(
-        `Para activar tu cuenta debes aceptar: ${faltantes
-          .map((f) => f.label)
-          .join(", ")}.`,
+        `Para activar tu cuenta debes aceptar: ${faltantes.map((f) => f.label).join(", ")}.`,
       );
       return;
     }
@@ -82,13 +80,11 @@ export default function OnboardingPage() {
         <div className="rainbow-bar" />
         <div className="p-6 sm:p-8">
           <div className="section-label mb-2">Bienvenida · paso 1 de 1</div>
-          <h1 className="font-display text-2xl font-bold sm:text-3xl">
-            Antes de empezar
-          </h1>
+          <h1 className="font-display text-2xl font-bold sm:text-3xl">Antes de empezar</h1>
           <div className="accent-bar mt-3" />
           <p className="mt-3 text-sm text-text-mid">
-            ANTARES cumple con el <b>RGPD</b> y la <b>LOPDGDD</b>. Para activar tu
-            cuenta necesitamos tu consentimiento explícito.
+            ANTARES cumple con el <b>RGPD</b> y la <b>LOPDGDD</b>. Para activar tu cuenta
+            necesitamos tu consentimiento explícito.
           </p>
 
           <div className="mt-6 flex flex-col gap-3">
@@ -131,7 +127,9 @@ export default function OnboardingPage() {
 
           {!todoAceptado && !error && (
             <div className="mt-4 rounded-lg border border-warn/30 bg-warn/10 px-3 py-2 text-xs text-warn">
-              Marca las {faltantes.length} casilla{faltantes.length === 1 ? "" : "s"} obligatoria{faltantes.length === 1 ? "" : "s"} pendiente{faltantes.length === 1 ? "" : "s"} para continuar.
+              Marca las {faltantes.length} casilla{faltantes.length === 1 ? "" : "s"} obligatoria
+              {faltantes.length === 1 ? "" : "s"} pendiente{faltantes.length === 1 ? "" : "s"} para
+              continuar.
             </div>
           )}
 
@@ -141,17 +139,13 @@ export default function OnboardingPage() {
             disabled={!todoAceptado || loading}
             className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan to-fuchsia text-sm font-bold text-bg transition-all hover:opacity-95 active:scale-[0.99] disabled:opacity-40"
           >
-            {loading ? (
-              <Loader2 className="animate-spin" size={16} />
-            ) : (
-              <CheckCircle size={16} />
-            )}
+            {loading ? <Loader2 className="animate-spin" size={16} /> : <CheckCircle size={16} />}
             Aceptar y continuar
           </button>
 
           <p className="mt-4 flex items-center justify-center gap-1.5 text-[0.7rem] text-text-lo">
-            <ShieldCheck size={11} /> Tu consentimiento se registra con sello de
-            tiempo, IP y versión legal {VERSION}.
+            <ShieldCheck size={11} /> Tu consentimiento se registra con sello de tiempo, IP y
+            versión legal {VERSION}.
           </p>
         </div>
       </div>

@@ -1,16 +1,16 @@
 "use client";
 
 import {
-  BarChart,
   Bar,
-  LineChart,
+  BarChart,
+  CartesianGrid,
+  Legend,
   Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
 } from "recharts";
 import { useThemeColors } from "@/lib/theme/useThemeColors";
 
@@ -34,18 +34,14 @@ export function MonthlyBars({
         />
         <Tooltip content={<CustomTooltip />} cursor={{ fill: c.cursorBg }} />
         <Legend wrapperStyle={{ fontSize: 12, color: c.indigo300, paddingTop: 8 }} />
-        <Bar dataKey="ganado"  name="Lo que has ganado"   fill={c.cyan}    radius={[6, 6, 0, 0]} />
+        <Bar dataKey="ganado" name="Lo que has ganado" fill={c.cyan} radius={[6, 6, 0, 0]} />
         <Bar dataKey="gastado" name="Lo que has gastado" fill={c.fuchsia} radius={[6, 6, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>
   );
 }
 
-export function TaxLine({
-  data,
-}: {
-  data: { mes: string; iva: number; irpf: number }[];
-}) {
+export function TaxLine({ data }: { data: { mes: string; iva: number; irpf: number }[] }) {
   const c = useThemeColors();
   const axis = { fill: c.axis, fontSize: 11 };
   return (

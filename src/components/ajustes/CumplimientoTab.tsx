@@ -1,22 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
 import {
-  ShieldCheck,
-  FileText,
+  AlertCircle,
+  Ban,
+  CheckCircle2,
   Cookie,
+  ExternalLink,
+  FileText,
+  Loader2,
   Scale,
   ScrollText,
-  Loader2,
-  CheckCircle2,
-  AlertCircle,
-  ExternalLink,
-  Ban,
+  ShieldCheck,
 } from "lucide-react";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { createClient } from "@/lib/supabase/client";
 import { formatSupabaseError } from "@/lib/supabase-errors";
-import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { ExportarDatosButton } from "./ExportarDatosButton";
 
 type Vigente = {
@@ -124,9 +124,8 @@ export function CumplimientoTab() {
       <div className="card-glass p-5 sm:p-7">
         <div className="section-label mb-4">Documentos legales</div>
         <p className="mb-4 text-xs text-text-mid">
-          Enlaces públicos a los documentos que rigen el servicio. Cualquier
-          actualización queda registrada con número de versión y fecha de
-          publicación.
+          Enlaces públicos a los documentos que rigen el servicio. Cualquier actualización queda
+          registrada con número de versión y fecha de publicación.
         </p>
         <div className="grid gap-3 sm:grid-cols-2">
           {DOCS.map(({ href, label, desc, Icon }) => (
@@ -142,10 +141,7 @@ export function CumplimientoTab() {
               <div className="flex-1">
                 <div className="flex items-center gap-1.5 font-semibold text-text-hi">
                   {label}
-                  <ExternalLink
-                    size={12}
-                    className="text-text-lo group-hover:text-cyan"
-                  />
+                  <ExternalLink size={12} className="text-text-lo group-hover:text-cyan" />
                 </div>
                 <p className="mt-1 text-xs text-text-mid">{desc}</p>
               </div>
@@ -157,9 +153,9 @@ export function CumplimientoTab() {
       <div className="card-glass p-5 sm:p-7">
         <div className="section-label mb-4">Consentimientos registrados</div>
         <p className="mb-4 text-xs text-text-mid">
-          Registro de los consentimientos aceptados por el titular del negocio
-          durante el onboarding. Cada entrada incluye versión del documento,
-          fecha y firma de evidencia (IP y user agent).
+          Registro de los consentimientos aceptados por el titular del negocio durante el
+          onboarding. Cada entrada incluye versión del documento, fecha y firma de evidencia (IP y
+          user agent).
         </p>
 
         {loading ? (
@@ -179,9 +175,7 @@ export function CumplimientoTab() {
               >
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="font-semibold capitalize text-text-hi">
-                      {r.tipo}
-                    </span>
+                    <span className="font-semibold capitalize text-text-hi">{r.tipo}</span>
                     {r.vigente ? (
                       <span className="rounded-full border border-emerald-400/40 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-200">
                         Vigente
@@ -223,10 +217,9 @@ export function CumplimientoTab() {
       <div className="card-glass p-5 sm:p-7">
         <div className="section-label mb-2">Portabilidad de datos</div>
         <p className="mb-4 text-xs text-text-mid">
-          Descarga un ZIP con todos tus datos personales (Art. 20 RGPD). El
-          archivo incluye un JSON por recurso (clientes, citas, tareas,
-          finanzas, documentos, comunicaciones, perfil y consentimientos) y un
-          README con la lista de archivos, la fecha de generación y un resumen
+          Descarga un ZIP con todos tus datos personales (Art. 20 RGPD). El archivo incluye un JSON
+          por recurso (clientes, citas, tareas, finanzas, documentos, comunicaciones, perfil y
+          consentimientos) y un README con la lista de archivos, la fecha de generación y un resumen
           de tus derechos.
         </p>
         <ExportarDatosButton />

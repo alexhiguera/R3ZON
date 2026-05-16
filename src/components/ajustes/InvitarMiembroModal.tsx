@@ -1,20 +1,24 @@
 "use client";
 
+import { AlertCircle, Loader2, Send, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import { X, Loader2, Send, AlertCircle } from "lucide-react";
 import { z } from "zod";
 
 const schema = z.object({
-  email:  z.string().trim().toLowerCase().email("Email inválido"),
+  email: z.string().trim().toLowerCase().email("Email inválido"),
   nombre: z.string().trim().max(120).optional(),
-  rol:    z.enum(["admin", "editor", "lector"]),
+  rol: z.enum(["admin", "editor", "lector"]),
 });
 
 type Form = z.input<typeof schema>;
 
 const ROLES: { value: Form["rol"]; label: string; desc: string }[] = [
-  { value: "admin",  label: "Admin",  desc: "Acceso total. Puede invitar, configurar e integrar." },
-  { value: "editor", label: "Editor", desc: "Puede crear y editar clientes, citas, tareas y finanzas." },
+  { value: "admin", label: "Admin", desc: "Acceso total. Puede invitar, configurar e integrar." },
+  {
+    value: "editor",
+    label: "Editor",
+    desc: "Puede crear y editar clientes, citas, tareas y finanzas.",
+  },
   { value: "lector", label: "Lector", desc: "Sólo lectura. No puede modificar datos." },
 ];
 
@@ -27,10 +31,10 @@ export function InvitarMiembroModal({
   onClose: () => void;
   onInvited: () => void;
 }) {
-  const [form, setForm]       = useState<Form>({ email: "", nombre: "", rol: "lector" });
-  const [acepta, setAcepta]   = useState(false);
-  const [errors, setErrors]   = useState<Partial<Record<keyof Form, string>>>({});
-  const [busy, setBusy]       = useState(false);
+  const [form, setForm] = useState<Form>({ email: "", nombre: "", rol: "lector" });
+  const [acepta, setAcepta] = useState(false);
+  const [errors, setErrors] = useState<Partial<Record<keyof Form, string>>>({});
+  const [busy, setBusy] = useState(false);
   const [apiError, setApiErr] = useState<string | null>(null);
 
   useEffect(() => {
@@ -160,11 +164,21 @@ export function InvitarMiembroModal({
             />
             <span className="text-xs text-text-mid">
               Confirmo que el miembro <strong className="text-text-hi">aceptará</strong> nuestra{" "}
-              <a href="/legal/privacidad" target="_blank" className="text-cyan hover:underline">
+              <a
+                href="/legal/privacidad"
+                target="_blank"
+                className="text-cyan hover:underline"
+                rel="noopener"
+              >
                 política de privacidad
               </a>{" "}
               y los{" "}
-              <a href="/legal/terminos" target="_blank" className="text-cyan hover:underline">
+              <a
+                href="/legal/terminos"
+                target="_blank"
+                className="text-cyan hover:underline"
+                rel="noopener"
+              >
                 términos de uso
               </a>{" "}
               al activar su cuenta. La aceptación quedará registrada con timestamp y versión.

@@ -1,8 +1,8 @@
 "use client";
 
-import { Loader2, RotateCcw, CheckCircle2, AlertCircle } from "lucide-react";
+import { AlertCircle, CheckCircle2, Loader2, RotateCcw } from "lucide-react";
 import { useThemeEngine } from "@/lib/theme/ThemeProvider";
-import { themeSchema, type SchemaControl } from "@/lib/theme/theme";
+import { type SchemaControl, themeSchema } from "@/lib/theme/theme";
 
 function Segmented({
   value,
@@ -80,13 +80,7 @@ function PresetGrid({
   );
 }
 
-function ColorPicker({
-  value,
-  onChange,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-}) {
+function ColorPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
     <div className="flex items-center gap-1.5">
       <input
@@ -138,7 +132,8 @@ export function AparienciaTab() {
         <div>
           <h2 className="text-lg font-semibold text-text-hi">Apariencia</h2>
           <p className="mt-1 text-xs text-text-mid">
-            Personaliza tema, tipografía y colores. Los cambios se guardan automáticamente y se aplican solo a tu usuario.
+            Personaliza tema, tipografía y colores. Los cambios se guardan automáticamente y se
+            aplican solo a tu usuario.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -180,12 +175,15 @@ export function AparienciaTab() {
 
           // Para agrupar visualmente, los colores con id "doc.*" se rinden
           // bajo un encabezado "Documentos"; el resto van juntos en otro bloque.
-          const grupoDe = (c: SchemaControl) =>
-            c.id.startsWith("doc.") ? "doc" : "base";
+          const grupoDe = (c: SchemaControl) => (c.id.startsWith("doc.") ? "doc" : "base");
 
           const bloques: Array<
             | { kind: "single"; control: SchemaControl }
-            | { kind: "colors"; grupo: "doc" | "base"; controls: Extract<SchemaControl, { type: "color" }>[] }
+            | {
+                kind: "colors";
+                grupo: "doc" | "base";
+                controls: Extract<SchemaControl, { type: "color" }>[];
+              }
           > = [];
           for (const c of visibles) {
             if (c.type === "color") {
@@ -252,11 +250,7 @@ export function AparienciaTab() {
                 )}
 
                 {c.type === "preset" && (
-                  <PresetGrid
-                    value={theme[c.id]}
-                    control={c}
-                    onChange={(v) => setField(c.id, v)}
-                  />
+                  <PresetGrid value={theme[c.id]} control={c} onChange={(v) => setField(c.id, v)} />
                 )}
 
                 {c.type === "font" && (
@@ -271,7 +265,6 @@ export function AparienciaTab() {
           });
         })()}
       </div>
-
     </div>
   );
 }

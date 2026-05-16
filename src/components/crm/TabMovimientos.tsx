@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Calendar, Euro, Loader2, Plus, Wallet } from "lucide-react";
 import Link from "next/link";
-import { Wallet, Plus, Loader2, Euro, Calendar } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
+import { useEffect, useState } from "react";
 import { Tooltip } from "@/components/ui/Tooltip";
+import { createClient } from "@/lib/supabase/client";
 
 type Movimiento = {
   id: string;
@@ -17,9 +17,9 @@ type Movimiento = {
 };
 
 const ESTADO_PAGO: Record<string, string> = {
-  pagado:    "border-ok/30 bg-ok/10 text-ok",
+  pagado: "border-ok/30 bg-ok/10 text-ok",
   pendiente: "border-warn/30 bg-warn/10 text-warn",
-  vencido:   "border-danger/30 bg-danger/10 text-danger",
+  vencido: "border-danger/30 bg-danger/10 text-danger",
 };
 
 export function TabMovimientos({
@@ -58,9 +58,7 @@ export function TabMovimientos({
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
           <div className="section-label mb-0.5">Movimientos financieros</div>
-          <p className="text-xs text-text-mid">
-            Ingresos y gastos asociados a {clienteNombre}.
-          </p>
+          <p className="text-xs text-text-mid">Ingresos y gastos asociados a {clienteNombre}.</p>
         </div>
         <Tooltip text="Registrar un nuevo movimiento para este cliente." side="left">
           <Link
@@ -94,18 +92,14 @@ export function TabMovimientos({
                 <Euro size={15} />
               </span>
               <div className="min-w-0 flex-1">
-                <div className="truncate text-sm font-semibold text-text-hi">
-                  {m.concepto}
-                </div>
+                <div className="truncate text-sm font-semibold text-text-hi">{m.concepto}</div>
                 <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-text-lo">
                   <span className="capitalize">{m.tipo}</span>
                   <span className="flex items-center gap-1">
                     <Calendar size={10} />
                     {new Date(m.fecha).toLocaleDateString("es-ES")}
                   </span>
-                  {m.numero_factura && (
-                    <span className="font-mono">{m.numero_factura}</span>
-                  )}
+                  {m.numero_factura && <span className="font-mono">{m.numero_factura}</span>}
                 </div>
               </div>
               <div className="flex shrink-0 flex-col items-end gap-1">

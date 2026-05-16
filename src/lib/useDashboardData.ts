@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { DashboardTask } from "@/components/dashboard/PendingTasks";
+import type { DashboardActivityItem } from "@/components/dashboard/RecentActivity";
+import type { DashboardCliente } from "@/components/dashboard/RecentClients";
+import { type AgendaEventoRow, listEvents } from "@/lib/agenda";
+import type { MovimientoFila } from "@/lib/finanzas";
 import { createClient } from "@/lib/supabase/client";
 import { useNegocioId } from "@/lib/useNegocioId";
-import { listEvents, type AgendaEventoRow } from "@/lib/agenda";
-import type { MovimientoFila } from "@/lib/finanzas";
-import type { DashboardTask } from "@/components/dashboard/PendingTasks";
-import type { DashboardCliente } from "@/components/dashboard/RecentClients";
-import type { DashboardActivityItem } from "@/components/dashboard/RecentActivity";
 
 export type DashboardKpis = {
   clientesTotal: number;
@@ -67,7 +67,14 @@ export function useDashboardData(): DashboardData {
       const inicioAnio = new Date(now.getFullYear(), 0, 1).toISOString();
       const finAnio = new Date(now.getFullYear(), 11, 31, 23, 59, 59).toISOString();
       const inicioHoy = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-      const finHoy = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59).toISOString();
+      const finHoy = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate(),
+        23,
+        59,
+        59,
+      ).toISOString();
       const enSieteDias = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString();
       const hoyISO = now.toISOString();
 
@@ -105,7 +112,9 @@ export function useDashboardData(): DashboardData {
             .neq("estado", "cancelada"),
           supabase
             .from("agenda_eventos")
-            .select("id,title,description,start_time,end_time,color,estado,google_event_id,google_calendar_id,cliente_id,ubicacion")
+            .select(
+              "id,title,description,start_time,end_time,color,estado,google_event_id,google_calendar_id,cliente_id,ubicacion",
+            )
             .gte("start_time", hoyISO)
             .neq("estado", "cancelada")
             .order("start_time", { ascending: true })
@@ -116,11 +125,7 @@ export function useDashboardData(): DashboardData {
             .select("tipo, fecha, base_imponible, iva_importe, irpf_importe, total")
             .gte("fecha", inicioAnio)
             .lte("fecha", finAnio),
-          supabase
-            .from("finanzas")
-            .select("total")
-            .eq("tipo", "ingreso")
-            .gte("fecha", inicioMes),
+          supabase.from("finanzas").select("total").eq("tipo", "ingreso").gte("fecha", inicioMes),
           supabase
             .from("finanzas")
             .select("total")
@@ -157,14 +162,16 @@ export function useDashboardData(): DashboardData {
 
         const proximaCita = (proximaCitaRes.data?.[0] as AgendaEventoRow | undefined) ?? null;
 
-        const actividad: DashboardActivityItem[] = ((actividadRes.data ?? []) as Array<{
-          id: string;
-          tipo: string;
-          asunto: string | null;
-          contenido: string | null;
-          created_at: string;
-          clientes?: { nombre: string | null } | { nombre: string | null }[] | null;
-        }>).map((row) => {
+        const actividad: DashboardActivityItem[] = (
+          (actividadRes.data ?? []) as Array<{
+            id: string;
+            tipo: string;
+            asunto: string | null;
+            contenido: string | null;
+            created_at: string;
+            clientes?: { nombre: string | null } | { nombre: string | null }[] | null;
+          }>
+        ).map((row) => {
           const cli = Array.isArray(row.clientes) ? row.clientes[0] : row.clientes;
           return {
             id: row.id,

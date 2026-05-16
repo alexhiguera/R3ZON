@@ -10,17 +10,17 @@
 
 import "server-only";
 import { randomBytes, randomUUID } from "node:crypto";
-import { createAdminClient } from "@/lib/supabase/admin";
 import {
+  type AdminTokens,
   googleFetchAdmin,
   loadTokensFor,
   persistSyncTokenFor,
-  type AdminTokens,
 } from "@/lib/google-admin";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 const CALENDAR_ID = "primary";
 const WATCH_RENEW_THRESHOLD_MS = 24 * 60 * 60 * 1000;
-const WATCH_REQUEST_TTL_MS     = 6 * 24 * 60 * 60 * 1000;
+const WATCH_REQUEST_TTL_MS = 6 * 24 * 60 * 60 * 1000;
 
 type GoogleCalendarEventLite = {
   id: string;
@@ -31,7 +31,7 @@ type GoogleCalendarEventLite = {
   colorId?: string;
   etag?: string;
   start?: { dateTime?: string; date?: string };
-  end?:   { dateTime?: string; date?: string };
+  end?: { dateTime?: string; date?: string };
 };
 
 type GoogleEventsList = {
@@ -43,7 +43,7 @@ type GoogleEventsList = {
 function toIso(g?: { dateTime?: string; date?: string }): string | null {
   if (!g) return null;
   if (g.dateTime) return new Date(g.dateTime).toISOString();
-  if (g.date)     return new Date(`${g.date}T00:00:00Z`).toISOString();
+  if (g.date) return new Date(`${g.date}T00:00:00Z`).toISOString();
   return null;
 }
 
@@ -55,7 +55,7 @@ function mapStatus(s: GoogleCalendarEventLite["status"]): "confirmada" | "tentat
 
 export async function syncGoogleCalendarFor(userId: string): Promise<{
   inserted: number;
-  updated:  number;
+  updated: number;
   cancelled: number;
 }> {
   const tokens: AdminTokens | null = await loadTokensFor(userId);
@@ -66,7 +66,7 @@ export async function syncGoogleCalendarFor(userId: string): Promise<{
 
   const params = new URLSearchParams();
   params.set("singleEvents", "true");
-  params.set("maxResults",   "250");
+  params.set("maxResults", "250");
 
   if (tokens.sync_token) {
     params.set("syncToken", tokens.sync_token);
@@ -75,14 +75,15 @@ export async function syncGoogleCalendarFor(userId: string): Promise<{
     params.set("orderBy", "updated");
   }
 
-  let inserted  = 0;
-  let updated   = 0;
+  let inserted = 0;
+  let updated = 0;
   let cancelled = 0;
   let nextSyncToken: string | null = null;
   let pageToken: string | undefined;
 
   do {
-    if (pageToken) params.set("pageToken", pageToken); else params.delete("pageToken");
+    if (pageToken) params.set("pageToken", pageToken);
+    else params.delete("pageToken");
 
     let res = await googleFetchAdmin(
       userId,
@@ -108,9 +109,9 @@ export async function syncGoogleCalendarFor(userId: string): Promise<{
       throw new Error(`Google Calendar list (admin) failed: ${res.status}`);
     }
 
-    const page = await res.json() as GoogleEventsList;
+    const page = (await res.json()) as GoogleEventsList;
     nextSyncToken = page.nextSyncToken ?? nextSyncToken;
-    pageToken     = page.nextPageToken;
+    pageToken = page.nextPageToken;
 
     const items = page.items ?? [];
     if (items.length === 0) continue;
@@ -126,23 +127,23 @@ export async function syncGoogleCalendarFor(userId: string): Promise<{
     const rows = items
       .map((ev) => {
         const start = toIso(ev.start);
-        const end   = toIso(ev.end);
+        const end = toIso(ev.end);
         if (!start || !end) return null;
         const status = mapStatus(ev.status);
         if (status === "cancelada") cancelled++;
         return {
-          negocio_id:         negocioId,
-          google_event_id:    ev.id,
+          negocio_id: negocioId,
+          google_event_id: ev.id,
           google_calendar_id: CALENDAR_ID,
-          google_etag:        ev.etag ?? null,
-          title:              ev.summary ?? "(sin título)",
-          description:        ev.description ?? null,
-          ubicacion:          ev.location ?? null,
-          start_time:         start,
-          end_time:           end,
-          color:              ev.colorId ?? null,
-          estado:             status,
-          last_synced_at:     new Date().toISOString(),
+          google_etag: ev.etag ?? null,
+          title: ev.summary ?? "(sin título)",
+          description: ev.description ?? null,
+          ubicacion: ev.location ?? null,
+          start_time: start,
+          end_time: end,
+          color: ev.colorId ?? null,
+          estado: status,
+          last_synced_at: new Date().toISOString(),
         };
       })
       .filter((r): r is NonNullable<typeof r> => r !== null);
@@ -181,17 +182,17 @@ async function registerCalendarWatchFor(userId: string): Promise<void> {
     throw new Error("GOOGLE_WEBHOOK_URL no configurada o no es HTTPS.");
   }
 
-  const channelId    = randomUUID();
+  const channelId = randomUUID();
   const channelToken = randomBytes(32).toString("base64url");
   const expirationMs = Date.now() + WATCH_REQUEST_TTL_MS;
 
   const res = await googleFetchAdmin(userId, `/calendars/primary/events/watch`, {
     method: "POST",
     body: JSON.stringify({
-      id:         channelId,
-      type:       "web_hook",
-      address:    webhookUrl,
-      token:      channelToken,
+      id: channelId,
+      type: "web_hook",
+      address: webhookUrl,
+      token: channelToken,
       expiration: String(expirationMs),
     }),
   });
@@ -201,7 +202,7 @@ async function registerCalendarWatchFor(userId: string): Promise<void> {
     throw new Error(`watch register admin ${res.status}: ${body.slice(0, 200)}`);
   }
 
-  const data = await res.json() as { id: string; resourceId: string; expiration?: string };
+  const data = (await res.json()) as { id: string; resourceId: string; expiration?: string };
   const expiration = data.expiration
     ? new Date(parseInt(data.expiration, 10))
     : new Date(expirationMs);
@@ -212,11 +213,11 @@ async function registerCalendarWatchFor(userId: string): Promise<void> {
   const { error } = await supabase
     .from("google_connections")
     .update({
-      channel_id:          data.id,
-      channel_token:       channelToken,
+      channel_id: data.id,
+      channel_token: channelToken,
       channel_resource_id: data.resourceId,
-      channel_expiration:  expiration.toISOString(),
-      updated_at:          new Date().toISOString(),
+      channel_expiration: expiration.toISOString(),
+      updated_at: new Date().toISOString(),
     })
     .eq("user_id", userId);
   if (error) throw new Error(`update watch channel admin: ${error.message}`);
@@ -247,7 +248,7 @@ export async function refreshExpiringWatchChannels(): Promise<{
 
   const rows = (data ?? []) as { user_id: string; channel_expiration: string | null }[];
   let renewed = 0;
-  let failed  = 0;
+  let failed = 0;
   const errors: { userId: string; error: string }[] = [];
 
   for (const row of rows) {
@@ -258,7 +259,7 @@ export async function refreshExpiringWatchChannels(): Promise<{
       failed++;
       errors.push({
         userId: row.user_id,
-        error:  err instanceof Error ? err.message : String(err),
+        error: err instanceof Error ? err.message : String(err),
       });
     }
   }

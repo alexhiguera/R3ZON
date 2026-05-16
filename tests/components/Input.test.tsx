@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it, vi } from "vitest";
+
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { Input, Select, Textarea, INPUT_CLS } from "@/components/ui/Input";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { INPUT_CLS, Input, Select, Textarea } from "@/components/ui/Input";
 
 afterEach(() => cleanup());
 

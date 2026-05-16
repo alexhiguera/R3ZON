@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
-import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 
 function Boom({ msg = "kaboom" }: { msg?: string }): React.ReactElement {

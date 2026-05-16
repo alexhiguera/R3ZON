@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Check, Copy, Loader2, ShieldCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { Loader2, ShieldCheck, Copy, Check } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
+import { useEffect, useState } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { createClient } from "@/lib/supabase/client";
 
 export default function Configurar2FA() {
   const supabase = createClient();
@@ -117,7 +117,11 @@ export default function Configurar2FA() {
                 disabled={loading || code.length !== 6}
                 className="flex h-12 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan to-fuchsia text-sm font-bold text-bg disabled:opacity-50"
               >
-                {loading ? <Loader2 className="animate-spin" size={16} /> : <ShieldCheck size={16} />}
+                {loading ? (
+                  <Loader2 className="animate-spin" size={16} />
+                ) : (
+                  <ShieldCheck size={16} />
+                )}
                 Activar 2FA
               </button>
             </form>

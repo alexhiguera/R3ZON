@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import { HelpCircle } from "lucide-react";
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -37,7 +37,7 @@ export function Tooltip({ text, children, side = "top", className }: Props) {
             "pointer-events-none absolute z-50 w-52 rounded-xl border border-indigo-400/25",
             "bg-[rgba(20,18,60,0.98)] px-3 py-2 text-xs leading-relaxed text-text-mid",
             "shadow-xl backdrop-blur-sm",
-            posClass
+            posClass,
           )}
         >
           {text}

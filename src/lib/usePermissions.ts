@@ -46,9 +46,9 @@ export type EstadoPermisos = {
 const PERMISOS_VACIOS: PermisosTabla = {};
 
 export function usePermissions(): EstadoPermisos {
-  const [loading, setLoading]   = useState(true);
-  const [nivel, setNivel]       = useState<NivelPermisos>("anon");
-  const [rol, setRol]           = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [nivel, setNivel] = useState<NivelPermisos>("anon");
+  const [rol, setRol] = useState<string | null>(null);
   const [permisos, setPermisos] = useState<PermisosTabla>(PERMISOS_VACIOS);
 
   useEffect(() => {
@@ -71,7 +71,9 @@ export function usePermissions(): EstadoPermisos {
       }
       setLoading(false);
     })();
-    return () => { cancelado = true; };
+    return () => {
+      cancelado = true;
+    };
   }, []);
 
   const esAdmin = nivel === "admin_global" || nivel === "owner";

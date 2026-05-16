@@ -1,15 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { ArrowRight, CalendarDays, Clock, Loader2, MapPin, User2 } from "lucide-react";
 import Link from "next/link";
-import {
-  CalendarDays,
-  Clock,
-  MapPin,
-  User2,
-  Loader2,
-  ArrowRight,
-} from "lucide-react";
+import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 type Row = {
@@ -23,9 +16,9 @@ type Row = {
 };
 
 const ESTADO_STYLE: Record<string, string> = {
-  tentativa:  "border-warn/30 bg-warn/10 text-warn",
+  tentativa: "border-warn/30 bg-warn/10 text-warn",
   confirmada: "border-cyan/30 bg-cyan/10 text-cyan",
-  cancelada:  "border-danger/30 bg-danger/10 text-danger",
+  cancelada: "border-danger/30 bg-danger/10 text-danger",
 };
 
 export function MisCitas() {
@@ -38,9 +31,7 @@ export function MisCitas() {
       const now = new Date().toISOString();
       const { data } = await supabase
         .from("agenda_eventos")
-        .select(
-          "id,title,start_time,end_time,ubicacion,estado,clientes(id,nombre)"
-        )
+        .select("id,title,start_time,end_time,ubicacion,estado,clientes(id,nombre)")
         .neq("estado", "cancelada")
         .gte("start_time", now)
         .order("start_time", { ascending: true })
@@ -54,9 +45,7 @@ export function MisCitas() {
     <div className="card-glass space-y-3 p-5">
       <div className="flex items-center gap-2">
         <CalendarDays size={16} className="text-cyan" />
-        <h2 className="font-display text-lg font-bold text-text-hi">
-          Mis próximas citas
-        </h2>
+        <h2 className="font-display text-lg font-bold text-text-hi">Mis próximas citas</h2>
         <Link
           href="/citas"
           className="ml-auto inline-flex items-center gap-1 text-[11px] font-semibold text-cyan hover:underline"
@@ -80,10 +69,7 @@ export function MisCitas() {
             const fin = new Date(c.end_time);
             const durMin = Math.max(1, Math.round((fin.getTime() - inicio.getTime()) / 60000));
             return (
-              <li
-                key={c.id}
-                className="flex items-start gap-3 bg-indigo-900/15 p-3"
-              >
+              <li key={c.id} className="flex items-start gap-3 bg-indigo-900/15 p-3">
                 <div className="flex w-12 shrink-0 flex-col items-center rounded-xl border border-indigo-400/15 bg-indigo-900/40 py-1.5 text-center">
                   <span className="text-[0.6rem] font-medium uppercase text-text-lo">
                     {inicio.toLocaleString("es-ES", { month: "short" })}
@@ -93,14 +79,13 @@ export function MisCitas() {
                   </span>
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-semibold text-text-hi">
-                    {c.title}
-                  </div>
+                  <div className="truncate text-sm font-semibold text-text-hi">{c.title}</div>
                   <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-text-lo">
                     <span className="flex items-center gap-1">
                       <Clock size={10} />
                       {inicio.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
-                      {" · "}{durMin} min
+                      {" · "}
+                      {durMin} min
                     </span>
                     {c.clientes && (
                       <Link

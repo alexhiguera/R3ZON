@@ -1,24 +1,19 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Users,
+  AlertTriangle,
+  ChevronDown,
+  ChevronRight,
   Clock,
   Loader2,
   Save,
   Target,
-  ChevronDown,
-  ChevronRight,
-  AlertTriangle,
+  Users,
 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useToast } from "@/components/ui/Toast";
-import {
-  type Fichaje,
-  calcularJornada,
-  fichajesDelDia,
-  formatearDuracion,
-} from "@/lib/fichajes";
+import { calcularJornada, type Fichaje, fichajesDelDia, formatearDuracion } from "@/lib/fichajes";
+import { createClient } from "@/lib/supabase/client";
 
 type Miembro = {
   user_id: string;
@@ -58,9 +53,7 @@ export function PanelAdmin({
   const supabase = useMemo(() => createClient(), []);
   const toast = useToast();
 
-  const [horasDefault, setHorasDefault] = useState<string>(
-    String(horasDefaultInicial),
-  );
+  const [horasDefault, setHorasDefault] = useState<string>(String(horasDefaultInicial));
   const [guardandoDefault, setGuardandoDefault] = useState(false);
 
   const [miembros, setMiembros] = useState<Miembro[]>([]);
@@ -78,10 +71,7 @@ export function PanelAdmin({
         .from("v_equipo_negocio")
         .select("user_id,miembro_id,email,nombre,rol,es_owner")
         .eq("negocio_id", negocioId),
-      supabase
-        .from("miembros_negocio")
-        .select("id,horas_objetivo_dia")
-        .eq("negocio_id", negocioId),
+      supabase.from("miembros_negocio").select("id,horas_objetivo_dia").eq("negocio_id", negocioId),
       supabase
         .from("fichajes")
         .select("id,user_id,negocio_id,tipo,ts,gps_lat,gps_lng,gps_accuracy_m,observaciones")
@@ -113,9 +103,7 @@ export function PanelAdmin({
       nombre: (m.nombre as string | null) ?? null,
       rol: (m.rol as string) ?? "miembro",
       es_owner: !!m.es_owner,
-      horas_objetivo_dia: m.miembro_id
-        ? horasMap.get(m.miembro_id as string) ?? null
-        : null,
+      horas_objetivo_dia: m.miembro_id ? (horasMap.get(m.miembro_id as string) ?? null) : null,
     }));
 
     setMiembros(equipo);
@@ -123,7 +111,9 @@ export function PanelAdmin({
     setCargando(false);
   }, [supabase, toast, negocioId, desde]);
 
-  useEffect(() => { cargar(); }, [cargar]);
+  useEffect(() => {
+    cargar();
+  }, [cargar]);
 
   async function guardarDefault() {
     const horas = Number(horasDefault);
@@ -161,9 +151,7 @@ export function PanelAdmin({
         : "Horas del trabajador actualizadas.",
     );
     setMiembros((prev) =>
-      prev.map((m) =>
-        m.miembro_id === miembroId ? { ...m, horas_objetivo_dia: horas } : m,
-      ),
+      prev.map((m) => (m.miembro_id === miembroId ? { ...m, horas_objetivo_dia: horas } : m)),
     );
   }
 
@@ -171,9 +159,7 @@ export function PanelAdmin({
     <div className="card-glass p-5">
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <Users size={18} className="text-cyan" />
-        <h2 className="font-display text-lg font-bold text-text-hi">
-          Panel del administrador
-        </h2>
+        <h2 className="font-display text-lg font-bold text-text-hi">Panel del administrador</h2>
         <span className="rounded-full border border-cyan/30 bg-cyan/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-cyan">
           owner
         </span>
@@ -186,8 +172,8 @@ export function PanelAdmin({
             <Target size={13} /> Horas/día por defecto
           </label>
           <p className="mb-2 text-[11px] text-text-lo">
-            Valor estándar de la jornada. Aplica a todos los trabajadores salvo
-            que se ajuste un valor específico debajo.
+            Valor estándar de la jornada. Aplica a todos los trabajadores salvo que se ajuste un
+            valor específico debajo.
           </p>
           <input
             type="number"
@@ -213,7 +199,10 @@ export function PanelAdmin({
       {/* Selector de periodo */}
       <div className="mb-4 flex items-center justify-between gap-3">
         <div className="section-label">Trabajadores</div>
-        <div role="tablist" className="flex gap-1 rounded-xl border border-indigo-400/20 bg-indigo-900/20 p-1 text-xs">
+        <div
+          role="tablist"
+          className="flex gap-1 rounded-xl border border-indigo-400/20 bg-indigo-900/20 p-1 text-xs"
+        >
           {(["hoy", "semana", "mes"] as Periodo[]).map((p) => (
             <button
               key={p}
@@ -247,7 +236,8 @@ export function PanelAdmin({
               const dia = fichajesDelDia(fichajesUser, d);
               return acc + calcularJornada(dia).trabajado_ms;
             }, 0);
-            const horasDefaultNum = Number(horasDefault) > 0 ? Number(horasDefault) : horasDefaultInicial;
+            const horasDefaultNum =
+              Number(horasDefault) > 0 ? Number(horasDefault) : horasDefaultInicial;
             const horasObjetivoMiembro = m.horas_objetivo_dia ?? horasDefaultNum;
             const objetivoMs = horasObjetivoMiembro * dias.length * 3600 * 1000;
             const ratio = objetivoMs > 0 ? totalMs / objetivoMs : 0;
@@ -295,8 +285,8 @@ export function PanelAdmin({
                         ratio >= 1
                           ? "text-emerald-400"
                           : ratio >= 0.8
-                          ? "text-amber-400"
-                          : "text-rose-400"
+                            ? "text-amber-400"
+                            : "text-rose-400"
                       }`}
                     >
                       {Math.round(ratio * 100)}%
@@ -312,7 +302,9 @@ export function PanelAdmin({
                         miembroId={m.miembro_id}
                         valorInicial={m.horas_objetivo_dia}
                         usaDefault={!usaOverride}
-                        horasDefault={Number(horasDefault) > 0 ? Number(horasDefault) : horasDefaultInicial}
+                        horasDefault={
+                          Number(horasDefault) > 0 ? Number(horasDefault) : horasDefaultInicial
+                        }
                         onSave={(v) => guardarMiembro(m.miembro_id!, v)}
                       />
                     ) : (
@@ -379,9 +371,7 @@ function OverrideHoras({
   horasDefault: number;
   onSave: (valor: string) => void | Promise<void>;
 }) {
-  const [valor, setValor] = useState<string>(
-    valorInicial === null ? "" : String(valorInicial),
-  );
+  const [valor, setValor] = useState<string>(valorInicial === null ? "" : String(valorInicial));
   const [guardando, setGuardando] = useState(false);
 
   return (

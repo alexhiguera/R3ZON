@@ -1,5 +1,5 @@
-import { createServerClient, type CookieMethodsServer } from "@supabase/ssr";
-import { NextResponse, type NextRequest } from "next/server";
+import { type CookieMethodsServer, createServerClient } from "@supabase/ssr";
+import { type NextRequest, NextResponse } from "next/server";
 
 export async function updateSession(request: NextRequest) {
   // Reenviamos el pathname como header para que los Server Components
@@ -19,12 +19,10 @@ export async function updateSession(request: NextRequest) {
         setAll: (list: Parameters<NonNullable<CookieMethodsServer["setAll"]>>[0]) => {
           list.forEach(({ name, value }) => request.cookies.set(name, value));
           response = NextResponse.next({ request: { headers: requestHeaders } });
-          list.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
-          );
+          list.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
         },
       },
-    }
+    },
   );
 
   const {
@@ -54,8 +52,7 @@ export async function updateSession(request: NextRequest) {
 
   // Con sesión: comprobar 2FA pendiente
   if (user) {
-    const { data: aal } =
-      await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
 
     // Si el usuario tiene MFA habilitada (nextLevel='aal2') pero la sesión es aal1
     // y no estamos ya en la pantalla 2FA → forzar verificación.

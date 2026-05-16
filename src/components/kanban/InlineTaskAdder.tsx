@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import { Loader2, Plus, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import type { Tarea } from "@/lib/kanban";
 import { createClient } from "@/lib/supabase/client";
 import { useNegocioId } from "@/lib/useNegocioId";
-import type { Tarea } from "@/lib/kanban";
 
 /**
  * Mini-formulario in-line dentro de una columna del kanban.
@@ -32,7 +32,9 @@ export function InlineTaskAdder({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => { inputRef.current?.focus(); }, []);
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
 
   // Cancelar al hacer click fuera (sólo si el campo está vacío para no
   // perder lo escrito por accidente).
@@ -68,7 +70,10 @@ export function InlineTaskAdder({
       .select()
       .single();
     setBusy(false);
-    if (error) { setError(error.message); return; }
+    if (error) {
+      setError(error.message);
+      return;
+    }
     onCreated(data as Tarea);
     setTitulo("");
     // Mantener el input abierto para añadir varias seguidas — UX rápida.
@@ -85,7 +90,10 @@ export function InlineTaskAdder({
         value={titulo}
         onChange={(e) => setTitulo(e.target.value)}
         onKeyDown={(e) => {
-          if (e.key === "Enter") { e.preventDefault(); crear(); }
+          if (e.key === "Enter") {
+            e.preventDefault();
+            crear();
+          }
           if (e.key === "Escape") onCancel();
         }}
         placeholder="Título de la tarea…"

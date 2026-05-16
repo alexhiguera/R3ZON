@@ -4,17 +4,17 @@
 
 :root {
   /* Theme Engine: tripletes "r g b" para usar con rgb(var(--x) / <alpha>). */
-  --bg:          8 7 20;
-  --indigo-900:  30 27 75;
-  --indigo-800:  49 46 129;
-  --indigo-700:  55 48 163;
-  --indigo-600:  79 70 229;
-  --indigo-400:  129 140 248;
-  --indigo-300:  165 180 252;
-  --cyan:        34 211 238;
-  --fuchsia:     232 121 249;
-  --text-hi:     240 244 255;
-  --text-mid:    199 210 254;
+  --bg: 8 7 20;
+  --indigo-900: 30 27 75;
+  --indigo-800: 49 46 129;
+  --indigo-700: 55 48 163;
+  --indigo-600: 79 70 229;
+  --indigo-400: 129 140 248;
+  --indigo-300: 165 180 252;
+  --cyan: 34 211 238;
+  --fuchsia: 232 121 249;
+  --text-hi: 240 244 255;
+  --text-mid: 199 210 254;
 
   /* Colores semánticos fijos */
   --green: #34d399;
@@ -30,7 +30,8 @@
   --radius-scale: 1;
 }
 
-html, body {
+html,
+body {
   background: rgb(var(--bg));
   color: rgb(var(--text-hi));
   font-family: var(--font-sans);
@@ -40,9 +41,9 @@ html, body {
 
 body {
   background-image:
-    radial-gradient(ellipse 80% 50% at 15% 5%,  rgb(var(--indigo-600) / 0.22) 0%, transparent 60%),
-    radial-gradient(ellipse 55% 45% at 85% 85%, rgb(var(--fuchsia)    / 0.13) 0%, transparent 55%),
-    radial-gradient(ellipse 50% 60% at 55% 55%, rgb(var(--cyan)       / 0.06) 0%, transparent 65%);
+    radial-gradient(ellipse 80% 50% at 15% 5%, rgb(var(--indigo-600) / 0.22) 0%, transparent 60%),
+    radial-gradient(ellipse 55% 45% at 85% 85%, rgb(var(--fuchsia) / 0.13) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 60% at 55% 55%, rgb(var(--cyan) / 0.06) 0%, transparent 65%);
   background-attachment: fixed;
   min-height: 100vh;
 }
@@ -50,7 +51,11 @@ body {
 /* Glass card base */
 @layer components {
   .card-glass {
-    background: linear-gradient(135deg, rgb(var(--indigo-800) / 0.38), rgb(var(--indigo-900) / 0.65));
+    background: linear-gradient(
+      135deg,
+      rgb(var(--indigo-800) / 0.38),
+      rgb(var(--indigo-900) / 0.65)
+    );
     border: 1px solid rgb(var(--indigo-400) / 0.18);
     border-radius: calc(18px * var(--radius-scale));
     backdrop-filter: blur(14px);
@@ -59,11 +64,17 @@ body {
   }
   .card-glass:hover {
     border-color: rgb(var(--indigo-400) / 0.36);
-    box-shadow: 0 22px 60px rgb(var(--indigo-600) / 0.20);
+    box-shadow: 0 22px 60px rgb(var(--indigo-600) / 0.2);
   }
   .rainbow-bar {
     height: 3px;
-    background: linear-gradient(90deg, rgb(var(--indigo-600)), rgb(var(--cyan)), rgb(var(--fuchsia)), rgb(var(--indigo-600)));
+    background: linear-gradient(
+      90deg,
+      rgb(var(--indigo-600)),
+      rgb(var(--cyan)),
+      rgb(var(--fuchsia)),
+      rgb(var(--indigo-600))
+    );
   }
   .accent-bar {
     height: 3px;
@@ -85,12 +96,17 @@ body {
 }
 
 /* Scrollbar fina y oscura */
-::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
 ::-webkit-scrollbar-thumb {
   background: rgb(var(--indigo-400) / 0.25);
   border-radius: 9999px;
 }
-::-webkit-scrollbar-thumb:hover { background: rgb(var(--indigo-400) / 0.45); }
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--indigo-400) / 0.45);
+}
 
 /* ─── Accesibilidad ────────────────────────────────────────────────────────
  * Focus visible global: outline cyan con offset para que sea perceptible
@@ -118,7 +134,9 @@ select:focus-visible {
 
 /* Reducir movimiento (toggle de Ajustes → Accesibilidad o preferencia del SO). */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
@@ -143,7 +161,10 @@ html.underline-links a:not([data-no-underline]) {
 /* Toggle "Cursor grande". */
 html.large-cursor,
 html.large-cursor * {
-  cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'><path d='M4 2 L4 26 L11 19 L15 28 L19 26 L15 17 L24 17 Z' fill='white' stroke='black' stroke-width='1.5' stroke-linejoin='round'/></svg>") 4 2, auto;
+  cursor:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'><path d='M4 2 L4 26 L11 19 L15 28 L19 26 L15 17 L24 17 Z' fill='white' stroke='black' stroke-width='1.5' stroke-linejoin='round'/></svg>")
+    4 2,
+    auto;
 }
 
 /* Toggle "Alto contraste" — sube el contraste de glass y texto medio

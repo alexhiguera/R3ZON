@@ -1,5 +1,5 @@
-import type { Metadata, Viewport } from "next";
 import { Analytics } from "@vercel/analytics/next";
+import type { Metadata, Viewport } from "next";
 import { A11Y_BOOT_SCRIPT } from "@/lib/a11y-prefs";
 import "./globals.css";
 
@@ -41,8 +41,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary",
     title: "R3ZON ANTARES",
-    description:
-      "Sistema integral de gestión para autónomos y pequeñas empresas.",
+    description: "Sistema integral de gestión para autónomos y pequeñas empresas.",
   },
   robots: {
     index: true,

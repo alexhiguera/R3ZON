@@ -1,8 +1,8 @@
-import { NextResponse, type NextRequest } from "next/server";
-import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
-import { getStripe } from "@/lib/stripe";
+import { type NextRequest, NextResponse } from "next/server";
 import { withApiHandler } from "@/lib/api-handler";
+import { getStripe } from "@/lib/stripe";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 
 /**
  * Crea una sesión de Stripe Checkout en modo `setup` para que el usuario
@@ -14,7 +14,9 @@ import { withApiHandler } from "@/lib/api-handler";
  */
 export const POST = withApiHandler("billing/setup-checkout", async (request: NextRequest) => {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
 
   const { data: perfil, error } = await supabase
@@ -55,7 +57,7 @@ export const POST = withApiHandler("billing/setup-checkout", async (request: Nex
     customer: customerId,
     payment_method_types: ["card"],
     success_url: `${origin}/ajustes?billing=metodo_anadido`,
-    cancel_url:  `${origin}/ajustes?billing=cancelled`,
+    cancel_url: `${origin}/ajustes?billing=cancelled`,
   });
 
   return NextResponse.json({ url: session.url });

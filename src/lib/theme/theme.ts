@@ -71,7 +71,7 @@ function hexToTriplet(hex: string): string | null {
 }
 
 function setVar(name: string, value: string) {
-  const v = RGB_VARS.has(name) ? hexToTriplet(value) ?? value : value;
+  const v = RGB_VARS.has(name) ? (hexToTriplet(value) ?? value) : value;
   document.documentElement.style.setProperty(name, v);
 }
 
@@ -105,7 +105,7 @@ export function applyTheme(values: ThemeValues) {
   // Light-mode tonal override sólo si la paleta no es "custom".
   // "Blanco roto" en lugar de blanco puro para no cegar.
   if (mode === "light" && merged["palette"] !== "custom") {
-    setVar("--bg", "#eef0f6");          // blanco roto
+    setVar("--bg", "#eef0f6"); // blanco roto
     setVar("--text-hi", "#161529");
     setVar("--text-mid", "#4a4a6a");
     // Tonos claros para los indigos (cards y bordes coherentes en claro).

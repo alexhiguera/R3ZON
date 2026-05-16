@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
 import { AlertTriangle, Loader2 } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Modal } from "./Modal";
 
 type Tone = "danger" | "warning" | "info";
@@ -73,7 +73,12 @@ export function useConfirmDialog() {
     setTyped("");
   }, []);
 
-  useEffect(() => () => { resolverRef.current?.(false); }, []);
+  useEffect(
+    () => () => {
+      resolverRef.current?.(false);
+    },
+    [],
+  );
 
   const tone = options?.tone ?? "danger";
   const styles = TONE_STYLES[tone];
@@ -86,7 +91,9 @@ export function useConfirmDialog() {
       size="sm"
       title={
         <div className="flex items-center gap-3">
-          <span className={`flex h-9 w-9 items-center justify-center rounded-xl border ${styles.border} ${styles.bg} ${styles.text}`}>
+          <span
+            className={`flex h-9 w-9 items-center justify-center rounded-xl border ${styles.border} ${styles.bg} ${styles.text}`}
+          >
             <AlertTriangle size={16} />
           </span>
           <h2 className="font-display text-lg font-bold text-text-hi">{options.title}</h2>
@@ -99,7 +106,8 @@ export function useConfirmDialog() {
         {options.requireTyping && (
           <label className="flex flex-col gap-1.5">
             <span className="text-[0.7rem] font-semibold uppercase tracking-wider text-text-lo">
-              Escribe <span className="font-mono text-text-hi">{options.requireTyping}</span> para confirmar
+              Escribe <span className="font-mono text-text-hi">{options.requireTyping}</span> para
+              confirmar
             </span>
             <input
               type="text"
@@ -123,7 +131,10 @@ export function useConfirmDialog() {
           </button>
           <button
             type="button"
-            onClick={() => { setBusy(true); close(true); }}
+            onClick={() => {
+              setBusy(true);
+              close(true);
+            }}
             disabled={busy || !typingOk}
             className={`inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-bold disabled:opacity-50 ${styles.cta}`}
           >

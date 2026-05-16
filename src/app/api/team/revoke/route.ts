@@ -1,18 +1,23 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { createClient } from "@/lib/supabase/server";
 import { withApiHandler } from "@/lib/api-handler";
+import { createClient } from "@/lib/supabase/server";
 
 const Body = z.object({ id: z.string().uuid() });
 
 export const POST = withApiHandler("team/revoke", async (request: NextRequest) => {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
 
   let body;
-  try { body = Body.parse(await request.json()); }
-  catch { return NextResponse.json({ error: "Payload inválido" }, { status: 400 }); }
+  try {
+    body = Body.parse(await request.json());
+  } catch {
+    return NextResponse.json({ error: "Payload inválido" }, { status: 400 });
+  }
 
   // RLS (miembros_owner) ya valida que sólo el owner del negocio puede borrar.
   const { error } = await supabase

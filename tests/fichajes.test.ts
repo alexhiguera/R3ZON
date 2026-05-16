@@ -1,13 +1,13 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
   calcularJornada,
   estadoTrabajador,
+  type Fichaje,
   fichajesDelDia,
   formatearDuracion,
   siguientesPermitidos,
-  transicionValida,
-  type Fichaje,
   type TipoFichaje,
+  transicionValida,
 } from "@/lib/fichajes";
 
 function f(tipo: TipoFichaje, ts: string): Pick<Fichaje, "tipo" | "ts"> {
@@ -25,9 +25,7 @@ describe("siguientesPermitidos / transicionValida", () => {
   });
 
   it("tras entrada permite inicio_descanso o salida", () => {
-    expect(siguientesPermitidos("entrada").sort()).toEqual(
-      ["inicio_descanso", "salida"].sort(),
-    );
+    expect(siguientesPermitidos("entrada").sort()).toEqual(["inicio_descanso", "salida"].sort());
     expect(transicionValida("entrada", "entrada")).toBe(false);
     expect(transicionValida("entrada", "fin_descanso")).toBe(false);
   });
@@ -76,7 +74,7 @@ describe("calcularJornada", () => {
   it("jornada cerrada simple (entrada → salida)", () => {
     const r = calcularJornada([
       f("entrada", "2026-05-04T08:00:00Z"),
-      f("salida",  "2026-05-04T16:00:00Z"),
+      f("salida", "2026-05-04T16:00:00Z"),
     ]);
     expect(r.trabajado_ms).toBe(8 * 3600_000);
     expect(r.descanso_ms).toBe(0);
@@ -87,10 +85,10 @@ describe("calcularJornada", () => {
 
   it("descuenta correctamente un descanso intermedio", () => {
     const r = calcularJornada([
-      f("entrada",         "2026-05-04T09:00:00Z"),
+      f("entrada", "2026-05-04T09:00:00Z"),
       f("inicio_descanso", "2026-05-04T13:00:00Z"),
-      f("fin_descanso",    "2026-05-04T14:00:00Z"),
-      f("salida",          "2026-05-04T18:00:00Z"),
+      f("fin_descanso", "2026-05-04T14:00:00Z"),
+      f("salida", "2026-05-04T18:00:00Z"),
     ]);
     expect(r.trabajado_ms).toBe(8 * 3600_000); // 4h + 4h
     expect(r.descanso_ms).toBe(1 * 3600_000);
@@ -99,12 +97,12 @@ describe("calcularJornada", () => {
 
   it("acepta varios descansos en el mismo día", () => {
     const r = calcularJornada([
-      f("entrada",         "2026-05-04T09:00:00Z"),
+      f("entrada", "2026-05-04T09:00:00Z"),
       f("inicio_descanso", "2026-05-04T11:00:00Z"),
-      f("fin_descanso",    "2026-05-04T11:15:00Z"),
+      f("fin_descanso", "2026-05-04T11:15:00Z"),
       f("inicio_descanso", "2026-05-04T14:00:00Z"),
-      f("fin_descanso",    "2026-05-04T15:00:00Z"),
-      f("salida",          "2026-05-04T18:00:00Z"),
+      f("fin_descanso", "2026-05-04T15:00:00Z"),
+      f("salida", "2026-05-04T18:00:00Z"),
     ]);
     // Trabajado: 2h + 2h45m + 3h = 7h45m
     expect(r.trabajado_ms).toBe((7 * 60 + 45) * 60_000);
@@ -115,7 +113,7 @@ describe("calcularJornada", () => {
 
   it("ordena fichajes desordenados correctamente", () => {
     const r = calcularJornada([
-      f("salida",  "2026-05-04T16:00:00Z"),
+      f("salida", "2026-05-04T16:00:00Z"),
       f("entrada", "2026-05-04T08:00:00Z"),
     ]);
     expect(r.trabajado_ms).toBe(8 * 3600_000);
@@ -132,10 +130,7 @@ describe("calcularJornada", () => {
   it("descanso en curso no cuenta como trabajado", () => {
     const ahora = new Date("2026-05-04T13:30:00Z");
     const r = calcularJornada(
-      [
-        f("entrada",         "2026-05-04T09:00:00Z"),
-        f("inicio_descanso", "2026-05-04T13:00:00Z"),
-      ],
+      [f("entrada", "2026-05-04T09:00:00Z"), f("inicio_descanso", "2026-05-04T13:00:00Z")],
       ahora,
     );
     expect(r.trabajado_ms).toBe(4 * 3600_000);
@@ -174,7 +169,7 @@ describe("calcularJornada — jornada nocturna", () => {
   it("suma correctamente cuando entrada y salida son de días distintos", () => {
     const r = calcularJornada([
       f("entrada", "2026-05-04T22:00:00Z"),
-      f("salida",  "2026-05-05T06:00:00Z"),
+      f("salida", "2026-05-05T06:00:00Z"),
     ]);
     expect(r.trabajado_ms).toBe(8 * 3600_000);
     expect(r.cerrada).toBe(true);
@@ -182,10 +177,10 @@ describe("calcularJornada — jornada nocturna", () => {
 
   it("descuenta descanso que también cruza medianoche", () => {
     const r = calcularJornada([
-      f("entrada",         "2026-05-04T22:00:00Z"),
+      f("entrada", "2026-05-04T22:00:00Z"),
       f("inicio_descanso", "2026-05-04T23:30:00Z"),
-      f("fin_descanso",    "2026-05-05T00:00:00Z"),
-      f("salida",          "2026-05-05T06:00:00Z"),
+      f("fin_descanso", "2026-05-05T00:00:00Z"),
+      f("salida", "2026-05-05T06:00:00Z"),
     ]);
     // Trabajado: 1h30m + 6h = 7h30m
     expect(r.trabajado_ms).toBe((7 * 60 + 30) * 60_000);
@@ -197,10 +192,10 @@ describe("calcularJornada — jornada nocturna", () => {
 // ── fichajesDelDia ─────────────────────────────────────────────────────────────
 describe("fichajesDelDia", () => {
   it("filtra solo los del día local indicado", () => {
-    const base  = new Date(2026, 4, 4, 0, 0, 0, 0); // 4 mayo 2026 00:00 local
-    const hoy1  = new Date(2026, 4, 4, 9, 0).toISOString();
-    const hoy2  = new Date(2026, 4, 4, 23, 30).toISOString();
-    const ayer  = new Date(2026, 4, 3, 23, 59).toISOString();
+    const base = new Date(2026, 4, 4, 0, 0, 0, 0); // 4 mayo 2026 00:00 local
+    const hoy1 = new Date(2026, 4, 4, 9, 0).toISOString();
+    const hoy2 = new Date(2026, 4, 4, 23, 30).toISOString();
+    const ayer = new Date(2026, 4, 3, 23, 59).toISOString();
     const manana = new Date(2026, 4, 5, 0, 1).toISOString();
 
     const todos = [{ ts: ayer }, { ts: hoy1 }, { ts: hoy2 }, { ts: manana }];

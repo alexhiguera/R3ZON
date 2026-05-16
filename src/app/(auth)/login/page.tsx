@@ -2,12 +2,12 @@
 
 export const dynamic = "force-dynamic";
 
-import { Suspense, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { AlertCircle, Loader2, Mail } from "lucide-react";
 import Link from "next/link";
-import { Mail, Loader2, AlertCircle } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useState } from "react";
 import { OAuthButtons } from "@/components/auth/OAuthButtons";
+import { createClient } from "@/lib/supabase/client";
 
 function translateError(msg: string): string {
   if (msg.includes("Invalid login credentials")) {
@@ -45,7 +45,7 @@ function LoginForm() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(
-    oauthError ? "No se pudo iniciar sesión con Google. Inténtalo de nuevo." : null
+    oauthError ? "No se pudo iniciar sesión con Google. Inténtalo de nuevo." : null,
   );
 
   const onSubmit = async (e: React.FormEvent) => {
@@ -67,9 +67,7 @@ function LoginForm() {
       <div>
         <div className="section-label mb-2">Acceso</div>
         <h1 className="font-display text-2xl font-bold">Bienvenido de nuevo</h1>
-        <p className="mt-1 text-sm text-text-mid">
-          Inicia sesión para gestionar tu negocio.
-        </p>
+        <p className="mt-1 text-sm text-text-mid">Inicia sesión para gestionar tu negocio.</p>
       </div>
 
       <OAuthButtons />
@@ -82,12 +80,7 @@ function LoginForm() {
 
       <form onSubmit={onSubmit} className="flex flex-col gap-3">
         <Field label="Email" type="email" value={email} onChange={setEmail} />
-        <Field
-          label="Contraseña"
-          type="password"
-          value={password}
-          onChange={setPassword}
-        />
+        <Field label="Contraseña" type="password" value={password} onChange={setPassword} />
 
         {error && (
           <div className="flex items-start gap-2.5 rounded-xl border border-danger/30 bg-danger/10 px-3 py-2.5 text-xs text-danger">
@@ -101,11 +94,7 @@ function LoginForm() {
           disabled={loading}
           className="mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan to-fuchsia text-sm font-bold text-bg transition-all hover:opacity-95 active:scale-[0.99] disabled:opacity-50"
         >
-          {loading ? (
-            <Loader2 className="animate-spin" size={16} />
-          ) : (
-            <Mail size={16} />
-          )}
+          {loading ? <Loader2 className="animate-spin" size={16} /> : <Mail size={16} />}
           Iniciar sesión
         </button>
       </form>

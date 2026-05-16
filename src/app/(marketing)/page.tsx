@@ -1,17 +1,17 @@
-import Link from "next/link";
 import {
   ArrowRight,
   Building2,
   Calendar,
-  Kanban,
   Clock,
+  FileText,
+  HeartHandshake,
+  Kanban,
+  Shield,
   ShoppingCart,
   Wallet,
-  FileText,
-  Shield,
   Zap,
-  HeartHandshake,
 } from "lucide-react";
+import Link from "next/link";
 
 export default function LandingPage() {
   return (
@@ -31,9 +31,9 @@ export default function LandingPage() {
               </span>
             </h1>
             <p className="mx-auto mt-6 max-w-2xl text-base text-text-mid sm:text-lg">
-              Clientes, agenda, tareas, fichajes, TPV y finanzas. Sin
-              integraciones imposibles, sin hojas de cálculo a medianoche.
-              ANTARES es el sistema operativo que tu pequeña empresa necesita.
+              Clientes, agenda, tareas, fichajes, TPV y finanzas. Sin integraciones imposibles, sin
+              hojas de cálculo a medianoche. ANTARES es el sistema operativo que tu pequeña empresa
+              necesita.
             </p>
             <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Link
@@ -68,9 +68,7 @@ export default function LandingPage() {
               <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl border border-cyan/40 bg-cyan/10 text-cyan">
                 <Icon size={18} strokeWidth={2} />
               </div>
-              <h3 className="font-display text-lg font-bold text-text-hi">
-                {title}
-              </h3>
+              <h3 className="font-display text-lg font-bold text-text-hi">{title}</h3>
               <p className="mt-1 text-sm text-text-mid">{desc}</p>
             </article>
           ))}
@@ -89,9 +87,7 @@ export default function LandingPage() {
           {WHYS.map(({ title, desc, Icon }) => (
             <article key={title} className="card-glass p-6">
               <Icon className="text-fuchsia" size={22} strokeWidth={2} />
-              <h3 className="mt-3 font-display text-lg font-bold text-text-hi">
-                {title}
-              </h3>
+              <h3 className="mt-3 font-display text-lg font-bold text-text-hi">{title}</h3>
               <p className="mt-1 text-sm text-text-mid">{desc}</p>
             </article>
           ))}
@@ -107,8 +103,8 @@ export default function LandingPage() {
               Empieza hoy. Sin tarjeta.
             </h2>
             <p className="mx-auto mt-3 max-w-xl text-text-mid">
-              Crea tu cuenta gratis y prueba ANTARES con todos los módulos.
-              Cuando estés listo, escala al plan que se ajuste a tu negocio.
+              Crea tu cuenta gratis y prueba ANTARES con todos los módulos. Cuando estés listo,
+              escala al plan que se ajuste a tu negocio.
             </p>
             <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Link

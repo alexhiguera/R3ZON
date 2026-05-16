@@ -1,16 +1,25 @@
 "use client";
 
-import { useState } from "react";
-import { useEffect } from "react";
 import {
-  Plus, Mail, Phone, MessageCircle, Pencil, Trash2,
-  Crown, UserPlus2, Loader2, Save, X,
-  Network, LayoutGrid,
+  Crown,
+  LayoutGrid,
+  Loader2,
+  Mail,
+  MessageCircle,
+  Network,
+  Pencil,
+  Phone,
+  Plus,
+  Save,
+  Trash2,
+  UserPlus2,
+  X,
 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { Tooltip } from "@/components/ui/Tooltip";
 import { createClient } from "@/lib/supabase/client";
 import { HierarchyChart } from "./HierarchyChart";
-import { Tooltip } from "@/components/ui/Tooltip";
-import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
 import type { Contacto } from "./types";
 
 type Vista = "arbol" | "tarjetas";
@@ -29,8 +38,14 @@ type ContactoForm = {
 };
 
 const EMPTY: ContactoForm = {
-  nombre: "", apellidos: "", email: "", telefono: "",
-  puesto: "", departamento: "", reports_to: null, es_decisor: false,
+  nombre: "",
+  apellidos: "",
+  email: "",
+  telefono: "",
+  puesto: "",
+  departamento: "",
+  reports_to: null,
+  es_decisor: false,
 };
 
 export function ContactosTab({
@@ -125,7 +140,7 @@ export function ContactosTab({
     onChange(
       contactos
         .filter((x) => x.id !== c.id)
-        .map((x) => (x.reports_to === c.id ? { ...x, reports_to: null } : x))
+        .map((x) => (x.reports_to === c.id ? { ...x, reports_to: null } : x)),
     );
   };
 
@@ -156,7 +171,9 @@ export function ContactosTab({
                 onClick={() => cambiarVista("tarjetas")}
                 aria-pressed={vista === "tarjetas"}
                 className={`flex h-8 w-8 items-center justify-center rounded-lg transition-colors ${
-                  vista === "tarjetas" ? "bg-cyan/15 text-cyan" : "text-indigo-300 hover:text-text-hi"
+                  vista === "tarjetas"
+                    ? "bg-cyan/15 text-cyan"
+                    : "text-indigo-300 hover:text-text-hi"
                 }`}
               >
                 <LayoutGrid size={14} />
@@ -291,12 +308,10 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
       <span className="flex h-14 w-14 items-center justify-center rounded-2xl border border-indigo-400/20 bg-indigo-900/40 text-indigo-300">
         <UserPlus2 size={24} />
       </span>
-      <div className="font-display text-lg font-bold text-text-hi">
-        Aún no hay contactos
-      </div>
+      <div className="font-display text-lg font-bold text-text-hi">Aún no hay contactos</div>
       <p className="max-w-sm text-sm text-text-mid">
-        Empieza añadiendo a la persona de mayor cargo (CEO o director). Después podrás añadir
-        a quienes le reportan y se construirá el organigrama automáticamente.
+        Empieza añadiendo a la persona de mayor cargo (CEO o director). Después podrás añadir a
+        quienes le reportan y se construirá el organigrama automáticamente.
       </p>
       <button
         onClick={onAdd}
@@ -309,7 +324,12 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
 }
 
 function ContactoModal({
-  form, contactos, saving, onChange, onSave, onClose,
+  form,
+  contactos,
+  saving,
+  onChange,
+  onSave,
+  onClose,
 }: {
   form: ContactoForm;
   contactos: Contacto[];
@@ -325,9 +345,7 @@ function ContactoModal({
     while (stack.length) {
       const cur = stack.pop()!;
       out.add(cur);
-      contactos
-        .filter((c) => c.reports_to === cur)
-        .forEach((c) => stack.push(c.id));
+      contactos.filter((c) => c.reports_to === cur).forEach((c) => stack.push(c.id));
     }
     return out;
   };
@@ -343,7 +361,9 @@ function ContactoModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="contacto-modal-title"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
       <div className="card-glass flex max-h-[calc(100vh-2rem)] w-full max-w-lg flex-col overflow-hidden">
         <div className="rainbow-bar shrink-0" />
@@ -364,9 +384,24 @@ function ContactoModal({
           <Field label="Nombre *" value={form.nombre} onChange={(v) => set("nombre", v)} />
           <Field label="Apellidos" value={form.apellidos} onChange={(v) => set("apellidos", v)} />
           <Field label="Email" value={form.email} onChange={(v) => set("email", v)} type="email" />
-          <Field label="Teléfono" value={form.telefono} onChange={(v) => set("telefono", v)} type="tel" />
-          <Field label="Puesto" value={form.puesto} onChange={(v) => set("puesto", v)} placeholder="Director Comercial" />
-          <Field label="Departamento" value={form.departamento} onChange={(v) => set("departamento", v)} placeholder="Ventas" />
+          <Field
+            label="Teléfono"
+            value={form.telefono}
+            onChange={(v) => set("telefono", v)}
+            type="tel"
+          />
+          <Field
+            label="Puesto"
+            value={form.puesto}
+            onChange={(v) => set("puesto", v)}
+            placeholder="Director Comercial"
+          />
+          <Field
+            label="Departamento"
+            value={form.departamento}
+            onChange={(v) => set("departamento", v)}
+            placeholder="Ventas"
+          />
 
           <label className="flex flex-col gap-1.5 sm:col-span-2">
             <span className="text-xs font-medium text-text-mid">¿A quién reporta?</span>
@@ -423,7 +458,11 @@ function ContactoModal({
 }
 
 function Field({
-  label, value, onChange, placeholder, type = "text",
+  label,
+  value,
+  onChange,
+  placeholder,
+  type = "text",
 }: {
   label: string;
   value: string;

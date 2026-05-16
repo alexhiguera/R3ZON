@@ -1,10 +1,4 @@
-export function PlaceholderTab({
-  title,
-  description,
-}: {
-  title: string;
-  description: string;
-}) {
+export function PlaceholderTab({ title, description }: { title: string; description: string }) {
   return (
     <div className="card-glass p-4 sm:p-8">
       <div className="section-label mb-2">Próximamente</div>

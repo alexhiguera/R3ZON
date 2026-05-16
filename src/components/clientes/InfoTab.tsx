@@ -1,22 +1,22 @@
 "use client";
 
+import { Edit3, Loader2, Save } from "lucide-react";
 import { useState } from "react";
-import { Edit3, Save, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { Cliente } from "./types";
 
 const FIELDS: { key: keyof Cliente; label: string; type?: string }[] = [
-  { key: "nombre",            label: "Nombre" },
-  { key: "cif",               label: "CIF / NIF" },
-  { key: "sector",            label: "Sector" },
-  { key: "sitio_web",         label: "Sitio web" },
-  { key: "email",             label: "Email corporativo", type: "email" },
-  { key: "telefono",          label: "Teléfono" },
-  { key: "direccion",         label: "Dirección" },
-  { key: "ciudad",            label: "Ciudad" },
-  { key: "codigo_postal",     label: "Código postal" },
-  { key: "pais",              label: "País" },
-  { key: "num_empleados",     label: "Nº de empleados", type: "number" },
+  { key: "nombre", label: "Nombre" },
+  { key: "cif", label: "CIF / NIF" },
+  { key: "sector", label: "Sector" },
+  { key: "sitio_web", label: "Sitio web" },
+  { key: "email", label: "Email corporativo", type: "email" },
+  { key: "telefono", label: "Teléfono" },
+  { key: "direccion", label: "Dirección" },
+  { key: "ciudad", label: "Ciudad" },
+  { key: "codigo_postal", label: "Código postal" },
+  { key: "pais", label: "País" },
+  { key: "num_empleados", label: "Nº de empleados", type: "number" },
   { key: "facturacion_anual", label: "Facturación anual (€)", type: "number" },
 ];
 
@@ -77,7 +77,10 @@ export function InfoTab({
         ) : (
           <div className="flex gap-2">
             <button
-              onClick={() => { setForm(cliente); setEditando(false); }}
+              onClick={() => {
+                setForm(cliente);
+                setEditando(false);
+              }}
               className="rounded-xl border border-indigo-400/25 bg-indigo-900/40 px-3 py-2 text-xs text-text-mid"
             >
               Cancelar
@@ -119,11 +122,7 @@ export function InfoTab({
         {FIELDS.map(({ key, label, type }) => {
           const raw = form[key];
           const display =
-            raw == null || raw === ""
-              ? null
-              : Array.isArray(raw)
-              ? raw.join(", ")
-              : String(raw);
+            raw == null || raw === "" ? null : Array.isArray(raw) ? raw.join(", ") : String(raw);
           return (
             <label key={key} className="flex flex-col gap-1.5">
               <span className="text-xs font-medium text-text-mid">{label}</span>
@@ -134,9 +133,12 @@ export function InfoTab({
                   onChange={(e) =>
                     setForm((f) => ({
                       ...f,
-                      [key]: type === "number"
-                        ? (e.target.value === "" ? null : Number(e.target.value))
-                        : e.target.value,
+                      [key]:
+                        type === "number"
+                          ? e.target.value === ""
+                            ? null
+                            : Number(e.target.value)
+                          : e.target.value,
                     }))
                   }
                   className="h-11 rounded-xl border border-indigo-400/20 bg-indigo-900/30 px-3 text-sm text-text-hi focus:border-cyan/50 focus:outline-none focus:ring-2 focus:ring-cyan/20"

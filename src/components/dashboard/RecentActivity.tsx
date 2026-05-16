@@ -1,7 +1,7 @@
 "use client";
 
-import { Activity, FileText, Mail, MessageCircle } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { Activity, FileText, Mail, MessageCircle } from "lucide-react";
 
 export type DashboardActivityItem = {
   id: string;
@@ -13,20 +13,28 @@ export type DashboardActivityItem = {
 };
 
 const TIPO_META: Record<string, { Icon: LucideIcon; label: string; tint: string }> = {
-  nota:           { Icon: FileText,      label: "Nota",       tint: "border-indigo-400/30 bg-indigo-400/10 text-indigo-300" },
-  email_click:    { Icon: Mail,          label: "Email",      tint: "border-cyan/30 bg-cyan/10 text-cyan" },
-  whatsapp_click: { Icon: MessageCircle, label: "WhatsApp",   tint: "border-emerald-400/30 bg-emerald-400/10 text-emerald-300" },
+  nota: {
+    Icon: FileText,
+    label: "Nota",
+    tint: "border-indigo-400/30 bg-indigo-400/10 text-indigo-300",
+  },
+  email_click: { Icon: Mail, label: "Email", tint: "border-cyan/30 bg-cyan/10 text-cyan" },
+  whatsapp_click: {
+    Icon: MessageCircle,
+    label: "WhatsApp",
+    tint: "border-emerald-400/30 bg-emerald-400/10 text-emerald-300",
+  },
 };
 
 function relativo(iso: string) {
   const diff = Date.now() - new Date(iso).getTime();
   const min = Math.floor(diff / 60000);
-  if (min < 1)  return "ahora";
+  if (min < 1) return "ahora";
   if (min < 60) return `hace ${min}min`;
   const h = Math.floor(min / 60);
-  if (h < 24)   return `hace ${h}h`;
+  if (h < 24) return `hace ${h}h`;
   const d = Math.floor(h / 24);
-  if (d < 7)    return `hace ${d}d`;
+  if (d < 7) return `hace ${d}d`;
   return new Date(iso).toLocaleDateString("es-ES", { day: "numeric", month: "short" });
 }
 
@@ -65,7 +73,9 @@ export function RecentActivity({
                 key={it.id}
                 className="flex items-start gap-3 rounded-xl border border-indigo-400/15 bg-indigo-900/20 p-3"
               >
-                <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md border ${meta.tint}`}>
+                <span
+                  className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md border ${meta.tint}`}
+                >
                   <Icon size={13} />
                 </span>
                 <div className="flex-1 min-w-0">

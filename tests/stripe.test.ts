@@ -1,10 +1,12 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
 import Stripe from "stripe";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ─── Mock supabase admin antes de importar la ruta ────────────────────────────
-const updateMock  = vi.fn().mockResolvedValue({ data: null, error: null });
-const eqUpdateMock = vi.fn().mockReturnValue({ then: (fn: any) => fn({ data: null, error: null }) });
-const upsertMock  = vi.fn().mockResolvedValue({ data: null, error: null });
+const updateMock = vi.fn().mockResolvedValue({ data: null, error: null });
+const eqUpdateMock = vi
+  .fn()
+  .mockReturnValue({ then: (fn: any) => fn({ data: null, error: null }) });
+const upsertMock = vi.fn().mockResolvedValue({ data: null, error: null });
 const selectMaybeMock = vi.fn();
 
 const fromMock = vi.fn((table: string) => {
@@ -33,23 +35,23 @@ vi.mock("@/lib/supabase/admin", () => ({
 
 // ─── Stripe SDK con clave dummy y secret de webhook conocido ─────────────────
 const WEBHOOK_SECRET = "whsec_test_secret_for_vitest";
-process.env.STRIPE_SECRET_KEY    = "sk_test_dummy";
+process.env.STRIPE_SECRET_KEY = "sk_test_dummy";
 process.env.STRIPE_WEBHOOK_SECRET = WEBHOOK_SECRET;
-process.env.STRIPE_PRICE_PRO     = "price_pro_123";
+process.env.STRIPE_PRICE_PRO = "price_pro_123";
 process.env.STRIPE_PRICE_BUSINESS = "price_biz_456";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { typescript: true });
 
+import { NextRequest } from "next/server";
 // Ahora sí: importar la ruta y los helpers.
 import { POST } from "@/app/api/billing/webhook/route";
 import { planFromPriceId } from "@/lib/stripe";
-import { NextRequest } from "next/server";
 
 function makeRequest(payload: object): NextRequest {
   const body = JSON.stringify(payload);
-  const sig  = stripe.webhooks.generateTestHeaderString({
+  const sig = stripe.webhooks.generateTestHeaderString({
     payload: body,
-    secret:  WEBHOOK_SECRET,
+    secret: WEBHOOK_SECRET,
   });
   return new NextRequest("http://localhost/api/billing/webhook", {
     method: "POST",

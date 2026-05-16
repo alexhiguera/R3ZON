@@ -26,15 +26,7 @@ type FieldProps = {
  * Acepta cualquier hijo, pero solo clona props si es un único elemento React.
  * Para layouts compuestos (icono + input), envolver el grupo con un id explícito.
  */
-export function Field({
-  label,
-  children,
-  full,
-  hint,
-  error,
-  htmlFor,
-  className,
-}: FieldProps) {
+export function Field({ label, children, full, hint, error, htmlFor, className }: FieldProps) {
   const autoId = useId();
   const child = Children.only(
     isValidElement(children) ? children : <span>{children}</span>,

@@ -1,5 +1,5 @@
-import { PageHeader } from "./PageHeader";
 import type { LucideIcon } from "lucide-react";
+import { PageHeader } from "./PageHeader";
 
 export function Placeholder({
   eyebrow,
@@ -21,8 +21,8 @@ export function Placeholder({
         </span>
         <div className="font-display text-lg font-bold text-text-hi">Próximamente</div>
         <div className="max-w-md text-sm text-text-mid">
-          Este módulo está conectado al esquema de base de datos. La interfaz se
-          construirá en las siguientes iteraciones.
+          Este módulo está conectado al esquema de base de datos. La interfaz se construirá en las
+          siguientes iteraciones.
         </div>
       </div>
     </div>

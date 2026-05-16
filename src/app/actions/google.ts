@@ -8,21 +8,21 @@
 import { createClient } from "@/lib/supabase/server";
 
 export type GoogleStatus = {
-  connected:        boolean;
-  email:            string | null;
-  expiresAt:        string | null;
-  scope:            string | null;
-  watchActive:      boolean;
-  watchExpiresAt:   string | null;
+  connected: boolean;
+  email: string | null;
+  expiresAt: string | null;
+  scope: string | null;
+  watchActive: boolean;
+  watchExpiresAt: string | null;
   /** El servidor tiene `GOOGLE_CLIENT_ID/SECRET` y `GOOGLE_WEBHOOK_URL`. Si es false, los botones de Conectar/Sincronizar no funcionarán hasta que se configure. */
   serverConfigured: boolean;
   /** Lista de env vars que faltan (sólo info para UI; no contiene valores). */
-  missingEnv:       string[];
+  missingEnv: string[];
 };
 
 function checkServerEnv(): { ok: boolean; missing: string[] } {
   const required = ["GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "GOOGLE_WEBHOOK_URL"];
-  const missing  = required.filter((k) => !process.env[k]);
+  const missing = required.filter((k) => !process.env[k]);
   return { ok: missing.length === 0, missing };
 }
 
@@ -30,12 +30,19 @@ export async function getGoogleConnectionStatus(): Promise<GoogleStatus> {
   const env = checkServerEnv();
   const supabase = await createClient();
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) {
     return {
-      connected: false, email: null, expiresAt: null, scope: null,
-      watchActive: false, watchExpiresAt: null,
-      serverConfigured: env.ok, missingEnv: env.missing,
+      connected: false,
+      email: null,
+      expiresAt: null,
+      scope: null,
+      watchActive: false,
+      watchExpiresAt: null,
+      serverConfigured: env.ok,
+      missingEnv: env.missing,
     };
   }
 
@@ -48,21 +55,30 @@ export async function getGoogleConnectionStatus(): Promise<GoogleStatus> {
 
   if (error || !data) {
     return {
-      connected: false, email: null, expiresAt: null, scope: null,
-      watchActive: false, watchExpiresAt: null,
-      serverConfigured: env.ok, missingEnv: env.missing,
+      connected: false,
+      email: null,
+      expiresAt: null,
+      scope: null,
+      watchActive: false,
+      watchExpiresAt: null,
+      serverConfigured: env.ok,
+      missingEnv: env.missing,
     };
   }
 
-  const watchActive = !!(data.channel_id && data.channel_expiration && new Date(data.channel_expiration) > new Date());
+  const watchActive = !!(
+    data.channel_id &&
+    data.channel_expiration &&
+    new Date(data.channel_expiration) > new Date()
+  );
   return {
-    connected:        true,
-    email:            data.google_account_email ?? null,
-    expiresAt:        data.expires_at ?? null,
-    scope:            data.scope ?? null,
+    connected: true,
+    email: data.google_account_email ?? null,
+    expiresAt: data.expires_at ?? null,
+    scope: data.scope ?? null,
     watchActive,
-    watchExpiresAt:   data.channel_expiration ?? null,
+    watchExpiresAt: data.channel_expiration ?? null,
     serverConfigured: env.ok,
-    missingEnv:       env.missing,
+    missingEnv: env.missing,
   };
 }

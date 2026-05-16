@@ -2,9 +2,9 @@ import Link from "next/link";
 
 const NAV = [
   { href: "/legal/aviso-legal", label: "Aviso legal" },
-  { href: "/legal/privacidad",  label: "Privacidad" },
-  { href: "/legal/cookies",     label: "Cookies" },
-  { href: "/legal/terminos",    label: "Términos" },
+  { href: "/legal/privacidad", label: "Privacidad" },
+  { href: "/legal/cookies", label: "Cookies" },
+  { href: "/legal/terminos", label: "Términos" },
 ];
 
 export default function LegalLayout({ children }: { children: React.ReactNode }) {
@@ -16,11 +16,7 @@ export default function LegalLayout({ children }: { children: React.ReactNode })
           alt="R3ZON ANTARES"
           className="h-10 w-10 dark:block hidden"
         />
-        <img
-          src="/R3ZON-ANTARES.svg"
-          alt="R3ZON ANTARES"
-          className="h-10 w-10 dark:hidden block"
-        />
+        <img src="/R3ZON-ANTARES.svg" alt="R3ZON ANTARES" className="h-10 w-10 dark:hidden block" />
         <span className="font-display text-lg font-extrabold tracking-tight">R3ZON ANTARES</span>
       </Link>
 

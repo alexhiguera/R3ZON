@@ -1,14 +1,12 @@
 "use client";
 
+import { AlertCircle, Loader2, ScanLine } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { ScanLine, Loader2, AlertCircle } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
-import { createClient } from "@/lib/supabase/client";
 import type { Producto } from "@/lib/inventario";
+import { createClient } from "@/lib/supabase/client";
 
-type ScanResult =
-  | { kind: "existente"; producto: Producto }
-  | { kind: "nuevo"; codigo: string };
+type ScanResult = { kind: "existente"; producto: Producto } | { kind: "nuevo"; codigo: string };
 
 export function BarcodeScanModal({
   open,
@@ -49,13 +47,16 @@ export function BarcodeScanModal({
       return;
     }
     if (data) onResult({ kind: "existente", producto: data as Producto });
-    else      onResult({ kind: "nuevo", codigo: c });
+    else onResult({ kind: "nuevo", codigo: c });
   }
 
   return (
     <Modal open={open} onClose={onClose} title="Escanear código de barras" size="md">
       <form
-        onSubmit={(e) => { e.preventDefault(); procesar(codigo); }}
+        onSubmit={(e) => {
+          e.preventDefault();
+          procesar(codigo);
+        }}
         className="space-y-4"
       >
         <div className="rounded-2xl border border-cyan/30 bg-cyan/5 p-5 text-center">

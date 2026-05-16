@@ -1,10 +1,10 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { AlertCircle, CheckCircle2, Loader2, Save, Trash2, Upload } from "lucide-react";
 import Image from "next/image";
-import { Loader2, Save, Upload, Trash2, AlertCircle, CheckCircle2 } from "lucide-react";
+import { useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { negocioSchema, type NegocioFormValues } from "./negocioSchema";
+import { type NegocioFormValues, negocioSchema } from "./negocioSchema";
 import type { PerfilNegocio } from "./types";
 
 const LOGO_BUCKET = "logos";
@@ -18,11 +18,27 @@ const FIELDS: {
   placeholder?: string;
   full?: boolean;
 }[] = [
-  { key: "nombre_negocio", label: "Nombre del negocio", placeholder: "Acme Soluciones SL", full: true },
-  { key: "cif_nif",        label: "CIF / NIF",          placeholder: "B12345678" },
-  { key: "telefono",       label: "Teléfono",           type: "tel",   placeholder: "+34 600 000 000" },
-  { key: "email_contacto", label: "Email de contacto",  type: "email", placeholder: "hola@acme.com", full: true },
-  { key: "direccion",      label: "Dirección fiscal",   placeholder: "Calle Mayor 1, 28013 Madrid", full: true },
+  {
+    key: "nombre_negocio",
+    label: "Nombre del negocio",
+    placeholder: "Acme Soluciones SL",
+    full: true,
+  },
+  { key: "cif_nif", label: "CIF / NIF", placeholder: "B12345678" },
+  { key: "telefono", label: "Teléfono", type: "tel", placeholder: "+34 600 000 000" },
+  {
+    key: "email_contacto",
+    label: "Email de contacto",
+    type: "email",
+    placeholder: "hola@acme.com",
+    full: true,
+  },
+  {
+    key: "direccion",
+    label: "Dirección fiscal",
+    placeholder: "Calle Mayor 1, 28013 Madrid",
+    full: true,
+  },
 ];
 
 type Errors = Partial<Record<keyof NegocioFormValues, string>>;
@@ -34,14 +50,14 @@ export function NegocioTab({ perfil }: { perfil: PerfilNegocio }) {
 
   const [form, setForm] = useState<NegocioFormValues>({
     nombre_negocio: perfil.nombre_negocio ?? "",
-    cif_nif:        perfil.cif_nif ?? "",
-    direccion:      perfil.direccion ?? "",
+    cif_nif: perfil.cif_nif ?? "",
+    direccion: perfil.direccion ?? "",
     email_contacto: perfil.email_contacto ?? "",
-    telefono:       perfil.telefono ?? "",
+    telefono: perfil.telefono ?? "",
   });
   const [logoUrl, setLogoUrl] = useState<string | null>(perfil.logo_url);
-  const [errors, setErrors]   = useState<Errors>({});
-  const [saving, setSaving]   = useState(false);
+  const [errors, setErrors] = useState<Errors>({});
+  const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [toast, setToast] = useState<Toast>(null);
 
@@ -93,7 +109,7 @@ export function NegocioTab({ perfil }: { perfil: PerfilNegocio }) {
     }
 
     setUploading(true);
-    const ext  = file.name.split(".").pop()?.toLowerCase() || "png";
+    const ext = file.name.split(".").pop()?.toLowerCase() || "png";
     const path = `${perfil.id}/logo-${Date.now()}.${ext}`;
 
     const { error: upErr } = await supabase.storage
@@ -196,7 +212,9 @@ export function NegocioTab({ perfil }: { perfil: PerfilNegocio }) {
                 type="button"
                 onClick={() => fileRef.current?.click()}
                 disabled={uploading}
-                aria-label={logoUrl ? "Cambiar el logo del negocio" : "Subir un logo para el negocio"}
+                aria-label={
+                  logoUrl ? "Cambiar el logo del negocio" : "Subir un logo para el negocio"
+                }
                 className="flex items-center gap-1.5 rounded-xl border border-indigo-400/25 bg-indigo-900/40 px-3 py-2 text-xs font-medium text-text-hi hover:border-cyan/40 disabled:opacity-50"
               >
                 {uploading ? <Loader2 className="animate-spin" size={13} /> : <Upload size={13} />}
@@ -228,10 +246,7 @@ export function NegocioTab({ perfil }: { perfil: PerfilNegocio }) {
           {FIELDS.map(({ key, label, type, placeholder, full }) => {
             const err = errors[key];
             return (
-              <label
-                key={key}
-                className={`flex flex-col gap-1.5 ${full ? "sm:col-span-2" : ""}`}
-              >
+              <label key={key} className={`flex flex-col gap-1.5 ${full ? "sm:col-span-2" : ""}`}>
                 <span className="text-xs font-medium text-text-mid">{label}</span>
                 <input
                   type={type ?? "text"}

@@ -1,26 +1,26 @@
 "use client";
 
-import { useRef, useState } from "react";
 import {
+  closestCenter,
   DndContext,
+  type DragEndEvent,
   PointerSensor,
   useSensor,
   useSensors,
-  closestCenter,
-  type DragEndEvent,
 } from "@dnd-kit/core";
 import {
-  SortableContext,
   arrayMove,
+  SortableContext,
   useSortable,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { X, Plus, Trash2, Check, GripVertical } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
-import { Tooltip } from "@/components/ui/Tooltip";
+import { Check, GripVertical, Plus, Trash2, X } from "lucide-react";
+import { useRef, useState } from "react";
 import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { Tooltip } from "@/components/ui/Tooltip";
 import { COLORES_COLUMNA, type Columna } from "@/lib/kanban";
+import { createClient } from "@/lib/supabase/client";
 
 type Props = {
   columnas: Columna[];
@@ -47,9 +47,7 @@ export function ColumnManager({ columnas, onClose, onUpdate }: Props) {
   const [saving, setSaving] = useState(false);
   const { confirm: confirmDialog, dialog: confirmDialogNode } = useConfirmDialog();
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } })
-  );
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
   const persistOrden = async (next: Columna[]) => {
     const updates = next.map((c, i) => ({ id: c.id, posicion: i }));
@@ -59,8 +57,8 @@ export function ColumnManager({ columnas, onClose, onUpdate }: Props) {
     if (error) {
       await Promise.all(
         updates.map((u) =>
-          supabase.from("kanban_columnas").update({ posicion: u.posicion }).eq("id", u.id)
-        )
+          supabase.from("kanban_columnas").update({ posicion: u.posicion }).eq("id", u.id),
+        ),
       );
     }
   };
@@ -142,7 +140,9 @@ export function ColumnManager({ columnas, onClose, onUpdate }: Props) {
   return (
     <div
       ref={overlayRef}
-      onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
+      onClick={(e) => {
+        if (e.target === overlayRef.current) onClose();
+      }}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
     >
       <div className="card-glass w-full max-w-md overflow-hidden">
@@ -150,11 +150,10 @@ export function ColumnManager({ columnas, onClose, onUpdate }: Props) {
 
         <div className="flex items-center justify-between px-5 pt-5">
           <div>
-            <h2 className="font-display text-lg font-bold text-text-hi">
-              Gestionar columnas
-            </h2>
+            <h2 className="font-display text-lg font-bold text-text-hi">Gestionar columnas</h2>
             <p className="text-xs text-text-mid">
-              Arrastra el icono <GripVertical size={11} className="inline -mt-0.5" /> para reordenarlas.
+              Arrastra el icono <GripVertical size={11} className="inline -mt-0.5" /> para
+              reordenarlas.
             </p>
           </div>
           <button
@@ -200,7 +199,9 @@ export function ColumnManager({ columnas, onClose, onUpdate }: Props) {
             <input
               value={nuevoNombre}
               onChange={(e) => setNuevoNombre(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") agregarColumna(); }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") agregarColumna();
+              }}
               placeholder="Nueva columna…"
               className="h-9 flex-1 rounded-lg border border-indigo-400/15 bg-indigo-900/30 px-3 text-sm text-text-hi placeholder:text-text-lo focus:border-cyan/50 focus:outline-none"
             />
@@ -277,10 +278,7 @@ function ColRow({
       </button>
 
       {/* Color dot */}
-      <div
-        className="h-3 w-3 shrink-0 rounded-full"
-        style={{ backgroundColor: col.color }}
-      />
+      <div className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: col.color }} />
 
       {/* Nombre */}
       {editing ? (
@@ -289,7 +287,10 @@ function ColRow({
           value={val}
           onChange={(e) => setVal(e.target.value)}
           onBlur={commit}
-          onKeyDown={(e) => { if (e.key === "Enter") commit(); if (e.key === "Escape") setEditing(false); }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") commit();
+            if (e.key === "Escape") setEditing(false);
+          }}
           className="h-7 flex-1 rounded-lg border border-cyan/40 bg-indigo-900/40 px-2 text-sm text-text-hi focus:outline-none"
         />
       ) : (

@@ -19,30 +19,35 @@
  * instalada y mantiene su propio sistema de modales — Kanban TaskModal).
  */
 
-import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  X, Loader2, Trash2, MapPin, FileText, User2,
-  Smartphone, Search, Calendar as CalendarIcon, Palette,
-  ChevronDown, ChevronRight, Sliders,
+  Calendar as CalendarIcon,
+  ChevronDown,
+  ChevronRight,
+  FileText,
+  Loader2,
+  MapPin,
+  Palette,
+  Search,
+  Sliders,
+  Smartphone,
+  Trash2,
+  User2,
+  X,
 } from "lucide-react";
-
-import { createClient } from "@/lib/supabase/client";
-import { Help } from "@/components/ui/Tooltip";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
-import {
-  createEvent,
-  updateEvent,
-  deleteEvent,
-} from "@/lib/agenda";
+import { Help } from "@/components/ui/Tooltip";
+import { createEvent, deleteEvent, updateEvent } from "@/lib/agenda";
+import { createClient } from "@/lib/supabase/client";
 
 // ---------------------------------------------------------------------------
 
 export type EventModalInitial = {
-  id?: string;                    // si viene → modo edición
+  id?: string; // si viene → modo edición
   title?: string;
   description?: string | null;
   start: Date;
-  end:   Date;
+  end: Date;
   color?: string | null;
   ubicacion?: string | null;
   cliente_id?: string | null;
@@ -57,12 +62,12 @@ type Cliente = {
 };
 
 const COLORES: { id: string; label: string; bg: string }[] = [
-  { id: "indigo",  label: "Indigo",   bg: "bg-indigo-500" },
-  { id: "cyan",    label: "Cian",     bg: "bg-cyan-400" },
-  { id: "fuchsia", label: "Fucsia",   bg: "bg-fuchsia-400" },
-  { id: "green",   label: "Verde",    bg: "bg-emerald-400" },
-  { id: "orange",  label: "Naranja",  bg: "bg-orange-400" },
-  { id: "red",     label: "Rojo",     bg: "bg-red-400" },
+  { id: "indigo", label: "Indigo", bg: "bg-indigo-500" },
+  { id: "cyan", label: "Cian", bg: "bg-cyan-400" },
+  { id: "fuchsia", label: "Fucsia", bg: "bg-fuchsia-400" },
+  { id: "green", label: "Verde", bg: "bg-emerald-400" },
+  { id: "orange", label: "Naranja", bg: "bg-orange-400" },
+  { id: "red", label: "Rojo", bg: "bg-red-400" },
 ];
 
 // Devuelve un ISO local (sin Z) apto para `<input type="datetime-local">`.
@@ -81,21 +86,21 @@ export function EventModal({
 }: {
   initial: EventModalInitial;
   onClose: () => void;
-  onSaved:  () => void;
+  onSaved: () => void;
   onDeleted?: () => void;
 }) {
   const isEdit = !!initial.id;
 
   // ---- estado del formulario ----
-  const [title,       setTitle]       = useState(initial.title ?? "");
+  const [title, setTitle] = useState(initial.title ?? "");
   const [description, setDescription] = useState(initial.description ?? "");
-  const [start,       setStart]       = useState(toLocalInput(initial.start));
-  const [end,         setEnd]         = useState(toLocalInput(initial.end));
-  const [ubicacion,   setUbicacion]   = useState(initial.ubicacion ?? "");
-  const [color,       setColor]       = useState<string>(initial.color ?? "indigo");
-  const [clienteId,   setClienteId]   = useState<string | null>(initial.cliente_id ?? null);
+  const [start, setStart] = useState(toLocalInput(initial.start));
+  const [end, setEnd] = useState(toLocalInput(initial.end));
+  const [ubicacion, setUbicacion] = useState(initial.ubicacion ?? "");
+  const [color, setColor] = useState<string>(initial.color ?? "indigo");
+  const [clienteId, setClienteId] = useState<string | null>(initial.cliente_id ?? null);
 
-  const [error,   setError]   = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const { confirm: confirmDialog, dialog: confirmDialogNode } = useConfirmDialog();
@@ -107,10 +112,10 @@ export function EventModal({
 
   // ---- combobox clientes ----
   const supabase = createClient();
-  const [search,    setSearch]    = useState("");
-  const [results,   setResults]   = useState<Cliente[]>([]);
-  const [open,      setOpen]      = useState(false);
-  const [selected,  setSelected]  = useState<Cliente | null>(null);
+  const [search, setSearch] = useState("");
+  const [results, setResults] = useState<Cliente[]>([]);
+  const [open, setOpen] = useState(false);
+  const [selected, setSelected] = useState<Cliente | null>(null);
   const searchAbort = useRef<AbortController | null>(null);
 
   // Si venimos en modo edición con cliente_id, cargamos su nombre para mostrarlo.
@@ -153,15 +158,17 @@ export function EventModal({
 
   // Cerrar con Escape.
   useEffect(() => {
-    const fn = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    const fn = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
     window.addEventListener("keydown", fn);
     return () => window.removeEventListener("keydown", fn);
   }, [onClose]);
 
   // ---- validación ----
   const validation = useMemo(() => {
-    if (!title.trim())   return "Pon un título a la cita.";
-    if (!start || !end)  return "Indica fecha y hora de inicio y fin.";
+    if (!title.trim()) return "Pon un título a la cita.";
+    if (!start || !end) return "Indica fecha y hora de inicio y fin.";
     const s = new Date(start);
     const e = new Date(end);
     if (Number.isNaN(s.getTime()) || Number.isNaN(e.getTime())) return "Fechas inválidas.";
@@ -171,18 +178,21 @@ export function EventModal({
 
   // ---- guardar ----
   const submit = async () => {
-    if (validation) { setError(validation); return; }
+    if (validation) {
+      setError(validation);
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
       const payload = {
-        title:       title.trim(),
+        title: title.trim(),
         description: description.trim() || null,
-        start:       new Date(start).toISOString(),
-        end:         new Date(end).toISOString(),
+        start: new Date(start).toISOString(),
+        end: new Date(end).toISOString(),
         color,
-        ubicacion:   ubicacion.trim() || null,
-        cliente_id:  clienteId,
+        ubicacion: ubicacion.trim() || null,
+        cliente_id: clienteId,
       };
       if (isEdit && initial.id) {
         await updateEvent({ id: initial.id, ...payload });
@@ -202,7 +212,8 @@ export function EventModal({
     if (!initial.id) return;
     const ok = await confirmDialog({
       title: "Eliminar cita",
-      message: "La cita se borrará también de Google Calendar si está sincronizada. Esta acción no se puede deshacer.",
+      message:
+        "La cita se borrará también de Google Calendar si está sincronizada. Esta acción no se puede deshacer.",
       confirmLabel: "Eliminar",
       tone: "danger",
     });
@@ -223,7 +234,9 @@ export function EventModal({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 py-8 backdrop-blur-sm"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
       role="dialog"
       aria-modal="true"
       aria-labelledby="event-modal-title"
@@ -362,16 +375,22 @@ export function EventModal({
                     >
                       <span className="flex items-center gap-2">
                         <Search size={14} className="text-text-mid" />
-                        {selected
-                          ? selected.nombre
-                          : <span className="text-text-ghost">Sin cliente vinculado</span>}
+                        {selected ? (
+                          selected.nombre
+                        ) : (
+                          <span className="text-text-ghost">Sin cliente vinculado</span>
+                        )}
                       </span>
                       {selected && (
                         <span
                           role="button"
                           tabIndex={0}
                           aria-label="Quitar cliente vinculado"
-                          onClick={(e) => { e.stopPropagation(); setSelected(null); setClienteId(null); }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelected(null);
+                            setClienteId(null);
+                          }}
                           onKeyDown={(e) => {
                             if (e.key === "Enter" || e.key === " ") {
                               e.preventDefault();

@@ -1,61 +1,72 @@
 "use client";
 
-import { useState } from "react";
 import {
-  Building2,
-  Plug,
-  Users,
-  CreditCard,
-  ShieldCheck,
-  Receipt,
-  Palette,
-  Boxes,
-  Scale,
-  Database,
   Accessibility,
+  Boxes,
+  Building2,
   ChevronDown,
+  CreditCard,
+  Database,
   type LucideIcon,
+  Palette,
+  Plug,
+  Receipt,
+  Scale,
+  ShieldCheck,
+  Users,
 } from "lucide-react";
-import { NegocioTab } from "./NegocioTab";
-import { FacturacionTab } from "./FacturacionTab";
-import { IntegracionesTab } from "./IntegracionesTab";
-import { EquipoTab } from "./EquipoTab";
-import { SeguridadTab } from "./SeguridadTab";
-import { SuscripcionTab } from "./SuscripcionTab";
-import { AparienciaTab } from "./AparienciaTab";
+import { useState } from "react";
 import { AccesibilidadTab } from "./AccesibilidadTab";
-import { ListadoTab } from "./ListadoTab";
+import { AparienciaTab } from "./AparienciaTab";
 import { CumplimientoTab } from "./CumplimientoTab";
 import { DatosTab } from "./DatosTab";
+import { EquipoTab } from "./EquipoTab";
+import { FacturacionTab } from "./FacturacionTab";
+import { IntegracionesTab } from "./IntegracionesTab";
+import { ListadoTab } from "./ListadoTab";
+import { NegocioTab } from "./NegocioTab";
+import { SeguridadTab } from "./SeguridadTab";
+import { SuscripcionTab } from "./SuscripcionTab";
 import type { PerfilNegocio, TabId } from "./types";
 
 const TABS: { id: TabId; label: string; Icon: LucideIcon }[] = [
-  { id: "negocio",       label: "Negocio",       Icon: Building2 },
-  { id: "apariencia",    label: "Apariencia",    Icon: Palette },
+  { id: "negocio", label: "Negocio", Icon: Building2 },
+  { id: "apariencia", label: "Apariencia", Icon: Palette },
   { id: "accesibilidad", label: "Accesibilidad", Icon: Accessibility },
-  { id: "listado",       label: "Listado",       Icon: Boxes },
-  { id: "facturacion",   label: "Facturación",   Icon: Receipt },
+  { id: "listado", label: "Listado", Icon: Boxes },
+  { id: "facturacion", label: "Facturación", Icon: Receipt },
   { id: "integraciones", label: "Integraciones", Icon: Plug },
-  { id: "equipo",        label: "Equipo",        Icon: Users },
-  { id: "suscripcion",   label: "Suscripción",   Icon: CreditCard },
-  { id: "seguridad",     label: "Seguridad",     Icon: ShieldCheck },
-  { id: "datos",         label: "Datos",         Icon: Database },
-  { id: "cumplimiento",  label: "Cumplimiento",  Icon: Scale },
+  { id: "equipo", label: "Equipo", Icon: Users },
+  { id: "suscripcion", label: "Suscripción", Icon: CreditCard },
+  { id: "seguridad", label: "Seguridad", Icon: ShieldCheck },
+  { id: "datos", label: "Datos", Icon: Database },
+  { id: "cumplimiento", label: "Cumplimiento", Icon: Scale },
 ];
 
 function renderPanel(id: TabId, perfil: PerfilNegocio) {
   switch (id) {
-    case "negocio":       return <NegocioTab perfil={perfil} />;
-    case "apariencia":    return <AparienciaTab />;
-    case "accesibilidad": return <AccesibilidadTab />;
-    case "listado":       return <ListadoTab perfil={perfil} />;
-    case "facturacion":   return <FacturacionTab />;
-    case "integraciones": return <IntegracionesTab />;
-    case "equipo":        return <EquipoTab />;
-    case "suscripcion":   return <SuscripcionTab />;
-    case "seguridad":     return <SeguridadTab />;
-    case "datos":         return <DatosTab />;
-    case "cumplimiento":  return <CumplimientoTab />;
+    case "negocio":
+      return <NegocioTab perfil={perfil} />;
+    case "apariencia":
+      return <AparienciaTab />;
+    case "accesibilidad":
+      return <AccesibilidadTab />;
+    case "listado":
+      return <ListadoTab perfil={perfil} />;
+    case "facturacion":
+      return <FacturacionTab />;
+    case "integraciones":
+      return <IntegracionesTab />;
+    case "equipo":
+      return <EquipoTab />;
+    case "suscripcion":
+      return <SuscripcionTab />;
+    case "seguridad":
+      return <SeguridadTab />;
+    case "datos":
+      return <DatosTab />;
+    case "cumplimiento":
+      return <CumplimientoTab />;
   }
 }
 
@@ -70,10 +81,7 @@ export function SettingsTabs({ perfil }: { perfil: PerfilNegocio }) {
         {TABS.map(({ id, label, Icon }) => {
           const expanded = openMobile === id;
           return (
-            <div
-              key={id}
-              className="card-glass overflow-hidden"
-            >
+            <div key={id} className="card-glass overflow-hidden">
               <button
                 type="button"
                 aria-expanded={expanded}
@@ -93,10 +101,7 @@ export function SettingsTabs({ perfil }: { perfil: PerfilNegocio }) {
                 />
               </button>
               {expanded && (
-                <div
-                  id={`m-panel-${id}`}
-                  className="border-t border-indigo-400/15 px-3 py-4"
-                >
+                <div id={`m-panel-${id}`} className="border-t border-indigo-400/15 px-3 py-4">
                   {renderPanel(id, perfil)}
                 </div>
               )}
@@ -138,11 +143,7 @@ export function SettingsTabs({ perfil }: { perfil: PerfilNegocio }) {
           </ul>
         </nav>
 
-        <section
-          role="tabpanel"
-          id={`panel-${active}`}
-          aria-labelledby={`tab-${active}`}
-        >
+        <section role="tabpanel" id={`panel-${active}`} aria-labelledby={`tab-${active}`}>
           {renderPanel(active, perfil)}
         </section>
       </div>

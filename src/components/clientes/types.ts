@@ -6,7 +6,7 @@
 export type Cliente = {
   id: string;
   negocio_id: string;
-  nombre: string;            // razón social / nombre comercial
+  nombre: string; // razón social / nombre comercial
   cif: string | null;
   sector: string | null;
   sitio_web: string | null;

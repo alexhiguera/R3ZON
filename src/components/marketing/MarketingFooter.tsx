@@ -11,11 +11,7 @@ export function MarketingFooter() {
             alt="ANTARES"
             className="h-10 w-10 dark:block hidden"
           />
-          <img
-            src="/R3ZON-ANTARES.svg"
-            alt="ANTARES"
-            className="h-10 w-10 dark:hidden block"
-          />
+          <img src="/R3ZON-ANTARES.svg" alt="ANTARES" className="h-10 w-10 dark:hidden block" />
           <div>
             <div className="font-display text-base font-extrabold tracking-tight text-text-hi">
               ANTARES
@@ -30,25 +26,61 @@ export function MarketingFooter() {
           <div>
             <div className="section-label mb-2">Producto</div>
             <ul className="space-y-1.5">
-              <li><Link href="/servicios" className="text-text-mid hover:text-text-hi">Servicios</Link></li>
-              <li><Link href="/precios" className="text-text-mid hover:text-text-hi">Precios</Link></li>
-              <li><Link href="/descargas" className="text-text-mid hover:text-text-hi">Descargas</Link></li>
+              <li>
+                <Link href="/servicios" className="text-text-mid hover:text-text-hi">
+                  Servicios
+                </Link>
+              </li>
+              <li>
+                <Link href="/precios" className="text-text-mid hover:text-text-hi">
+                  Precios
+                </Link>
+              </li>
+              <li>
+                <Link href="/descargas" className="text-text-mid hover:text-text-hi">
+                  Descargas
+                </Link>
+              </li>
             </ul>
           </div>
           <div>
             <div className="section-label mb-2">Cuenta</div>
             <ul className="space-y-1.5">
-              <li><Link href="/login" className="text-text-mid hover:text-text-hi">Acceso</Link></li>
-              <li><Link href="/registro" className="text-text-mid hover:text-text-hi">Registro</Link></li>
+              <li>
+                <Link href="/login" className="text-text-mid hover:text-text-hi">
+                  Acceso
+                </Link>
+              </li>
+              <li>
+                <Link href="/registro" className="text-text-mid hover:text-text-hi">
+                  Registro
+                </Link>
+              </li>
             </ul>
           </div>
           <div>
             <div className="section-label mb-2">Legal</div>
             <ul className="space-y-1.5">
-              <li><Link href="/legal/aviso-legal" className="text-text-mid hover:text-text-hi">Aviso legal</Link></li>
-              <li><Link href="/legal/privacidad" className="text-text-mid hover:text-text-hi">Privacidad</Link></li>
-              <li><Link href="/legal/cookies" className="text-text-mid hover:text-text-hi">Cookies</Link></li>
-              <li><Link href="/legal/terminos" className="text-text-mid hover:text-text-hi">Términos</Link></li>
+              <li>
+                <Link href="/legal/aviso-legal" className="text-text-mid hover:text-text-hi">
+                  Aviso legal
+                </Link>
+              </li>
+              <li>
+                <Link href="/legal/privacidad" className="text-text-mid hover:text-text-hi">
+                  Privacidad
+                </Link>
+              </li>
+              <li>
+                <Link href="/legal/cookies" className="text-text-mid hover:text-text-hi">
+                  Cookies
+                </Link>
+              </li>
+              <li>
+                <Link href="/legal/terminos" className="text-text-mid hover:text-text-hi">
+                  Términos
+                </Link>
+              </li>
             </ul>
           </div>
         </div>

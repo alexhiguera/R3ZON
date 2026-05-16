@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
-import { getStripe } from "@/lib/stripe";
 import { withApiHandler } from "@/lib/api-handler";
+import { getStripe } from "@/lib/stripe";
+import { createClient } from "@/lib/supabase/server";
 
 /**
  * Lista los métodos de pago guardados del cliente Stripe asociado al
@@ -11,7 +11,9 @@ import { withApiHandler } from "@/lib/api-handler";
  */
 export const GET = withApiHandler("billing/payment-methods", async () => {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
 
   if (!process.env.STRIPE_SECRET_KEY) {
@@ -39,7 +41,7 @@ export const GET = withApiHandler("billing/payment-methods", async () => {
     brand: pm.card?.brand ?? "card",
     last4: pm.card?.last4 ?? "",
     exp_month: pm.card?.exp_month ?? null,
-    exp_year:  pm.card?.exp_year ?? null,
+    exp_year: pm.card?.exp_year ?? null,
     is_default: false, // Stripe no devuelve default aquí; lo gestiona el portal.
   }));
 

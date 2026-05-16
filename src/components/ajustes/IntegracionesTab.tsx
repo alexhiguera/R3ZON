@@ -9,7 +9,8 @@ export function IntegracionesTab() {
         <div className="section-label mb-1">Integraciones</div>
         <p className="text-sm text-text-mid">
           Conecta servicios externos para automatizar tu negocio. Tus credenciales se guardan{" "}
-          <strong className="text-text-hi">cifradas con pgcrypto</strong> en Supabase y sólo tu negocio puede leerlas.
+          <strong className="text-text-hi">cifradas con pgcrypto</strong> en Supabase y sólo tu
+          negocio puede leerlas.
         </p>
       </div>
 

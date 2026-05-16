@@ -12,7 +12,14 @@
  */
 
 type UnknownError =
-  | { code?: string; message?: string; details?: string; hint?: string; name?: string; status?: number }
+  | {
+      code?: string;
+      message?: string;
+      details?: string;
+      hint?: string;
+      name?: string;
+      status?: number;
+    }
   | Error
   | string
   | null
@@ -38,11 +45,26 @@ const POSTGREST_MESSAGES: Record<string, string> = {
 const AUTH_MESSAGES: Array<{ match: RegExp; text: string }> = [
   { match: /invalid login credentials/i, text: "Email o contraseña incorrectos." },
   { match: /email not confirmed/i, text: "Confirma tu email antes de iniciar sesión." },
-  { match: /user already registered|already been registered/i, text: "Ya existe una cuenta con ese email." },
-  { match: /password should be at least/i, text: "La contraseña debe tener al menos 8 caracteres." },
-  { match: /email rate limit/i, text: "Demasiados intentos. Espera unos minutos antes de volver a intentarlo." },
-  { match: /signup is disabled|signups not allowed/i, text: "El registro de nuevas cuentas está desactivado." },
-  { match: /jwt expired|token has expired/i, text: "Tu sesión ha caducado. Vuelve a iniciar sesión." },
+  {
+    match: /user already registered|already been registered/i,
+    text: "Ya existe una cuenta con ese email.",
+  },
+  {
+    match: /password should be at least/i,
+    text: "La contraseña debe tener al menos 8 caracteres.",
+  },
+  {
+    match: /email rate limit/i,
+    text: "Demasiados intentos. Espera unos minutos antes de volver a intentarlo.",
+  },
+  {
+    match: /signup is disabled|signups not allowed/i,
+    text: "El registro de nuevas cuentas está desactivado.",
+  },
+  {
+    match: /jwt expired|token has expired/i,
+    text: "Tu sesión ha caducado. Vuelve a iniciar sesión.",
+  },
   { match: /jwt|invalid token/i, text: "Sesión inválida. Vuelve a iniciar sesión." },
 ];
 
@@ -54,7 +76,10 @@ const STORAGE_MESSAGES: Array<{ match: RegExp; text: string }> = [
 ];
 
 const NETWORK_MESSAGES: Array<{ match: RegExp; text: string }> = [
-  { match: /failed to fetch|network ?error|networkrequestfailed/i, text: "Sin conexión con el servidor. Comprueba tu red e inténtalo de nuevo." },
+  {
+    match: /failed to fetch|network ?error|networkrequestfailed/i,
+    text: "Sin conexión con el servidor. Comprueba tu red e inténtalo de nuevo.",
+  },
   { match: /timeout|aborted/i, text: "La operación ha tardado demasiado. Inténtalo de nuevo." },
 ];
 
@@ -63,7 +88,10 @@ const NETWORK_MESSAGES: Array<{ match: RegExp; text: string }> = [
  * Nunca devuelve el `message` original sin haberlo mapeado, salvo que sea
  * claramente humano (sin palabras técnicas como "constraint", "violates"…).
  */
-export function formatSupabaseError(err: UnknownError, fallback = "No se ha podido completar la operación. Inténtalo de nuevo."): string {
+export function formatSupabaseError(
+  err: UnknownError,
+  fallback = "No se ha podido completar la operación. Inténtalo de nuevo.",
+): string {
   if (!err) return fallback;
   if (typeof err === "string") return looksTechnical(err) ? fallback : err;
 
@@ -83,10 +111,11 @@ export function formatSupabaseError(err: UnknownError, fallback = "No se ha podi
   if (status === 409) return "Hay un conflicto con un registro existente.";
   if (status === 413) return "El archivo es demasiado grande.";
   if (status === 429) return "Demasiadas peticiones. Espera unos segundos y vuelve a intentarlo.";
-  if (status && status >= 500) return "El servidor no responde. Vuelve a intentarlo en unos segundos.";
+  if (status && status >= 500)
+    return "El servidor no responde. Vuelve a intentarlo en unos segundos.";
 
   // 4) Auth / Storage / Network por patrón en mensaje
-  for (const { match, text } of AUTH_MESSAGES)    if (match.test(message)) return text;
+  for (const { match, text } of AUTH_MESSAGES) if (match.test(message)) return text;
   for (const { match, text } of STORAGE_MESSAGES) if (match.test(message)) return text;
   for (const { match, text } of NETWORK_MESSAGES) if (match.test(message)) return text;
 
@@ -98,7 +127,9 @@ export function formatSupabaseError(err: UnknownError, fallback = "No se ha podi
 
 function looksTechnical(s: string): boolean {
   // Patrones típicos de error crudo de Postgres/PostgREST/JS que no queremos mostrar.
-  return /violates|constraint|relation\s+".*"|column\s+".*"|duplicate key|stack|\bnull value\b|\bat \w+\.\w+\b|\bTypeError\b|\bReferenceError\b|undefined is not|cannot read prop|\bENOTFOUND\b|\bECONNREFUSED\b/i.test(s);
+  return /violates|constraint|relation\s+".*"|column\s+".*"|duplicate key|stack|\bnull value\b|\bat \w+\.\w+\b|\bTypeError\b|\bReferenceError\b|undefined is not|cannot read prop|\bENOTFOUND\b|\bECONNREFUSED\b/i.test(
+    s,
+  );
 }
 
 /**

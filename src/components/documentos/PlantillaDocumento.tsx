@@ -1,31 +1,31 @@
 "use client";
 
 import {
-  ETIQUETA_TIPO,
-  FORMATO_TIPO,
-  calcularTotales,
-  eur,
-  referenciaDocumento,
   type ClienteSnapshot,
+  calcularTotales,
   type EmisorSnapshot,
+  ETIQUETA_TIPO,
+  eur,
+  FORMATO_TIPO,
   type FormatoDocumento,
   type LineaDocumento,
+  referenciaDocumento,
   type TipoDocumento,
 } from "@/lib/documentos";
 import { formatearFechaLarga } from "@/lib/formato";
 
 export type ColoresDocumento = {
-  primario: string;   // cabecera, total, líneas separadoras
-  texto: string;      // color de texto principal
-  acento: string;     // fondo tabla cabecera
-  acentoSuave: string;// fondo box cliente
+  primario: string; // cabecera, total, líneas separadoras
+  texto: string; // color de texto principal
+  acento: string; // fondo tabla cabecera
+  acentoSuave: string; // fondo box cliente
 };
 
 const COLORES_POR_DEFECTO: ColoresDocumento = {
-  primario:     "#4f46e5",
-  texto:        "#0f172a",
-  acento:       "#eef2ff",
-  acentoSuave:  "#f8fafc",
+  primario: "#4f46e5",
+  texto: "#0f172a",
+  acento: "#eef2ff",
+  acentoSuave: "#f8fafc",
 };
 
 export type PlantillaProps = {
@@ -51,29 +51,24 @@ export function PlantillaDocumento(props: PlantillaProps) {
   const formato = props.formato ?? FORMATO_TIPO[props.tipo];
   const colores: ColoresDocumento = { ...COLORES_POR_DEFECTO, ...(props.colores ?? {}) };
 
-  return formato === "ticket"
-    ? <PlantillaTicket {...props} colores={colores} />
-    : <PlantillaA4    {...props} colores={colores} />;
+  return formato === "ticket" ? (
+    <PlantillaTicket {...props} colores={colores} />
+  ) : (
+    <PlantillaA4 {...props} colores={colores} />
+  );
 }
 
 // ──────────────────────────────────────────────────────────────────────────
 // Plantilla A4 — factura, presupuesto, albarán, proforma, recibo
 // ──────────────────────────────────────────────────────────────────────────
-function PlantillaA4(
-  props: PlantillaProps & { colores: ColoresDocumento },
-) {
+function PlantillaA4(props: PlantillaProps & { colores: ColoresDocumento }) {
   const c = props.colores;
   return (
     <div className="documento-print" style={stylesA4.contenedor(c)}>
       <header style={stylesA4.header(c)}>
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
           {props.emisor.logo_url && (
-            <img
-              src={props.emisor.logo_url}
-              alt=""
-              style={stylesA4.logo}
-              crossOrigin="anonymous"
-            />
+            <img src={props.emisor.logo_url} alt="" style={stylesA4.logo} crossOrigin="anonymous" />
           )}
           <div>
             <div style={stylesA4.tipoEtiqueta(c)}>{ETIQUETA_TIPO[props.tipo]}</div>
@@ -84,10 +79,10 @@ function PlantillaA4(
         </div>
         <div style={stylesA4.emisor}>
           <div style={stylesA4.emisorNombre(c)}>{props.emisor.nombre || "—"}</div>
-          {props.emisor.cif       && <div>CIF/NIF: {props.emisor.cif}</div>}
+          {props.emisor.cif && <div>CIF/NIF: {props.emisor.cif}</div>}
           {props.emisor.direccion && <div>{props.emisor.direccion}</div>}
-          {props.emisor.email     && <div>{props.emisor.email}</div>}
-          {props.emisor.telefono  && <div>{props.emisor.telefono}</div>}
+          {props.emisor.email && <div>{props.emisor.email}</div>}
+          {props.emisor.telefono && <div>{props.emisor.telefono}</div>}
         </div>
       </header>
 
@@ -98,9 +93,9 @@ function PlantillaA4(
             <div style={stylesA4.clienteNombre}>
               {props.cliente.nombre || <span style={{ color: "#aaa" }}>Sin cliente</span>}
             </div>
-            {props.cliente.cif       && <div>CIF/NIF: {props.cliente.cif}</div>}
+            {props.cliente.cif && <div>CIF/NIF: {props.cliente.cif}</div>}
             {props.cliente.direccion && <div>{props.cliente.direccion}</div>}
-            {props.cliente.email     && <div>{props.cliente.email}</div>}
+            {props.cliente.email && <div>{props.cliente.email}</div>}
           </div>
         </div>
         {/* Columna fechas: centrada verticalmente respecto al bloque cliente */}
@@ -114,9 +109,7 @@ function PlantillaA4(
               <div style={stylesA4.label}>
                 {props.tipo === "presupuesto" ? "Válido hasta" : "Vencimiento"}
               </div>
-              <div style={stylesA4.metaValor}>
-                {formatearFechaLarga(props.fecha_vencimiento)}
-              </div>
+              <div style={stylesA4.metaValor}>{formatearFechaLarga(props.fecha_vencimiento)}</div>
             </div>
           )}
         </div>
@@ -170,7 +163,7 @@ function PlantillaA4(
       {(props.condiciones_pago || props.metodo_pago) && (
         <section style={stylesA4.bloqueExtra}>
           <div style={stylesA4.label}>Pago</div>
-          {props.metodo_pago      && <div>Método: {props.metodo_pago}</div>}
+          {props.metodo_pago && <div>Método: {props.metodo_pago}</div>}
           {props.condiciones_pago && <div>{props.condiciones_pago}</div>}
         </section>
       )}
@@ -182,9 +175,7 @@ function PlantillaA4(
         </section>
       )}
 
-      <footer style={stylesA4.footer}>
-        Documento generado con R3ZON ANTARES
-      </footer>
+      <footer style={stylesA4.footer}>Documento generado con R3ZON ANTARES</footer>
     </div>
   );
 }
@@ -214,15 +205,11 @@ function TotalesA4({
         )}
       </div>
       <div style={stylesA4.totalesBox}>
-        <Fila label="Subtotal"       valor={eur(t.subtotal)} />
-        {t.descuento_total > 0 && (
-          <Fila label="Descuento"    valor={`− ${eur(t.descuento_total)}`} />
-        )}
+        <Fila label="Subtotal" valor={eur(t.subtotal)} />
+        {t.descuento_total > 0 && <Fila label="Descuento" valor={`− ${eur(t.descuento_total)}`} />}
         <Fila label="Base imponible" valor={eur(t.base_imponible)} />
-        <Fila label="IVA"            valor={eur(t.iva_total)} />
-        {t.irpf_total > 0 && (
-          <Fila label={`IRPF ${irpf_pct}%`} valor={`− ${eur(t.irpf_total)}`} />
-        )}
+        <Fila label="IVA" valor={eur(t.iva_total)} />
+        {t.irpf_total > 0 && <Fila label={`IRPF ${irpf_pct}%`} valor={`− ${eur(t.irpf_total)}`} />}
         <div style={stylesA4.totalFinal(colores)}>
           <span>TOTAL</span>
           <span>{eur(t.total)}</span>
@@ -244,9 +231,7 @@ function Fila({ label, valor }: { label: string; valor: string }) {
 // ──────────────────────────────────────────────────────────────────────────
 // Plantilla ticket térmico (80 mm) — vertical
 // ──────────────────────────────────────────────────────────────────────────
-function PlantillaTicket(
-  props: PlantillaProps & { colores: ColoresDocumento },
-) {
+function PlantillaTicket(props: PlantillaProps & { colores: ColoresDocumento }) {
   const t = calcularTotales(props.lineas, props.irpf_pct);
   return (
     <div className="documento-print documento-ticket" style={stylesTicket.contenedor}>
@@ -260,15 +245,18 @@ function PlantillaTicket(
           />
         )}
         <div style={stylesTicket.emisorNombre}>{props.emisor.nombre || "—"}</div>
-        {props.emisor.cif       && <div>CIF: {props.emisor.cif}</div>}
+        {props.emisor.cif && <div>CIF: {props.emisor.cif}</div>}
         {props.emisor.direccion && <div>{props.emisor.direccion}</div>}
-        {props.emisor.telefono  && <div>Tel. {props.emisor.telefono}</div>}
+        {props.emisor.telefono && <div>Tel. {props.emisor.telefono}</div>}
       </header>
 
       <hr style={stylesTicket.sep} />
 
       <div style={stylesTicket.meta}>
-        <div>{ETIQUETA_TIPO[props.tipo]} {referenciaDocumento(props.tipo, props.serie, props.anio, props.numero)}</div>
+        <div>
+          {ETIQUETA_TIPO[props.tipo]}{" "}
+          {referenciaDocumento(props.tipo, props.serie, props.anio, props.numero)}
+        </div>
         <div>{formatearFechaLarga(props.fecha_emision)}</div>
         {props.cliente.nombre && (
           <div style={{ marginTop: 4 }}>Cliente: {props.cliente.nombre}</div>
@@ -309,8 +297,8 @@ function PlantillaTicket(
       <hr style={stylesTicket.sep} />
 
       <div style={stylesTicket.totalesBox}>
-        <FilaT label="Base"  valor={eur(t.base_imponible)} />
-        <FilaT label="IVA"   valor={eur(t.iva_total)} />
+        <FilaT label="Base" valor={eur(t.base_imponible)} />
+        <FilaT label="IVA" valor={eur(t.iva_total)} />
         {t.irpf_total > 0 && (
           <FilaT label={`IRPF ${props.irpf_pct}%`} valor={`− ${eur(t.irpf_total)}`} />
         )}
@@ -352,8 +340,7 @@ function FilaT({ label, valor }: { label: string; valor: string }) {
 // ──────────────────────────────────────────────────────────────────────────
 // Estilos — sólo inline para que sobrevivan al `innerHTML` de la impresión.
 // ──────────────────────────────────────────────────────────────────────────
-const FONT_STACK =
-  "ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
+const FONT_STACK = "ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
 
 const stylesA4 = {
   contenedor: (c: ColoresDocumento): React.CSSProperties => ({

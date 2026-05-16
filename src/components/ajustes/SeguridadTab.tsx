@@ -1,26 +1,26 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
 import {
-  ShieldCheck,
-  ShieldAlert,
-  Loader2,
-  LogOut,
-  Smartphone,
-  Trash2,
-  CheckCircle2,
   AlertCircle,
+  CheckCircle2,
   ExternalLink,
-  KeyRound,
   Eye,
   EyeOff,
+  KeyRound,
+  Loader2,
+  LogOut,
+  ShieldAlert,
+  ShieldCheck,
+  Smartphone,
+  Trash2,
 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
-import { formatSupabaseError } from "@/lib/supabase-errors";
+import Link from "next/link";
+import { useEffect, useState } from "react";
 import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
+import { createClient } from "@/lib/supabase/client";
+import { formatSupabaseError } from "@/lib/supabase-errors";
 
 type Device = {
   id: string;
@@ -37,8 +37,8 @@ type Toast = { kind: "ok" | "err"; msg: string } | null;
 
 export function SeguridadTab() {
   const supabase = createClient();
-  const [mfa, setMfa]           = useState<MfaState>("loading");
-  const [devices, setDevices]   = useState<Device[]>([]);
+  const [mfa, setMfa] = useState<MfaState>("loading");
+  const [devices, setDevices] = useState<Device[]>([]);
   const [loadingD, setLoadingD] = useState(true);
   const [logoutAll, setLogoutAll] = useState(false);
   const [toast, setToast] = useState<Toast>(null);
@@ -71,7 +71,8 @@ export function SeguridadTab() {
   const cerrarTodas = async () => {
     const ok = await confirmDialog({
       title: "Cerrar todas las sesiones",
-      message: "Esto cerrará tu sesión en todos los dispositivos, incluido este. Tendrás que volver a iniciar sesión.",
+      message:
+        "Esto cerrará tu sesión en todos los dispositivos, incluido este. Tendrás que volver a iniciar sesión.",
       confirmLabel: "Cerrar todas",
       tone: "danger",
     });
@@ -79,20 +80,27 @@ export function SeguridadTab() {
     setLogoutAll(true);
     const { error } = await supabase.auth.signOut({ scope: "global" });
     setLogoutAll(false);
-    if (error) { flash({ kind: "err", msg: formatSupabaseError(error) }); return; }
+    if (error) {
+      flash({ kind: "err", msg: formatSupabaseError(error) });
+      return;
+    }
     window.location.href = "/login";
   };
 
   const olvidarDispositivo = async (id: string) => {
     const ok = await confirmDialog({
       title: "Olvidar dispositivo",
-      message: "Si vuelve a iniciar sesión en este dispositivo, recibirás un aviso de nuevo dispositivo.",
+      message:
+        "Si vuelve a iniciar sesión en este dispositivo, recibirás un aviso de nuevo dispositivo.",
       confirmLabel: "Olvidar",
       tone: "warning",
     });
     if (!ok) return;
     const { error } = await supabase.from("dispositivos_conocidos").delete().eq("id", id);
-    if (error) { flash({ kind: "err", msg: formatSupabaseError(error) }); return; }
+    if (error) {
+      flash({ kind: "err", msg: formatSupabaseError(error) });
+      return;
+    }
     setDevices((d) => d.filter((x) => x.id !== id));
     flash({ kind: "ok", msg: "Dispositivo olvidado." });
   };
@@ -119,11 +127,13 @@ export function SeguridadTab() {
       <div className="card-glass p-5 sm:p-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-start gap-3">
-            <div className={`flex h-11 w-11 items-center justify-center rounded-xl border ${
-              mfa === "on"
-                ? "border-emerald-400/40 bg-emerald-500/10 text-emerald-200"
-                : "border-amber-400/40 bg-amber-500/10 text-amber-200"
-            }`}>
+            <div
+              className={`flex h-11 w-11 items-center justify-center rounded-xl border ${
+                mfa === "on"
+                  ? "border-emerald-400/40 bg-emerald-500/10 text-emerald-200"
+                  : "border-amber-400/40 bg-amber-500/10 text-amber-200"
+              }`}
+            >
               {mfa === "on" ? <ShieldCheck size={20} /> : <ShieldAlert size={20} />}
             </div>
             <div>
@@ -132,8 +142,10 @@ export function SeguridadTab() {
               </h3>
               <p className="mt-0.5 text-xs text-text-mid">
                 {mfa === "loading" && "Comprobando estado…"}
-                {mfa === "off" && "Recomendado. Añade una app TOTP (Google Authenticator, 1Password, Authy…)."}
-                {mfa === "on" && "Activado. Te pediremos el código TOTP en cada inicio de sesión sensible."}
+                {mfa === "off" &&
+                  "Recomendado. Añade una app TOTP (Google Authenticator, 1Password, Authy…)."}
+                {mfa === "on" &&
+                  "Activado. Te pediremos el código TOTP en cada inicio de sesión sensible."}
               </p>
             </div>
           </div>
@@ -158,10 +170,12 @@ export function SeguridadTab() {
               <LogOut size={20} />
             </div>
             <div>
-              <h3 className="font-display text-base font-bold text-text-hi">Cerrar sesión en todos los dispositivos</h3>
+              <h3 className="font-display text-base font-bold text-text-hi">
+                Cerrar sesión en todos los dispositivos
+              </h3>
               <p className="mt-0.5 text-xs text-text-mid sm:max-w-md">
-                Útil si has perdido un dispositivo o sospechas un acceso no autorizado.
-                Invalida todos los tokens de sesión en cualquier navegador o app.
+                Útil si has perdido un dispositivo o sospechas un acceso no autorizado. Invalida
+                todos los tokens de sesión en cualquier navegador o app.
               </p>
             </div>
           </div>
@@ -199,7 +213,10 @@ export function SeguridadTab() {
         ) : (
           <ul className="divide-y divide-indigo-400/10">
             {devices.map((d) => (
-              <li key={d.id} className="flex flex-col gap-2 px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
+              <li
+                key={d.id}
+                className="flex flex-col gap-2 px-5 py-3 sm:flex-row sm:items-center sm:justify-between"
+              >
                 <div className="flex items-center gap-3">
                   <Smartphone size={15} className="text-text-mid" />
                   <div>
@@ -233,12 +250,14 @@ export function SeguridadTab() {
 
 function CambiarPasswordCard({ onResult }: { onResult: (t: Toast) => void }) {
   const supabase = createClient();
-  const [actual, setActual]       = useState("");
-  const [nueva, setNueva]         = useState("");
-  const [confirma, setConfirma]   = useState("");
-  const [mostrar, setMostrar]     = useState(false);
+  const [actual, setActual] = useState("");
+  const [nueva, setNueva] = useState("");
+  const [confirma, setConfirma] = useState("");
+  const [mostrar, setMostrar] = useState(false);
   const [guardando, setGuardando] = useState(false);
-  const [errores, setErrores]     = useState<{ actual?: string; nueva?: string; confirma?: string }>({});
+  const [errores, setErrores] = useState<{ actual?: string; nueva?: string; confirma?: string }>(
+    {},
+  );
 
   const fuerza = (() => {
     if (!nueva) return 0;
@@ -250,8 +269,15 @@ function CambiarPasswordCard({ onResult }: { onResult: (t: Toast) => void }) {
     if (/[^A-Za-z0-9]/.test(nueva)) s++;
     return s;
   })();
-  const fuerzaLabel  = ["—", "Muy débil", "Débil", "Aceptable", "Fuerte", "Muy fuerte"][fuerza];
-  const fuerzaColor  = ["bg-text-lo/30", "bg-rose-500", "bg-rose-400", "bg-amber-400", "bg-emerald-400", "bg-emerald-500"][fuerza];
+  const fuerzaLabel = ["—", "Muy débil", "Débil", "Aceptable", "Fuerte", "Muy fuerte"][fuerza];
+  const fuerzaColor = [
+    "bg-text-lo/30",
+    "bg-rose-500",
+    "bg-rose-400",
+    "bg-amber-400",
+    "bg-emerald-400",
+    "bg-emerald-500",
+  ][fuerza];
 
   async function enviar(e: React.FormEvent) {
     e.preventDefault();
@@ -266,7 +292,9 @@ function CambiarPasswordCard({ onResult }: { onResult: (t: Toast) => void }) {
 
     setGuardando(true);
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user?.email) {
       setGuardando(false);
       onResult({ kind: "err", msg: "No se ha podido identificar tu cuenta." });
@@ -290,7 +318,10 @@ function CambiarPasswordCard({ onResult }: { onResult: (t: Toast) => void }) {
       return;
     }
 
-    setActual(""); setNueva(""); setConfirma(""); setErrores({});
+    setActual("");
+    setNueva("");
+    setConfirma("");
+    setErrores({});
     onResult({ kind: "ok", msg: "Contraseña actualizada correctamente." });
   }
 
@@ -303,8 +334,8 @@ function CambiarPasswordCard({ onResult }: { onResult: (t: Toast) => void }) {
         <div className="min-w-0 flex-1">
           <h3 className="font-display text-base font-bold text-text-hi">Cambiar contraseña</h3>
           <p className="mt-0.5 text-xs text-text-mid">
-            Usa al menos 8 caracteres con mayúsculas, minúsculas, números y, si puedes,
-            algún símbolo.
+            Usa al menos 8 caracteres con mayúsculas, minúsculas, números y, si puedes, algún
+            símbolo.
           </p>
         </div>
         <button

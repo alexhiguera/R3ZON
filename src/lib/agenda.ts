@@ -14,13 +14,8 @@
  */
 
 import { randomBytes, randomUUID } from "node:crypto";
+import { type GoogleCalendarEvent, googleFetch, loadTokens, persistSyncToken } from "@/lib/google";
 import { createClient } from "@/lib/supabase/server";
-import {
-  googleFetch,
-  loadTokens,
-  persistSyncToken,
-  type GoogleCalendarEvent,
-} from "@/lib/google";
 
 // Margen mínimo de vida útil del watch channel: si quedan <24h, lo renovamos.
 const WATCH_RENEW_THRESHOLD_MS = 24 * 60 * 60 * 1000;
@@ -45,7 +40,7 @@ const CALENDAR_ID = "primary";
 function toIsoOrNull(g?: { dateTime?: string; date?: string }): string | null {
   if (!g) return null;
   if (g.dateTime) return new Date(g.dateTime).toISOString();
-  if (g.date)     return new Date(`${g.date}T00:00:00Z`).toISOString();
+  if (g.date) return new Date(`${g.date}T00:00:00Z`).toISOString();
   return null;
 }
 
@@ -61,7 +56,7 @@ function mapStatus(s: GoogleCalendarEvent["status"]): "confirmada" | "tentativa"
  */
 async function fetchEventsPage(params: URLSearchParams): Promise<GoogleEventsList> {
   const path = `/calendars/${encodeURIComponent(CALENDAR_ID)}/events?${params.toString()}`;
-  const res  = await googleFetch(path);
+  const res = await googleFetch(path);
 
   if (res.status === 429) {
     // Google Calendar rate limit — propagamos un error tipado para que la UI
@@ -72,8 +67,9 @@ async function fetchEventsPage(params: URLSearchParams): Promise<GoogleEventsLis
       `Google Calendar rate limit (429). Reintenta en ~${Number.isFinite(seconds) ? seconds : 60}s.`,
     );
     (err as Error & { code?: string; retryAfter?: number }).code = "rate_limit";
-    (err as Error & { code?: string; retryAfter?: number }).retryAfter =
-      Number.isFinite(seconds) ? seconds : 60;
+    (err as Error & { code?: string; retryAfter?: number }).retryAfter = Number.isFinite(seconds)
+      ? seconds
+      : 60;
     throw err;
   }
 
@@ -132,17 +128,18 @@ export async function syncGoogleCalendar(): Promise<SyncResult> {
   }
 
   let inserted = 0;
-  let updated  = 0;
+  let updated = 0;
   let cancelled = 0;
   let nextSyncToken: string | null = null;
   let pageToken: string | undefined;
 
   do {
-    if (pageToken) params.set("pageToken", pageToken); else params.delete("pageToken");
+    if (pageToken) params.set("pageToken", pageToken);
+    else params.delete("pageToken");
 
     const page = await fetchEventsPage(params);
     nextSyncToken = page.nextSyncToken ?? nextSyncToken;
-    pageToken     = page.nextPageToken;
+    pageToken = page.nextPageToken;
 
     const items = page.items ?? [];
     if (items.length === 0) continue;
@@ -158,23 +155,23 @@ export async function syncGoogleCalendar(): Promise<SyncResult> {
     const rows = items
       .map((ev) => {
         const start = toIsoOrNull(ev.start);
-        const end   = toIsoOrNull(ev.end);
+        const end = toIsoOrNull(ev.end);
         if (!start || !end) return null; // evento sin tiempos → ignoramos
         const status = mapStatus(ev.status);
         if (status === "cancelada") cancelled++;
         return {
-          negocio_id:        negocioId,
-          google_event_id:   ev.id,
+          negocio_id: negocioId,
+          google_event_id: ev.id,
           google_calendar_id: CALENDAR_ID,
-          google_etag:       ev.etag ?? null,
-          title:             ev.summary ?? "(sin título)",
-          description:       ev.description ?? null,
-          ubicacion:         ev.location ?? null,
-          start_time:        start,
-          end_time:          end,
-          color:             ev.colorId ?? null,
-          estado:            status,
-          last_synced_at:    new Date().toISOString(),
+          google_etag: ev.etag ?? null,
+          title: ev.summary ?? "(sin título)",
+          description: ev.description ?? null,
+          ubicacion: ev.location ?? null,
+          start_time: start,
+          end_time: end,
+          color: ev.colorId ?? null,
+          estado: status,
+          last_synced_at: new Date().toISOString(),
         };
       })
       .filter((r): r is NonNullable<typeof r> => r !== null);
@@ -226,17 +223,17 @@ async function registerCalendarWatch(): Promise<void> {
     throw new Error("GOOGLE_WEBHOOK_URL debe ser HTTPS (Google rechaza http/localhost).");
   }
 
-  const channelId    = randomUUID();
+  const channelId = randomUUID();
   const channelToken = randomBytes(32).toString("base64url");
   const expirationMs = Date.now() + WATCH_REQUEST_TTL_MS;
 
   const res = await googleFetch(`/calendars/primary/events/watch`, {
     method: "POST",
     body: JSON.stringify({
-      id:         channelId,
-      type:       "web_hook",
-      address:    webhookUrl,
-      token:      channelToken,
+      id: channelId,
+      type: "web_hook",
+      address: webhookUrl,
+      token: channelToken,
       expiration: String(expirationMs),
     }),
   });
@@ -246,7 +243,7 @@ async function registerCalendarWatch(): Promise<void> {
     throw new Error(`Google watch register ${res.status}: ${body}`);
   }
 
-  const data = await res.json() as {
+  const data = (await res.json()) as {
     id: string;
     resourceId: string;
     expiration?: string;
@@ -259,10 +256,10 @@ async function registerCalendarWatch(): Promise<void> {
 
   const supabase = await createClient();
   const { error } = await supabase.rpc("set_google_watch_channel", {
-    p_channel_id:          data.id,
-    p_channel_token:       channelToken,
+    p_channel_id: data.id,
+    p_channel_token: channelToken,
     p_channel_resource_id: data.resourceId,
-    p_channel_expiration:  expiration.toISOString(),
+    p_channel_expiration: expiration.toISOString(),
   });
   if (error) throw new Error(`set_google_watch_channel: ${error.message}`);
 }
@@ -302,7 +299,7 @@ export async function stopCalendarWatch(): Promise<void> {
       const res = await googleFetch(`/channels/stop`, {
         method: "POST",
         body: JSON.stringify({
-          id:         data.channel_id,
+          id: data.channel_id,
           resourceId: data.channel_resource_id,
         }),
       });
@@ -345,9 +342,11 @@ export async function listEvents(rangeStart: string, rangeEnd: string): Promise<
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("agenda_eventos")
-    .select("id,title,description,start_time,end_time,color,estado,google_event_id,google_calendar_id,cliente_id,ubicacion")
+    .select(
+      "id,title,description,start_time,end_time,color,estado,google_event_id,google_calendar_id,cliente_id,ubicacion",
+    )
     .gte("start_time", rangeStart)
-    .lte("end_time",   rangeEnd)
+    .lte("end_time", rangeEnd)
     .neq("estado", "cancelada")
     .order("start_time", { ascending: true });
   if (error) throw new Error(`listEvents: ${error.message}`);
@@ -360,9 +359,9 @@ async function patchGoogleEvent(
   patch: Record<string, unknown>,
 ) {
   const path = `/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(googleEventId)}`;
-  const res  = await googleFetch(path, {
+  const res = await googleFetch(path, {
     method: "PATCH",
-    body:   JSON.stringify(patch),
+    body: JSON.stringify(patch),
   });
   if (!res.ok && res.status !== 404) {
     const body = await res.text();
@@ -376,8 +375,8 @@ async function patchGoogleEvent(
  */
 export async function updateEventTime(args: {
   id: string;
-  start: string;   // ISO
-  end:   string;   // ISO
+  start: string; // ISO
+  end: string; // ISO
 }): Promise<void> {
   const supabase = await createClient();
 
@@ -386,7 +385,7 @@ export async function updateEventTime(args: {
     .from("agenda_eventos")
     .update({
       start_time: args.start,
-      end_time:   args.end,
+      end_time: args.end,
       last_synced_at: new Date().toISOString(),
     })
     .eq("id", args.id)
@@ -396,14 +395,10 @@ export async function updateEventTime(args: {
 
   // 2. Si está vinculado a Google → PATCH silencioso.
   if (data?.google_event_id) {
-    await patchGoogleEvent(
-      data.google_calendar_id || "primary",
-      data.google_event_id,
-      {
-        start: { dateTime: new Date(args.start).toISOString() },
-        end:   { dateTime: new Date(args.end).toISOString() },
-      },
-    );
+    await patchGoogleEvent(data.google_calendar_id || "primary", data.google_event_id, {
+      start: { dateTime: new Date(args.start).toISOString() },
+      end: { dateTime: new Date(args.end).toISOString() },
+    });
   }
 }
 
@@ -418,7 +413,7 @@ export async function updateEvent(args: {
   title: string;
   description?: string | null;
   start: string;
-  end:   string;
+  end: string;
   color?: string | null;
   ubicacion?: string | null;
   cliente_id?: string | null;
@@ -434,30 +429,26 @@ export async function updateEvent(args: {
 
   // 1. Si está vinculado a Google → PATCH primero (fuente fiable de error).
   if (row?.google_event_id) {
-    await patchGoogleEvent(
-      row.google_calendar_id || "primary",
-      row.google_event_id,
-      {
-        summary:     args.title,
-        description: args.description ?? "",
-        location:    args.ubicacion ?? "",
-        start: { dateTime: new Date(args.start).toISOString() },
-        end:   { dateTime: new Date(args.end).toISOString() },
-      },
-    );
+    await patchGoogleEvent(row.google_calendar_id || "primary", row.google_event_id, {
+      summary: args.title,
+      description: args.description ?? "",
+      location: args.ubicacion ?? "",
+      start: { dateTime: new Date(args.start).toISOString() },
+      end: { dateTime: new Date(args.end).toISOString() },
+    });
   }
 
   // 2. Persistir en Supabase.
   const { error } = await supabase
     .from("agenda_eventos")
     .update({
-      title:       args.title,
+      title: args.title,
       description: args.description ?? null,
-      start_time:  args.start,
-      end_time:    args.end,
-      color:       args.color ?? null,
-      ubicacion:   args.ubicacion ?? null,
-      cliente_id:  args.cliente_id ?? null,
+      start_time: args.start,
+      end_time: args.end,
+      color: args.color ?? null,
+      ubicacion: args.ubicacion ?? null,
+      cliente_id: args.cliente_id ?? null,
       last_synced_at: new Date().toISOString(),
     })
     .eq("id", args.id);
@@ -471,7 +462,9 @@ export async function getEvent(id: string): Promise<AgendaEventoRow | null> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("agenda_eventos")
-    .select("id,title,description,start_time,end_time,color,estado,google_event_id,google_calendar_id,cliente_id,ubicacion")
+    .select(
+      "id,title,description,start_time,end_time,color,estado,google_event_id,google_calendar_id,cliente_id,ubicacion",
+    )
     .eq("id", id)
     .single();
   if (error) return null;
@@ -485,7 +478,7 @@ export async function createEvent(args: {
   title: string;
   description?: string | null;
   start: string;
-  end:   string;
+  end: string;
   color?: string | null;
   ubicacion?: string | null;
   cliente_id?: string | null;
@@ -505,11 +498,11 @@ export async function createEvent(args: {
       const res = await googleFetch(`/calendars/${googleCalId}/events`, {
         method: "POST",
         body: JSON.stringify({
-          summary:     args.title,
+          summary: args.title,
           description: args.description ?? "",
-          location:    args.ubicacion ?? "",
+          location: args.ubicacion ?? "",
           start: { dateTime: new Date(args.start).toISOString() },
-          end:   { dateTime: new Date(args.end).toISOString() },
+          end: { dateTime: new Date(args.end).toISOString() },
         }),
       });
       if (res.ok) {
@@ -525,19 +518,21 @@ export async function createEvent(args: {
   const { data, error } = await supabase
     .from("agenda_eventos")
     .insert({
-      negocio_id:        perfil.id,
-      title:             args.title,
-      description:       args.description ?? null,
-      start_time:        args.start,
-      end_time:          args.end,
-      color:             args.color ?? null,
-      ubicacion:         args.ubicacion ?? null,
-      cliente_id:        args.cliente_id ?? null,
-      google_event_id:   googleEventId,
+      negocio_id: perfil.id,
+      title: args.title,
+      description: args.description ?? null,
+      start_time: args.start,
+      end_time: args.end,
+      color: args.color ?? null,
+      ubicacion: args.ubicacion ?? null,
+      cliente_id: args.cliente_id ?? null,
+      google_event_id: googleEventId,
       google_calendar_id: googleEventId ? googleCalId : null,
-      last_synced_at:    new Date().toISOString(),
+      last_synced_at: new Date().toISOString(),
     })
-    .select("id,title,description,start_time,end_time,color,estado,google_event_id,google_calendar_id,cliente_id,ubicacion")
+    .select(
+      "id,title,description,start_time,end_time,color,estado,google_event_id,google_calendar_id,cliente_id,ubicacion",
+    )
     .single();
   if (error) throw new Error(`createEvent: ${error.message}`);
   return data as AgendaEventoRow;

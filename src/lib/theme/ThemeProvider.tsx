@@ -15,8 +15,8 @@ import {
   defaultTheme,
   mergeWithDefaults,
   readLocalTheme,
-  writeLocalTheme,
   type ThemeValues,
+  writeLocalTheme,
 } from "./theme";
 
 type Ctx = {
@@ -47,7 +47,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const supabase = useMemo(() => createClient(), []);
   // Sync local cache → CSS antes del primer paint disponible.
   const [theme, setTheme] = useState<ThemeValues>(() =>
-    mergeWithDefaults(typeof window !== "undefined" ? readLocalTheme() : null)
+    mergeWithDefaults(typeof window !== "undefined" ? readLocalTheme() : null),
   );
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -78,7 +78,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       if (cancelled) return;
       if (error && isMissingTableError(error)) {
         setSaveError(
-          "Falta aplicar supabase/theme_ext.sql en la BD. Los cambios solo persisten en este navegador."
+          "Falta aplicar supabase/theme_ext.sql en la BD. Los cambios solo persisten en este navegador.",
         );
       } else if (!error && data?.theme && typeof data.theme === "object") {
         const merged = mergeWithDefaults(data.theme as ThemeValues);
@@ -109,12 +109,12 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
           .from("user_preferences")
           .upsert(
             { user_id: user.id, theme: next, updated_at: new Date().toISOString() },
-            { onConflict: "user_id" }
+            { onConflict: "user_id" },
           );
         if (error) {
           if (isMissingTableError(error)) {
             setSaveError(
-              "Falta aplicar supabase/theme_ext.sql en la BD. Cambios guardados solo en este navegador."
+              "Falta aplicar supabase/theme_ext.sql en la BD. Cambios guardados solo en este navegador.",
             );
           } else {
             setSaveError(error.message);
@@ -125,7 +125,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         setSaving(false);
       }, 600);
     },
-    [supabase]
+    [supabase],
   );
 
   const setField = useCallback(
@@ -137,7 +137,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         return next;
       });
     },
-    [persist]
+    [persist],
   );
 
   const setMany = useCallback(
@@ -149,7 +149,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         return next;
       });
     },
-    [persist]
+    [persist],
   );
 
   const reset = useCallback(() => {
@@ -161,7 +161,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo<Ctx>(
     () => ({ theme, setField, setMany, reset, loading, saving, saveError }),
-    [theme, setField, setMany, reset, loading, saving, saveError]
+    [theme, setField, setMany, reset, loading, saving, saveError],
   );
 
   return <ThemeCtx.Provider value={value}>{children}</ThemeCtx.Provider>;

@@ -22,7 +22,7 @@ async function getWorker() {
 
 export async function ocrImagen(
   file: File | Blob | string,
-  onProgress?: (pct: number) => void
+  onProgress?: (pct: number) => void,
 ): Promise<string> {
   const Tesseract = await import("tesseract.js");
   const worker = await Tesseract.createWorker(["spa", "eng"], 1, {

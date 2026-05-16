@@ -16,10 +16,7 @@ const cifNifSchema = z
   .trim()
   .optional()
   .transform((v) => (v === "" || v === undefined ? null : v.toUpperCase()))
-  .refine(
-    (v) => v === null || cifNifRegex.test(v),
-    "Formato de CIF/NIF inválido (9 caracteres)"
-  );
+  .refine((v) => v === null || cifNifRegex.test(v), "Formato de CIF/NIF inválido (9 caracteres)");
 
 // E.164 laxo: + opcional y 7-15 dígitos (admite espacios que limpiamos).
 const telefonoSchema = z
@@ -29,7 +26,7 @@ const telefonoSchema = z
   .transform((v) => (v === "" || v === undefined ? null : v.replace(/\s+/g, "")))
   .refine(
     (v) => v === null || /^\+?[0-9]{7,15}$/.test(v),
-    "Teléfono inválido (7-15 dígitos, prefijo + opcional)"
+    "Teléfono inválido (7-15 dígitos, prefijo + opcional)",
   );
 
 const emailSchema = z
@@ -37,10 +34,7 @@ const emailSchema = z
   .trim()
   .optional()
   .transform((v) => (v === "" || v === undefined ? null : v.toLowerCase()))
-  .refine(
-    (v) => v === null || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v),
-    "Email inválido"
-  );
+  .refine((v) => v === null || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v), "Email inválido");
 
 export const negocioSchema = z.object({
   nombre_negocio: z

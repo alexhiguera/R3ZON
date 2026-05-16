@@ -16,7 +16,8 @@ try {
     if (m) env[m[1]] = m[2].replace(/^["']|["']$/g, "");
   }
 } catch {
-  console.error("✗ No encuentro .env.local"); process.exit(1);
+  console.error("✗ No encuentro .env.local");
+  process.exit(1);
 }
 
 const {
@@ -55,7 +56,8 @@ const { data, error } = await sb.auth.admin.createUser({
 });
 
 if (error && !/already.*registered/i.test(error.message)) {
-  console.error("✗", error.message); process.exit(1);
+  console.error("✗", error.message);
+  process.exit(1);
 }
 
 console.log("✓ Admin listo:", email);

@@ -1,17 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Calendar, ExternalLink, FileText, Loader2, Plus, Receipt } from "lucide-react";
 import Link from "next/link";
-import {
-  FileText,
-  Plus,
-  Loader2,
-  Receipt,
-  ExternalLink,
-  Calendar,
-} from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
+import { useEffect, useState } from "react";
 import { Tooltip } from "@/components/ui/Tooltip";
+import { createClient } from "@/lib/supabase/client";
 
 type Documento = {
   id: string;
@@ -24,11 +17,11 @@ type Documento = {
 };
 
 const ESTADO_DOC: Record<string, string> = {
-  borrador:    "border-text-lo/30 bg-text-lo/10 text-text-lo",
-  generado:    "border-indigo-400/30 bg-indigo-500/10 text-indigo-200",
-  enviado:     "border-cyan/30 bg-cyan/10 text-cyan",
-  pagado:      "border-ok/30 bg-ok/10 text-ok",
-  anulado:     "border-danger/30 bg-danger/10 text-danger",
+  borrador: "border-text-lo/30 bg-text-lo/10 text-text-lo",
+  generado: "border-indigo-400/30 bg-indigo-500/10 text-indigo-200",
+  enviado: "border-cyan/30 bg-cyan/10 text-cyan",
+  pagado: "border-ok/30 bg-ok/10 text-ok",
+  anulado: "border-danger/30 bg-danger/10 text-danger",
 };
 
 export function TabDocumentos({
@@ -84,12 +77,8 @@ export function TabDocumentos({
       {docs.length === 0 ? (
         <div className="flex flex-col items-center gap-2 py-8 text-center">
           <FileText size={28} className="text-indigo-400/30" />
-          <div className="text-sm font-medium text-text-hi">
-            Sin documentos emitidos
-          </div>
-          <p className="text-xs text-text-mid">
-            Crea una factura o presupuesto desde el botón.
-          </p>
+          <div className="text-sm font-medium text-text-hi">Sin documentos emitidos</div>
+          <p className="text-xs text-text-mid">Crea una factura o presupuesto desde el botón.</p>
         </div>
       ) : (
         <ul className="divide-y divide-indigo-400/10 overflow-hidden rounded-2xl border border-indigo-400/15">
@@ -124,9 +113,7 @@ export function TabDocumentos({
                 </div>
               </div>
               <div className="flex shrink-0 flex-col items-end gap-1">
-                <span className="text-sm font-bold text-text-hi">
-                  {d.total.toFixed(2)} €
-                </span>
+                <span className="text-sm font-bold text-text-hi">{d.total.toFixed(2)} €</span>
                 <span
                   className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold capitalize ${ESTADO_DOC[d.estado] ?? ""}`}
                 >

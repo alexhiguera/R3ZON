@@ -1,4 +1,4 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
@@ -15,7 +15,7 @@ const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
  */
 export async function GET(request: NextRequest) {
   const { origin, searchParams } = new URL(request.url);
-  const code  = searchParams.get("code");
+  const code = searchParams.get("code");
   const state = searchParams.get("state");
   const error = searchParams.get("error");
   // `next` viene del cookie que set /connect; Google no lo echo-back.
@@ -32,18 +32,18 @@ export async function GET(request: NextRequest) {
     return redirectWithError(origin, "invalid_state", next);
   }
 
-  const clientId     = process.env.GOOGLE_CLIENT_ID;
+  const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
   if (!clientId || !clientSecret) {
     return redirectWithError(origin, "google_credentials_missing", next);
   }
 
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) {
-    return NextResponse.redirect(
-      `${origin}/login?next=${encodeURIComponent(next)}`
-    );
+    return NextResponse.redirect(`${origin}/login?next=${encodeURIComponent(next)}`);
   }
 
   // Intercambio del code por tokens.
@@ -61,10 +61,10 @@ export async function GET(request: NextRequest) {
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({
         code,
-        client_id:     clientId,
+        client_id: clientId,
         client_secret: clientSecret,
-        redirect_uri:  `${origin}/api/integrations/google/callback`,
-        grant_type:    "authorization_code",
+        redirect_uri: `${origin}/api/integrations/google/callback`,
+        grant_type: "authorization_code",
       }),
     });
     if (!res.ok) {
@@ -87,11 +87,11 @@ export async function GET(request: NextRequest) {
   const email = decodeIdTokenEmail(tokenJson.id_token);
 
   const { error: rpcError } = await supabase.rpc("set_google_tokens", {
-    p_access_token:  tokenJson.access_token,
+    p_access_token: tokenJson.access_token,
     p_refresh_token: tokenJson.refresh_token,
-    p_expires_at:    expiresAt.toISOString(),
-    p_email:         email,
-    p_scope:         tokenJson.scope ?? null,
+    p_expires_at: expiresAt.toISOString(),
+    p_email: email,
+    p_scope: tokenJson.scope ?? null,
   });
 
   if (rpcError) {
@@ -113,7 +113,7 @@ export async function GET(request: NextRequest) {
     secure: process.env.NODE_ENV === "production",
   };
   res.cookies.set("g_oauth_state", "", expire);
-  res.cookies.set("g_oauth_next",  "", expire);
+  res.cookies.set("g_oauth_next", "", expire);
   return res;
 }
 
@@ -140,7 +140,7 @@ function decodeIdTokenEmail(idToken?: string): string | null {
     const [, payload] = idToken.split(".");
     if (!payload) return null;
     const decoded = JSON.parse(
-      Buffer.from(payload.replace(/-/g, "+").replace(/_/g, "/"), "base64").toString("utf-8")
+      Buffer.from(payload.replace(/-/g, "+").replace(/_/g, "/"), "base64").toString("utf-8"),
     );
     return typeof decoded.email === "string" ? decoded.email : null;
   } catch {

@@ -1,16 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Calendar, CalendarPlus, Clock, Loader2, MapPin, Search, User2 } from "lucide-react";
 import Link from "next/link";
-import {
-  Calendar,
-  Clock,
-  MapPin,
-  Search,
-  User2,
-  Loader2,
-  CalendarPlus,
-} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 type Row = {
@@ -28,9 +20,9 @@ type Row = {
 type Filtro = "proximas" | "hoy" | "semana" | "pasadas" | "todas";
 
 const ESTADO_STYLE: Record<string, string> = {
-  tentativa:  "border-warn/30 bg-warn/10 text-warn",
+  tentativa: "border-warn/30 bg-warn/10 text-warn",
   confirmada: "border-cyan/30 bg-cyan/10 text-cyan",
-  cancelada:  "border-danger/30 bg-danger/10 text-danger",
+  cancelada: "border-danger/30 bg-danger/10 text-danger",
 };
 
 function startOfDay(d: Date) {
@@ -52,7 +44,7 @@ export function CitasLista() {
       const { data } = await supabase
         .from("agenda_eventos")
         .select(
-          "id,title,description,start_time,end_time,estado,ubicacion,cliente_id,clientes(id,nombre)"
+          "id,title,description,start_time,end_time,estado,ubicacion,cliente_id,clientes(id,nombre)",
         )
         .neq("estado", "cancelada")
         .order("start_time", { ascending: false })
@@ -89,7 +81,7 @@ export function CitasLista() {
     return [...filtradas].sort((a, b) =>
       filtro === "pasadas"
         ? new Date(b.start_time).getTime() - new Date(a.start_time).getTime()
-        : new Date(a.start_time).getTime() - new Date(b.start_time).getTime()
+        : new Date(a.start_time).getTime() - new Date(b.start_time).getTime(),
     );
   }, [filtradas, filtro]);
 
@@ -107,14 +99,17 @@ export function CitasLista() {
             className="w-full bg-transparent text-sm text-text-hi placeholder:text-text-ghost focus:outline-none"
           />
         </div>
-        <div role="tablist" className="flex flex-wrap gap-1 rounded-xl border border-indigo-400/20 bg-indigo-900/20 p-1">
+        <div
+          role="tablist"
+          className="flex flex-wrap gap-1 rounded-xl border border-indigo-400/20 bg-indigo-900/20 p-1"
+        >
           {(
             [
               ["proximas", "Próximas"],
-              ["hoy",      "Hoy"],
-              ["semana",   "7 días"],
-              ["pasadas",  "Pasadas"],
-              ["todas",    "Todas"],
+              ["hoy", "Hoy"],
+              ["semana", "7 días"],
+              ["pasadas", "Pasadas"],
+              ["todas", "Todas"],
             ] as [Filtro, string][]
           ).map(([id, label]) => (
             <button
@@ -165,16 +160,15 @@ export function CitasLista() {
                   </span>
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-semibold text-text-hi">
-                    {c.title}
-                  </div>
+                  <div className="truncate text-sm font-semibold text-text-hi">{c.title}</div>
                   <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-text-lo">
                     <span className="flex items-center gap-1">
                       <Clock size={11} />
                       {inicio.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
                       {" – "}
                       {fin.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
-                      {" · "}{durMin} min
+                      {" · "}
+                      {durMin} min
                     </span>
                     {c.clientes && (
                       <Link

@@ -1,7 +1,7 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
-  añadirItem,
   aplicarMovimiento,
+  añadirItem,
   calcularTotalVenta,
   cambiarCantidad,
   colorCategoria,
@@ -11,20 +11,32 @@ import {
   type ItemTPV,
 } from "@/lib/inventario";
 
-const prod = (over: Partial<{ id: string; nombre: string; precio_venta: number; iva_pct: number }> = {}) => ({
-  id: "p1", nombre: "Café", precio_venta: 1.5, iva_pct: 10, ...over,
+const prod = (
+  over: Partial<{ id: string; nombre: string; precio_venta: number; iva_pct: number }> = {},
+) => ({
+  id: "p1",
+  nombre: "Café",
+  precio_venta: 1.5,
+  iva_pct: 10,
+  ...over,
 });
 
 // ── estadoStock ────────────────────────────────────────────────────────────
 describe("estadoStock", () => {
   it("sin_stock cuando el producto no rastrea inventario", () => {
-    expect(estadoStock({ stock_tracking: false, stock_actual: 0, stock_minimo: 0 })).toBe("sin_stock");
-    expect(estadoStock({ stock_tracking: false, stock_actual: 100, stock_minimo: 5 })).toBe("sin_stock");
+    expect(estadoStock({ stock_tracking: false, stock_actual: 0, stock_minimo: 0 })).toBe(
+      "sin_stock",
+    );
+    expect(estadoStock({ stock_tracking: false, stock_actual: 100, stock_minimo: 5 })).toBe(
+      "sin_stock",
+    );
   });
 
   it("agotado cuando stock_actual <= 0", () => {
-    expect(estadoStock({ stock_tracking: true, stock_actual: 0,    stock_minimo: 5 })).toBe("agotado");
-    expect(estadoStock({ stock_tracking: true, stock_actual: -1,   stock_minimo: 5 })).toBe("agotado");
+    expect(estadoStock({ stock_tracking: true, stock_actual: 0, stock_minimo: 5 })).toBe("agotado");
+    expect(estadoStock({ stock_tracking: true, stock_actual: -1, stock_minimo: 5 })).toBe(
+      "agotado",
+    );
   });
 
   it("bajo cuando stock_actual <= stock_minimo (>0)", () => {
@@ -35,12 +47,14 @@ describe("estadoStock", () => {
   it("ok en otro caso", () => {
     expect(estadoStock({ stock_tracking: true, stock_actual: 10, stock_minimo: 5 })).toBe("ok");
     // Sin mínimo configurado y con stock positivo → ok (no bajo).
-    expect(estadoStock({ stock_tracking: true, stock_actual: 1,  stock_minimo: 0 })).toBe("ok");
+    expect(estadoStock({ stock_tracking: true, stock_actual: 1, stock_minimo: 0 })).toBe("ok");
   });
 
   it("trata stock_actual o stock_minimo null como 0 (defensivo)", () => {
-    expect(estadoStock({ stock_tracking: true, stock_actual: null, stock_minimo: 5 })).toBe("agotado");
-    expect(estadoStock({ stock_tracking: true, stock_actual: 10,   stock_minimo: null })).toBe("ok");
+    expect(estadoStock({ stock_tracking: true, stock_actual: null, stock_minimo: 5 })).toBe(
+      "agotado",
+    );
+    expect(estadoStock({ stock_tracking: true, stock_actual: 10, stock_minimo: null })).toBe("ok");
   });
 });
 
@@ -71,7 +85,14 @@ describe("calcularTotalVenta", () => {
 
   it("una línea con IVA 10%", () => {
     const r = calcularTotalVenta([
-      { producto_id: "p1", nombre: "Café", cantidad: 2, precio_unit: 1.5, iva_pct: 10, descuento_pct: 0 },
+      {
+        producto_id: "p1",
+        nombre: "Café",
+        cantidad: 2,
+        precio_unit: 1.5,
+        iva_pct: 10,
+        descuento_pct: 0,
+      },
     ]);
     expect(r.subtotal).toBe(3);
     expect(r.iva_total).toBe(0.3);
@@ -81,7 +102,14 @@ describe("calcularTotalVenta", () => {
 
   it("aplica descuento por línea sobre la base", () => {
     const r = calcularTotalVenta([
-      { producto_id: "p1", nombre: "X", cantidad: 1, precio_unit: 100, iva_pct: 21, descuento_pct: 50 },
+      {
+        producto_id: "p1",
+        nombre: "X",
+        cantidad: 1,
+        precio_unit: 100,
+        iva_pct: 21,
+        descuento_pct: 50,
+      },
     ]);
     expect(r.subtotal).toBe(50);
     expect(r.iva_total).toBe(10.5);
@@ -90,11 +118,25 @@ describe("calcularTotalVenta", () => {
 
   it("mezcla de IVAs (restaurante: bebida 21 + comida 10)", () => {
     const r = calcularTotalVenta([
-      { producto_id: "b", nombre: "Cerveza", cantidad: 2, precio_unit: 3,  iva_pct: 21, descuento_pct: 0 },
-      { producto_id: "c", nombre: "Menú",    cantidad: 1, precio_unit: 12, iva_pct: 10, descuento_pct: 0 },
+      {
+        producto_id: "b",
+        nombre: "Cerveza",
+        cantidad: 2,
+        precio_unit: 3,
+        iva_pct: 21,
+        descuento_pct: 0,
+      },
+      {
+        producto_id: "c",
+        nombre: "Menú",
+        cantidad: 1,
+        precio_unit: 12,
+        iva_pct: 10,
+        descuento_pct: 0,
+      },
     ]);
-    expect(r.subtotal).toBe(18);          // 6 + 12
-    expect(r.iva_total).toBe(2.46);       // 1.26 + 1.20
+    expect(r.subtotal).toBe(18); // 6 + 12
+    expect(r.iva_total).toBe(2.46); // 1.26 + 1.20
     expect(r.total).toBe(20.46);
     expect(r.num_items).toBe(2);
     expect(r.num_unidades).toBe(3);
@@ -112,7 +154,14 @@ describe("añadirItem", () => {
 
   it("incrementa cantidad si ya existe sin descuento", () => {
     const inicio: ItemTPV[] = [
-      { producto_id: "p1", nombre: "Café", cantidad: 1, precio_unit: 1.5, iva_pct: 10, descuento_pct: 0 },
+      {
+        producto_id: "p1",
+        nombre: "Café",
+        cantidad: 1,
+        precio_unit: 1.5,
+        iva_pct: 10,
+        descuento_pct: 0,
+      },
     ];
     const r = añadirItem(inicio, prod());
     expect(r).toHaveLength(1);
@@ -121,7 +170,14 @@ describe("añadirItem", () => {
 
   it("crea nueva línea si la existente tiene descuento (no debe agruparlas)", () => {
     const inicio: ItemTPV[] = [
-      { producto_id: "p1", nombre: "Café", cantidad: 1, precio_unit: 1.5, iva_pct: 10, descuento_pct: 50 },
+      {
+        producto_id: "p1",
+        nombre: "Café",
+        cantidad: 1,
+        precio_unit: 1.5,
+        iva_pct: 10,
+        descuento_pct: 50,
+      },
     ];
     const r = añadirItem(inicio, prod());
     expect(r).toHaveLength(2);
@@ -129,8 +185,15 @@ describe("añadirItem", () => {
 
   it("agrupa cuando la existente tiene descuento_pct null/undefined (defensivo)", () => {
     const inicio: ItemTPV[] = [
-      // @ts-expect-error — simula entrada cruda con descuento_pct null
-      { producto_id: "p1", nombre: "Café", cantidad: 1, precio_unit: 1.5, iva_pct: 10, descuento_pct: null },
+      {
+        producto_id: "p1",
+        nombre: "Café",
+        cantidad: 1,
+        precio_unit: 1.5,
+        iva_pct: 10,
+        // @ts-expect-error — simula entrada cruda con descuento_pct null
+        descuento_pct: null,
+      },
     ];
     const r = añadirItem(inicio, prod());
     expect(r).toHaveLength(1);

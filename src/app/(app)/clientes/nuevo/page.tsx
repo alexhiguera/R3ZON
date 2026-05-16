@@ -1,22 +1,20 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { ArrowLeft, Building2, ChevronDown, ChevronUp, Loader2, X } from "lucide-react";
 import Link from "next/link";
-import {
-  ArrowLeft, Loader2, Building2, X, ChevronDown, ChevronUp,
-} from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { useToast } from "@/components/ui/Toast";
+import { Help } from "@/components/ui/Tooltip";
 import { createClient } from "@/lib/supabase/client";
 import { useNegocioId } from "@/lib/useNegocioId";
-import { PageHeader } from "@/components/ui/PageHeader";
-import { Help } from "@/components/ui/Tooltip";
-import { useToast } from "@/components/ui/Toast";
 
 const ETIQUETAS_SUGERIDAS = ["vip", "nuevo", "empresa", "inactivo"];
 const ESTADOS = [
   { id: "prospecto", label: "Prospecto" },
-  { id: "activa",    label: "Activa" },
-  { id: "inactiva",  label: "Inactiva" },
+  { id: "activa", label: "Activa" },
+  { id: "inactiva", label: "Inactiva" },
 ] as const;
 
 type EstadoId = (typeof ESTADOS)[number]["id"];
@@ -42,8 +40,7 @@ export default function NuevoClientePage() {
     if (t && !etiquetas.includes(t)) setEtiquetas((p) => [...p, t]);
     setTagInput("");
   };
-  const removeTag = (tag: string) =>
-    setEtiquetas((p) => p.filter((t) => t !== tag));
+  const removeTag = (tag: string) => setEtiquetas((p) => p.filter((t) => t !== tag));
 
   const submit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -77,21 +74,21 @@ export default function NuevoClientePage() {
     const { data, error } = await supabase
       .from("clientes")
       .insert({
-        negocio_id:        negocioId,
-        nombre:            get("nombre")!,
-        sector:            get("sector"),
-        email:             get("email"),
-        telefono:          get("telefono"),
-        cif:               get("cif"),
-        sitio_web:         get("sitio_web"),
-        direccion:         get("direccion"),
-        ciudad:            get("ciudad"),
-        codigo_postal:     get("codigo_postal"),
-        pais:              get("pais") ?? "España",
-        num_empleados:     getNum("num_empleados"),
+        negocio_id: negocioId,
+        nombre: get("nombre")!,
+        sector: get("sector"),
+        email: get("email"),
+        telefono: get("telefono"),
+        cif: get("cif"),
+        sitio_web: get("sitio_web"),
+        direccion: get("direccion"),
+        ciudad: get("ciudad"),
+        codigo_postal: get("codigo_postal"),
+        pais: get("pais") ?? "España",
+        num_empleados: getNum("num_empleados"),
         facturacion_anual: getNum("facturacion_anual"),
         estado,
-        notas:             get("notas"),
+        notas: get("notas"),
         etiquetas,
       })
       .select("id")
@@ -134,12 +131,7 @@ export default function NuevoClientePage() {
           />
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field
-              name="email"
-              label="Email"
-              type="email"
-              placeholder="hola@acme.com"
-            />
+            <Field name="email" label="Email" type="email" placeholder="hola@acme.com" />
             <Field
               name="telefono"
               label="Teléfono"
@@ -150,9 +142,7 @@ export default function NuevoClientePage() {
 
           {/* Estado comercial — visual rápido, no requiere texto */}
           <div>
-            <span className="mb-1.5 block text-xs font-medium text-text-mid">
-              Estado comercial
-            </span>
+            <span className="mb-1.5 block text-xs font-medium text-text-mid">Estado comercial</span>
             <div className="flex gap-2">
               {ESTADOS.map((s) => (
                 <button
@@ -181,16 +171,16 @@ export default function NuevoClientePage() {
             className="flex w-full items-center justify-between gap-2 p-4 text-left"
           >
             <div>
-              <div className="font-display text-sm font-bold text-text-hi">
-                Datos adicionales
-              </div>
+              <div className="font-display text-sm font-bold text-text-hi">Datos adicionales</div>
               <p className="mt-0.5 text-xs text-text-mid">
                 CIF, dirección fiscal, sector, datos B2B y notas. Todo opcional.
               </p>
             </div>
-            {showAvanzado
-              ? <ChevronUp size={18} className="shrink-0 text-text-mid" />
-              : <ChevronDown size={18} className="shrink-0 text-text-mid" />}
+            {showAvanzado ? (
+              <ChevronUp size={18} className="shrink-0 text-text-mid" />
+            ) : (
+              <ChevronDown size={18} className="shrink-0 text-text-mid" />
+            )}
           </button>
 
           {showAvanzado && (
@@ -198,9 +188,9 @@ export default function NuevoClientePage() {
               {/* Identidad fiscal */}
               <Section title="Identidad fiscal">
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <Field name="cif"       label="CIF / NIF"   placeholder="B12345678" />
-                  <Field name="sector"    label="Sector"      placeholder="Tecnología" />
-                  <Field name="sitio_web" label="Sitio web"   type="url" placeholder="acme.com" />
+                  <Field name="cif" label="CIF / NIF" placeholder="B12345678" />
+                  <Field name="sector" label="Sector" placeholder="Tecnología" />
+                  <Field name="sitio_web" label="Sitio web" type="url" placeholder="acme.com" />
                 </div>
               </Section>
 
@@ -208,16 +198,16 @@ export default function NuevoClientePage() {
               <Section title="Dirección fiscal">
                 <Field name="direccion" label="Calle y número" placeholder="Calle Mayor 1" />
                 <div className="mt-3 grid gap-4 sm:grid-cols-3">
-                  <Field name="ciudad"        label="Ciudad" />
+                  <Field name="ciudad" label="Ciudad" />
                   <Field name="codigo_postal" label="Código postal" />
-                  <Field name="pais"          label="País" placeholder="España" />
+                  <Field name="pais" label="País" placeholder="España" />
                 </div>
               </Section>
 
               {/* B2B */}
               <Section title="Datos B2B" help="Útil para segmentar y reportes.">
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <Field name="num_empleados"     label="Nº de empleados"     type="number" />
+                  <Field name="num_empleados" label="Nº de empleados" type="number" />
                   <Field name="facturacion_anual" label="Facturación anual €" type="number" />
                 </div>
               </Section>
@@ -241,7 +231,12 @@ export default function NuevoClientePage() {
                   <input
                     value={tagInput}
                     onChange={(e) => setTagInput(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addTag(tagInput); } }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        addTag(tagInput);
+                      }
+                    }}
                     placeholder="Escribe y pulsa Enter…"
                     className="h-10 flex-1 rounded-xl border border-indigo-400/20 bg-indigo-900/30 px-3 text-sm text-text-hi placeholder:text-text-lo focus:border-cyan/50 focus:outline-none"
                   />

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { Loader2, Zap } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { Zap, Loader2 } from "lucide-react";
+import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 /**
@@ -14,7 +14,7 @@ export function DevLoginButton({ redirectTo = "/dashboard" }: { redirectTo?: str
   // Guard de producción: compilado fuera en build de prod.
   if (process.env.NODE_ENV !== "development") return null;
 
-  const email    = process.env.NEXT_PUBLIC_DEV_EMAIL;
+  const email = process.env.NEXT_PUBLIC_DEV_EMAIL;
   const password = process.env.NEXT_PUBLIC_DEV_PASSWORD;
 
   if (!email || !password) return null;
@@ -32,9 +32,9 @@ function Inner({
   redirectTo: string;
 }) {
   const supabase = createClient();
-  const router   = useRouter();
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [error, setError]     = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const entrar = async () => {
     setLoading(true);
@@ -44,7 +44,7 @@ function Inner({
       setError(
         error.message.includes("Invalid login")
           ? "Usuario no existe aún. Ejecuta: npm run seed:admin"
-          : error.message
+          : error.message,
       );
       setLoading(false);
       return;
@@ -77,9 +77,7 @@ function Inner({
         Entrar directo (dev)
       </button>
 
-      {error && (
-        <p className="text-center text-xs text-danger">{error}</p>
-      )}
+      {error && <p className="text-center text-xs text-danger">{error}</p>}
 
       <p className="text-center text-[0.65rem] text-text-lo">
         Entra como <span className="font-mono text-warn">{email}</span>

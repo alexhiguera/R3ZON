@@ -1,18 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { ArrowRight, PiggyBank, Receipt, TrendingUp } from "lucide-react";
-import { agregarPorMes, eur, totales, type MovimientoFila } from "@/lib/finanzas";
+import Link from "next/link";
 import { MonthlyBars } from "@/components/finanzas/Charts";
+import { agregarPorMes, eur, type MovimientoFila, totales } from "@/lib/finanzas";
 import { KpiCard } from "./KpiCard";
 
-export function FinanceSummary({
-  filas,
-  loading,
-}: {
-  filas: MovimientoFila[];
-  loading?: boolean;
-}) {
+export function FinanceSummary({ filas, loading }: { filas: MovimientoFila[]; loading?: boolean }) {
   const t = totales(filas);
   const mensual = agregarPorMes(filas);
 

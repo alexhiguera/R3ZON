@@ -45,7 +45,10 @@ const TYPE_MESSAGES: Record<string, string> = {
   StripeRateLimitError: "Demasiadas peticiones. Espera unos segundos.",
 };
 
-export function formatStripeError(err: unknown, fallback = "No se ha podido procesar el pago. Inténtalo de nuevo."): string {
+export function formatStripeError(
+  err: unknown,
+  fallback = "No se ha podido procesar el pago. Inténtalo de nuevo.",
+): string {
   if (!err) return fallback;
   const e = err as StripeLike;
 

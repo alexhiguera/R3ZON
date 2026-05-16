@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { WifiOff } from "lucide-react";
+import { useEffect, useState } from "react";
 
 /**
  * Banner sticky bajo la topbar que avisa al usuario cuando el dispositivo

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock del cliente server-side. Devolvemos un objeto con `rpc` espiado.
 const rpcMock = vi.fn();
@@ -6,11 +6,7 @@ vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({ rpc: rpcMock }),
 }));
 
-import {
-  loadTokens,
-  saveTokens,
-  persistSyncToken,
-} from "@/lib/google";
+import { loadTokens, persistSyncToken, saveTokens } from "@/lib/google";
 
 beforeEach(() => {
   rpcMock.mockReset();
@@ -19,11 +15,15 @@ beforeEach(() => {
 describe("RPC wrappers — google.ts", () => {
   it("loadTokens devuelve la primera fila de get_google_tokens", async () => {
     rpcMock.mockResolvedValueOnce({
-      data: [{
-        access_token: "a", refresh_token: "r",
-        expires_at: new Date().toISOString(),
-        sync_token: null, email: "x@y.com",
-      }],
+      data: [
+        {
+          access_token: "a",
+          refresh_token: "r",
+          expires_at: new Date().toISOString(),
+          sync_token: null,
+          email: "x@y.com",
+        },
+      ],
       error: null,
     });
     const t = await loadTokens();
@@ -40,7 +40,8 @@ describe("RPC wrappers — google.ts", () => {
     rpcMock.mockResolvedValueOnce({ error: { message: "encryption_failed" } });
     await expect(
       saveTokens({
-        accessToken: "a", refreshToken: "r",
+        accessToken: "a",
+        refreshToken: "r",
         expiresAt: new Date("2026-01-01"),
         email: "x@y.com",
       }),
@@ -51,18 +52,18 @@ describe("RPC wrappers — google.ts", () => {
     rpcMock.mockResolvedValueOnce({ error: null });
     const expiresAt = new Date("2026-05-03T10:00:00Z");
     await saveTokens({
-      accessToken:  "tok",
+      accessToken: "tok",
       refreshToken: "ref",
       expiresAt,
       email: "u@e.com",
       scope: "calendar.events",
     });
     expect(rpcMock).toHaveBeenCalledWith("set_google_tokens", {
-      p_access_token:  "tok",
+      p_access_token: "tok",
       p_refresh_token: "ref",
-      p_expires_at:    expiresAt.toISOString(),
-      p_email:         "u@e.com",
-      p_scope:         "calendar.events",
+      p_expires_at: expiresAt.toISOString(),
+      p_email: "u@e.com",
+      p_scope: "calendar.events",
     });
   });
 

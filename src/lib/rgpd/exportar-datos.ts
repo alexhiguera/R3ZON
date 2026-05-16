@@ -1,4 +1,4 @@
-import { zipSync, strToU8 } from "fflate";
+import { strToU8, zipSync } from "fflate";
 import { createClient } from "@/lib/supabase/client";
 
 type TablaExportable =
@@ -62,9 +62,7 @@ export async function exportarMisDatos(): Promise<ResultadoExport> {
       // Tipado dinámico: las tablas se acceden por nombre en tiempo de ejecución.
       // `from` espera literales del esquema, pero aquí es seguro porque la RLS
       // filtra por tenant y solo iteramos sobre tablas conocidas.
-      const { data, error } = await supabase
-        .from(tabla as never)
-        .select("*");
+      const { data, error } = await supabase.from(tabla as never).select("*");
       if (error) {
         incidencias.push(`Tabla "${tabla}" omitida: ${error.message}`);
         continue;

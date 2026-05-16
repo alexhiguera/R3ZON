@@ -1,43 +1,43 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
 import {
-  Truck,
+  CheckCircle2,
+  Loader2,
+  Pencil,
+  Plus,
   Receipt,
   Repeat,
-  Plus,
-  Pencil,
-  Trash2,
-  Loader2,
-  CheckCircle2,
   Search,
+  Trash2,
+  Truck,
 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
-import { useNegocioId } from "@/lib/useNegocioId";
-import { useToast } from "@/components/ui/Toast";
-import { PageHeader } from "@/components/ui/PageHeader";
+import { useEffect, useMemo, useState } from "react";
+import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Field } from "@/components/ui/Field";
 import { Input, Select, Textarea } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
-import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
-import { formatSupabaseError } from "@/lib/supabase-errors";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { useToast } from "@/components/ui/Toast";
 import { eur } from "@/lib/formato";
 import {
   ESTADO_GASTO_BADGE,
-  TIPO_GASTO_LABEL,
-  gastoMensualizado,
   type EstadoGasto,
   type GastoProveedor,
+  gastoMensualizado,
   type Proveedor,
   type Recurrencia,
+  TIPO_GASTO_LABEL,
   type TipoGasto,
 } from "@/lib/proveedores";
+import { createClient } from "@/lib/supabase/client";
+import { formatSupabaseError } from "@/lib/supabase-errors";
+import { useNegocioId } from "@/lib/useNegocioId";
 
 type TabId = "proveedores" | "suscripcion";
 
 const TABS: { id: TabId; label: string; Icon: typeof Truck; eyebrow: string }[] = [
-  { id: "proveedores",  label: "Proveedores",   Icon: Truck,  eyebrow: "Directorio" },
-  { id: "suscripcion",  label: "Suscripciones", Icon: Repeat, eyebrow: "Recurrentes" },
+  { id: "proveedores", label: "Proveedores", Icon: Truck, eyebrow: "Directorio" },
+  { id: "suscripcion", label: "Suscripciones", Icon: Repeat, eyebrow: "Recurrentes" },
 ];
 
 export default function ProveedoresPage() {
@@ -77,9 +77,7 @@ export default function ProveedoresPage() {
           </ul>
         </nav>
 
-        <section>
-          {tab === "proveedores" ? <TabProveedores /> : <TabGastos tipo={tab} />}
-        </section>
+        <section>{tab === "proveedores" ? <TabProveedores /> : <TabGastos tipo={tab} />}</section>
       </div>
     </div>
   );
@@ -99,23 +97,22 @@ function TabProveedores() {
   useEffect(() => {
     let alive = true;
     (async () => {
-      const { data, error } = await supabase
-        .from("proveedores")
-        .select("*")
-        .order("nombre");
+      const { data, error } = await supabase.from("proveedores").select("*").order("nombre");
       if (!alive) return;
       if (error) toast.err(error.message);
       else setItems((data as Proveedor[]) ?? []);
       setLoading(false);
     })();
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+    };
   }, [supabase, toast]);
 
   const visibles = items.filter((p) =>
     !busqueda.trim()
       ? true
       : p.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-        (p.cif ?? "").toLowerCase().includes(busqueda.toLowerCase())
+        (p.cif ?? "").toLowerCase().includes(busqueda.toLowerCase()),
   );
 
   async function eliminar(p: Proveedor) {
@@ -213,7 +210,7 @@ function TabProveedores() {
         onCerrar={() => setEditando(null)}
         onGuardado={(saved, esNuevo) => {
           setItems((prev) =>
-            esNuevo ? [saved, ...prev] : prev.map((x) => (x.id === saved.id ? saved : x))
+            esNuevo ? [saved, ...prev] : prev.map((x) => (x.id === saved.id ? saved : x)),
           );
           setEditando(null);
         }}
@@ -239,7 +236,9 @@ function ProveedorModal({
   const [p, setP] = useState<Partial<Proveedor>>(inicial ?? {});
   const [guardando, setGuardando] = useState(false);
 
-  useEffect(() => { if (inicial) setP(inicial); }, [inicial]);
+  useEffect(() => {
+    if (inicial) setP(inicial);
+  }, [inicial]);
 
   if (!inicial) return null;
   const inicialNN = inicial;
@@ -267,7 +266,10 @@ function ProveedorModal({
       : supabase.from("proveedores").update(payload).eq("id", inicialNN.id!).select().single();
     const { data, error } = await q;
     setGuardando(false);
-    if (error) { toast.err(error.message); return; }
+    if (error) {
+      toast.err(error.message);
+      return;
+    }
     toast.ok(esNuevo ? "Proveedor creado" : "Proveedor actualizado");
     onGuardado(data as Proveedor, esNuevo);
   }
@@ -281,33 +283,62 @@ function ProveedorModal({
     >
       <form onSubmit={guardar} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Field label="Nombre" full>
-          <Input value={p.nombre ?? ""} onChange={(e) => setP({ ...p, nombre: e.target.value })}
-            required autoFocus />
+          <Input
+            value={p.nombre ?? ""}
+            onChange={(e) => setP({ ...p, nombre: e.target.value })}
+            required
+            autoFocus
+          />
         </Field>
         <Field label="CIF / NIF">
           <Input value={p.cif ?? ""} onChange={(e) => setP({ ...p, cif: e.target.value })} />
         </Field>
         <Field label="Categoría">
-          <Input value={p.categoria ?? ""} onChange={(e) => setP({ ...p, categoria: e.target.value })}
-            placeholder="Software, Material, Servicios…" />
+          <Input
+            value={p.categoria ?? ""}
+            onChange={(e) => setP({ ...p, categoria: e.target.value })}
+            placeholder="Software, Material, Servicios…"
+          />
         </Field>
         <Field label="Email">
-          <Input type="email" value={p.email ?? ""} onChange={(e) => setP({ ...p, email: e.target.value })} />
+          <Input
+            type="email"
+            value={p.email ?? ""}
+            onChange={(e) => setP({ ...p, email: e.target.value })}
+          />
         </Field>
         <Field label="Teléfono">
-          <Input type="tel" value={p.telefono ?? ""} onChange={(e) => setP({ ...p, telefono: e.target.value })} />
+          <Input
+            type="tel"
+            value={p.telefono ?? ""}
+            onChange={(e) => setP({ ...p, telefono: e.target.value })}
+          />
         </Field>
         <Field label="Web">
-          <Input value={p.web ?? ""} onChange={(e) => setP({ ...p, web: e.target.value })} placeholder="https://…" />
+          <Input
+            value={p.web ?? ""}
+            onChange={(e) => setP({ ...p, web: e.target.value })}
+            placeholder="https://…"
+          />
         </Field>
         <Field label="Persona de contacto">
-          <Input value={p.persona_contacto ?? ""} onChange={(e) => setP({ ...p, persona_contacto: e.target.value })} />
+          <Input
+            value={p.persona_contacto ?? ""}
+            onChange={(e) => setP({ ...p, persona_contacto: e.target.value })}
+          />
         </Field>
         <Field label="Dirección" full>
-          <Input value={p.direccion ?? ""} onChange={(e) => setP({ ...p, direccion: e.target.value })} />
+          <Input
+            value={p.direccion ?? ""}
+            onChange={(e) => setP({ ...p, direccion: e.target.value })}
+          />
         </Field>
         <Field label="Notas" full>
-          <Textarea rows={2} value={p.notas ?? ""} onChange={(e) => setP({ ...p, notas: e.target.value })} />
+          <Textarea
+            rows={2}
+            value={p.notas ?? ""}
+            onChange={(e) => setP({ ...p, notas: e.target.value })}
+          />
         </Field>
         <label className="flex items-center gap-2 text-xs text-text-mid sm:col-span-2">
           <input
@@ -319,13 +350,23 @@ function ProveedorModal({
           Proveedor activo
         </label>
         <div className="mt-2 flex gap-2 sm:col-span-2">
-          <button type="button" onClick={onCerrar}
-            className="flex-1 rounded-lg border border-indigo-400/20 bg-indigo-900/20 py-2.5 text-sm font-semibold text-text-mid">
+          <button
+            type="button"
+            onClick={onCerrar}
+            className="flex-1 rounded-lg border border-indigo-400/20 bg-indigo-900/20 py-2.5 text-sm font-semibold text-text-mid"
+          >
             Cancelar
           </button>
-          <button type="submit" disabled={guardando || !negocioId || !p.nombre?.trim()}
-            className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-emerald-500 to-emerald-600 py-2.5 text-sm font-bold text-white disabled:opacity-50">
-            {guardando ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
+          <button
+            type="submit"
+            disabled={guardando || !negocioId || !p.nombre?.trim()}
+            className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-emerald-500 to-emerald-600 py-2.5 text-sm font-bold text-white disabled:opacity-50"
+          >
+            {guardando ? (
+              <Loader2 size={14} className="animate-spin" />
+            ) : (
+              <CheckCircle2 size={14} />
+            )}
             Guardar
           </button>
         </div>
@@ -350,7 +391,11 @@ function TabGastos({ tipo }: { tipo: Exclude<TabId, "proveedores"> }) {
     setLoading(true);
     (async () => {
       const [g, p] = await Promise.all([
-        supabase.from("gastos_proveedor").select("*").eq("tipo", tipo).order("fecha", { ascending: false }),
+        supabase
+          .from("gastos_proveedor")
+          .select("*")
+          .eq("tipo", tipo)
+          .order("fecha", { ascending: false }),
         supabase.from("proveedores").select("id,nombre,negocio_id").order("nombre"),
       ]);
       if (!alive) return;
@@ -360,7 +405,9 @@ function TabGastos({ tipo }: { tipo: Exclude<TabId, "proveedores"> }) {
       else setProveedores((p.data as Proveedor[]) ?? []);
       setLoading(false);
     })();
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+    };
   }, [supabase, toast, tipo]);
 
   async function eliminar(g: GastoProveedor) {
@@ -373,11 +420,15 @@ function TabGastos({ tipo }: { tipo: Exclude<TabId, "proveedores"> }) {
     if (!ok) return;
     const { error } = await supabase.from("gastos_proveedor").delete().eq("id", g.id);
     if (error) toast.err(formatSupabaseError(error));
-    else { setGastos((prev) => prev.filter((x) => x.id !== g.id)); toast.ok("Eliminado"); }
+    else {
+      setGastos((prev) => prev.filter((x) => x.id !== g.id));
+      toast.ok("Eliminado");
+    }
   }
 
   const total = gastos.reduce((sum, g) => sum + Number(g.importe) || 0, 0);
-  const totalMes = tipo === "suscripcion" ? gastos.reduce((s, g) => s + gastoMensualizado(g), 0) : null;
+  const totalMes =
+    tipo === "suscripcion" ? gastos.reduce((s, g) => s + gastoMensualizado(g), 0) : null;
   const tipoLabel = TIPO_GASTO_LABEL[tipo];
 
   const nombreProveedor = (id: string | null) => {
@@ -401,14 +452,16 @@ function TabGastos({ tipo }: { tipo: Exclude<TabId, "proveedores"> }) {
         </div>
         <button
           type="button"
-          onClick={() => setEditando({
-            tipo,
-            estado: "pendiente",
-            fecha: new Date().toISOString().slice(0, 10),
-            importe: 0,
-            iva_pct: 21,
-            recurrencia: "mensual",
-          })}
+          onClick={() =>
+            setEditando({
+              tipo,
+              estado: "pendiente",
+              fecha: new Date().toISOString().slice(0, 10),
+              importe: 0,
+              iva_pct: 21,
+              recurrencia: "mensual",
+            })
+          }
           className="inline-flex h-10 items-center gap-2 rounded-lg bg-gradient-to-r from-emerald-500 to-emerald-600 px-4 text-sm font-bold text-white shadow-glow"
         >
           <Plus size={14} /> Nuevo
@@ -422,7 +475,9 @@ function TabGastos({ tipo }: { tipo: Exclude<TabId, "proveedores"> }) {
       ) : gastos.length === 0 ? (
         <div className="card-glass flex flex-col items-center gap-2 p-10 text-center text-text-mid">
           <Receipt size={28} className="text-indigo-400/40" />
-          <div className="font-display text-base font-bold">Sin {tipoLabel.toLowerCase()} todavía</div>
+          <div className="font-display text-base font-bold">
+            Sin {tipoLabel.toLowerCase()} todavía
+          </div>
         </div>
       ) : (
         <div className="card-glass divide-y divide-indigo-400/10 overflow-hidden">
@@ -433,7 +488,9 @@ function TabGastos({ tipo }: { tipo: Exclude<TabId, "proveedores"> }) {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 text-sm">
                     <span className="font-semibold text-text-hi">{g.concepto}</span>
-                    <span className={`rounded-md border px-1.5 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wider ${badge.cls}`}>
+                    <span
+                      className={`rounded-md border px-1.5 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wider ${badge.cls}`}
+                    >
                       {badge.label}
                     </span>
                     {g.recurrencia && (
@@ -443,16 +500,23 @@ function TabGastos({ tipo }: { tipo: Exclude<TabId, "proveedores"> }) {
                     )}
                   </div>
                   <div className="text-xs text-text-mid">
-                    {nombreProveedor(g.proveedor_id)} · {new Date(g.fecha).toLocaleDateString("es-ES")}
+                    {nombreProveedor(g.proveedor_id)} ·{" "}
+                    {new Date(g.fecha).toLocaleDateString("es-ES")}
                     {g.proximo_cobro && (
-                      <> · Próximo: <strong className="text-text-hi">
-                        {new Date(g.proximo_cobro).toLocaleDateString("es-ES")}
-                      </strong></>
+                      <>
+                        {" "}
+                        · Próximo:{" "}
+                        <strong className="text-text-hi">
+                          {new Date(g.proximo_cobro).toLocaleDateString("es-ES")}
+                        </strong>
+                      </>
                     )}
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="font-display text-base font-bold text-text-hi">{eur(Number(g.importe))}</div>
+                  <div className="font-display text-base font-bold text-text-hi">
+                    {eur(Number(g.importe))}
+                  </div>
                   <div className="text-[0.7rem] text-text-lo">+{g.iva_pct}% IVA</div>
                 </div>
                 <div className="flex shrink-0 gap-1">
@@ -484,7 +548,7 @@ function TabGastos({ tipo }: { tipo: Exclude<TabId, "proveedores"> }) {
         onCerrar={() => setEditando(null)}
         onGuardado={(saved, esNuevo) => {
           setGastos((prev) =>
-            esNuevo ? [saved, ...prev] : prev.map((x) => (x.id === saved.id ? saved : x))
+            esNuevo ? [saved, ...prev] : prev.map((x) => (x.id === saved.id ? saved : x)),
           );
           setEditando(null);
         }}
@@ -512,7 +576,9 @@ function GastoModal({
   const [g, setG] = useState<Partial<GastoProveedor>>(inicial ?? {});
   const [guardando, setGuardando] = useState(false);
 
-  useEffect(() => { if (inicial) setG(inicial); }, [inicial]);
+  useEffect(() => {
+    if (inicial) setG(inicial);
+  }, [inicial]);
 
   if (!inicial) return null;
   const inicialNN = inicial;
@@ -525,25 +591,28 @@ function GastoModal({
     if (!negocioId || !g.concepto?.trim()) return;
     setGuardando(true);
     const payload = {
-      negocio_id:    negocioId,
-      proveedor_id:  g.proveedor_id || null,
+      negocio_id: negocioId,
+      proveedor_id: g.proveedor_id || null,
       tipo,
-      concepto:      g.concepto.trim(),
-      categoria:     g.categoria?.trim() || null,
-      fecha:         g.fecha || new Date().toISOString().slice(0, 10),
-      importe:       Number(g.importe) || 0,
-      iva_pct:       Number(g.iva_pct) || 0,
-      recurrencia:   esSuscripcion ? ((g.recurrencia ?? "mensual") as Recurrencia) : null,
-      proximo_cobro: esSuscripcion ? (g.proximo_cobro || null) : null,
-      estado:        (g.estado ?? "pendiente") as EstadoGasto,
-      notas:         g.notas?.trim() || null,
+      concepto: g.concepto.trim(),
+      categoria: g.categoria?.trim() || null,
+      fecha: g.fecha || new Date().toISOString().slice(0, 10),
+      importe: Number(g.importe) || 0,
+      iva_pct: Number(g.iva_pct) || 0,
+      recurrencia: esSuscripcion ? ((g.recurrencia ?? "mensual") as Recurrencia) : null,
+      proximo_cobro: esSuscripcion ? g.proximo_cobro || null : null,
+      estado: (g.estado ?? "pendiente") as EstadoGasto,
+      notas: g.notas?.trim() || null,
     };
     const q = esNuevo
       ? supabase.from("gastos_proveedor").insert(payload).select().single()
       : supabase.from("gastos_proveedor").update(payload).eq("id", inicialNN.id!).select().single();
     const { data, error } = await q;
     setGuardando(false);
-    if (error) { toast.err(error.message); return; }
+    if (error) {
+      toast.err(error.message);
+      return;
+    }
     toast.ok(esNuevo ? "Gasto registrado" : "Gasto actualizado");
     onGuardado(data as GastoProveedor, esNuevo);
   }
@@ -557,8 +626,13 @@ function GastoModal({
     >
       <form onSubmit={guardar} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Field label="Concepto" full>
-          <Input value={g.concepto ?? ""} onChange={(e) => setG({ ...g, concepto: e.target.value })}
-            placeholder="Hosting Vercel, Material oficina…" required autoFocus />
+          <Input
+            value={g.concepto ?? ""}
+            onChange={(e) => setG({ ...g, concepto: e.target.value })}
+            placeholder="Hosting Vercel, Material oficina…"
+            required
+            autoFocus
+          />
         </Field>
         <Field label="Proveedor" full>
           <Select
@@ -567,30 +641,47 @@ function GastoModal({
           >
             <option value="">— Sin proveedor —</option>
             {proveedores.map((p) => (
-              <option key={p.id} value={p.id}>{p.nombre}</option>
+              <option key={p.id} value={p.id}>
+                {p.nombre}
+              </option>
             ))}
           </Select>
         </Field>
         <Field label="Importe (€)">
-          <Input type="number" step="0.01" value={g.importe ?? 0}
-            onChange={(e) => setG({ ...g, importe: parseFloat(e.target.value) || 0 })} />
+          <Input
+            type="number"
+            step="0.01"
+            value={g.importe ?? 0}
+            onChange={(e) => setG({ ...g, importe: parseFloat(e.target.value) || 0 })}
+          />
         </Field>
         <Field label="IVA %">
-          <Input type="number" step="0.01" value={g.iva_pct ?? 21}
-            onChange={(e) => setG({ ...g, iva_pct: parseFloat(e.target.value) || 0 })} />
+          <Input
+            type="number"
+            step="0.01"
+            value={g.iva_pct ?? 21}
+            onChange={(e) => setG({ ...g, iva_pct: parseFloat(e.target.value) || 0 })}
+          />
         </Field>
         <Field label="Fecha">
-          <Input type="date" value={g.fecha ?? ""}
-            onChange={(e) => setG({ ...g, fecha: e.target.value })} />
+          <Input
+            type="date"
+            value={g.fecha ?? ""}
+            onChange={(e) => setG({ ...g, fecha: e.target.value })}
+          />
         </Field>
         <Field label="Categoría">
-          <Input value={g.categoria ?? ""}
+          <Input
+            value={g.categoria ?? ""}
             onChange={(e) => setG({ ...g, categoria: e.target.value })}
-            placeholder="Software, Material…" />
+            placeholder="Software, Material…"
+          />
         </Field>
         <Field label="Estado">
-          <Select value={g.estado ?? "pendiente"}
-            onChange={(e) => setG({ ...g, estado: e.target.value as EstadoGasto })}>
+          <Select
+            value={g.estado ?? "pendiente"}
+            onChange={(e) => setG({ ...g, estado: e.target.value as EstadoGasto })}
+          >
             <option value="pendiente">Pendiente</option>
             <option value="pagado">Pagado</option>
             <option value="cancelado">Cancelado</option>
@@ -600,33 +691,51 @@ function GastoModal({
         {esSuscripcion && (
           <>
             <Field label="Recurrencia">
-              <Select value={g.recurrencia ?? "mensual"}
-                onChange={(e) => setG({ ...g, recurrencia: e.target.value as Recurrencia })}>
+              <Select
+                value={g.recurrencia ?? "mensual"}
+                onChange={(e) => setG({ ...g, recurrencia: e.target.value as Recurrencia })}
+              >
                 <option value="mensual">Mensual</option>
                 <option value="trimestral">Trimestral</option>
                 <option value="anual">Anual</option>
               </Select>
             </Field>
             <Field label="Próximo cobro" full>
-              <Input type="date" value={g.proximo_cobro ?? ""}
-                onChange={(e) => setG({ ...g, proximo_cobro: e.target.value })} />
+              <Input
+                type="date"
+                value={g.proximo_cobro ?? ""}
+                onChange={(e) => setG({ ...g, proximo_cobro: e.target.value })}
+              />
             </Field>
           </>
         )}
 
         <Field label="Notas" full>
-          <Textarea rows={2} value={g.notas ?? ""}
-            onChange={(e) => setG({ ...g, notas: e.target.value })} />
+          <Textarea
+            rows={2}
+            value={g.notas ?? ""}
+            onChange={(e) => setG({ ...g, notas: e.target.value })}
+          />
         </Field>
 
         <div className="mt-2 flex gap-2 sm:col-span-2">
-          <button type="button" onClick={onCerrar}
-            className="flex-1 rounded-lg border border-indigo-400/20 bg-indigo-900/20 py-2.5 text-sm font-semibold text-text-mid">
+          <button
+            type="button"
+            onClick={onCerrar}
+            className="flex-1 rounded-lg border border-indigo-400/20 bg-indigo-900/20 py-2.5 text-sm font-semibold text-text-mid"
+          >
             Cancelar
           </button>
-          <button type="submit" disabled={guardando || !negocioId || !g.concepto?.trim()}
-            className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-emerald-500 to-emerald-600 py-2.5 text-sm font-bold text-white disabled:opacity-50">
-            {guardando ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
+          <button
+            type="submit"
+            disabled={guardando || !negocioId || !g.concepto?.trim()}
+            className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-emerald-500 to-emerald-600 py-2.5 text-sm font-bold text-white disabled:opacity-50"
+          >
+            {guardando ? (
+              <Loader2 size={14} className="animate-spin" />
+            ) : (
+              <CheckCircle2 size={14} />
+            )}
             Guardar
           </button>
         </div>

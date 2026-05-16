@@ -1,29 +1,29 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import {
   Accessibility,
-  Sparkles,
+  CheckCircle2,
   Eye,
+  Keyboard,
   MousePointer2,
+  Sparkles,
   Type,
   Underline,
-  Keyboard,
-  CheckCircle2,
 } from "lucide-react";
+import { useEffect, useState } from "react";
 import {
+  type A11yPrefs,
   applyA11yPrefs,
+  DEFAULT_A11Y_PREFS,
+  type FontScale,
   loadA11yPrefs,
   saveA11yPrefs,
-  DEFAULT_A11Y_PREFS,
-  type A11yPrefs,
-  type FontScale,
 } from "@/lib/a11y-prefs";
 
 const FONT_SIZES: { value: FontScale; label: string; sample: string }[] = [
-  { value: "sm", label: "Pequeño",  sample: "Aa" },
-  { value: "md", label: "Normal",   sample: "Aa" },
-  { value: "lg", label: "Grande",   sample: "Aa" },
+  { value: "sm", label: "Pequeño", sample: "Aa" },
+  { value: "md", label: "Normal", sample: "Aa" },
+  { value: "lg", label: "Grande", sample: "Aa" },
   { value: "xl", label: "Muy grande", sample: "Aa" },
 ];
 
@@ -57,8 +57,8 @@ export function AccesibilidadTab() {
               Adapta la interfaz a tus necesidades
             </h2>
             <p className="mt-1 text-sm text-text-mid">
-              Estas preferencias se guardan en este dispositivo y se aplican en toda la
-              aplicación. Puedes activarlas y desactivarlas en cualquier momento.
+              Estas preferencias se guardan en este dispositivo y se aplican en toda la aplicación.
+              Puedes activarlas y desactivarlas en cualquier momento.
             </p>
           </div>
         </div>
@@ -83,9 +83,7 @@ export function AccesibilidadTab() {
           </span>
           <div>
             <h3 className="font-display text-sm font-bold text-text-hi">Tamaño de texto</h3>
-            <p className="text-xs text-text-mid">
-              Cambia el tamaño base de toda la interfaz.
-            </p>
+            <p className="text-xs text-text-mid">Cambia el tamaño base de toda la interfaz.</p>
           </div>
         </div>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -105,7 +103,16 @@ export function AccesibilidadTab() {
               >
                 <div
                   className="mb-1 font-display font-bold"
-                  style={{ fontSize: opt.value === "xl" ? "1.4rem" : opt.value === "lg" ? "1.2rem" : opt.value === "md" ? "1rem" : "0.875rem" }}
+                  style={{
+                    fontSize:
+                      opt.value === "xl"
+                        ? "1.4rem"
+                        : opt.value === "lg"
+                          ? "1.2rem"
+                          : opt.value === "md"
+                            ? "1rem"
+                            : "0.875rem",
+                  }}
                 >
                   {opt.sample}
                 </div>
@@ -160,19 +167,19 @@ export function AccesibilidadTab() {
           </div>
         </div>
         <ul className="grid gap-2 sm:grid-cols-2">
-          <Shortcut keys={["⌘", "K"]}    desc="Abrir la búsqueda global" />
+          <Shortcut keys={["⌘", "K"]} desc="Abrir la búsqueda global" />
           <Shortcut keys={["Ctrl", "K"]} desc="Abrir la búsqueda global (Windows/Linux)" />
-          <Shortcut keys={["Esc"]}        desc="Cerrar diálogo o panel actual" />
-          <Shortcut keys={["Tab"]}        desc="Avanzar al siguiente elemento focusable" />
-          <Shortcut keys={["⇧", "Tab"]}   desc="Volver al anterior" />
-          <Shortcut keys={["↑", "↓"]}     desc="Navegar listas y menús" />
-          <Shortcut keys={["Enter"]}      desc="Activar el elemento enfocado" />
+          <Shortcut keys={["Esc"]} desc="Cerrar diálogo o panel actual" />
+          <Shortcut keys={["Tab"]} desc="Avanzar al siguiente elemento focusable" />
+          <Shortcut keys={["⇧", "Tab"]} desc="Volver al anterior" />
+          <Shortcut keys={["↑", "↓"]} desc="Navegar listas y menús" />
+          <Shortcut keys={["Enter"]} desc="Activar el elemento enfocado" />
         </ul>
       </section>
 
       <p className="text-[0.7rem] text-text-lo">
-        Si tu sistema operativo ya solicita reducir el movimiento, se respeta automáticamente
-        aunque desactives la opción aquí.
+        Si tu sistema operativo ya solicita reducir el movimiento, se respeta automáticamente aunque
+        desactives la opción aquí.
       </p>
     </div>
   );

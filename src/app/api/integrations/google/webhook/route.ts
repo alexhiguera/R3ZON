@@ -1,6 +1,6 @@
-import { NextResponse, type NextRequest } from "next/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { type NextRequest, NextResponse } from "next/server";
 import { syncGoogleCalendarFor } from "@/lib/agenda-admin";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
  * Webhook de Google Calendar (events.watch).
@@ -21,8 +21,8 @@ import { syncGoogleCalendarFor } from "@/lib/agenda-admin";
  */
 export async function POST(request: NextRequest) {
   const channelId = request.headers.get("x-goog-channel-id");
-  const token     = request.headers.get("x-goog-channel-token");
-  const state     = request.headers.get("x-goog-resource-state");
+  const token = request.headers.get("x-goog-channel-token");
+  const state = request.headers.get("x-goog-resource-state");
 
   // Ack inicial: Google envía un primer POST con state=sync nada más
   // crear el canal. No hay cambios que sincronizar; respondemos 200.
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
   // Resolver canal → user_id usando la RPC admin (service-role).
   const admin = createAdminClient();
   const { data, error } = await admin.rpc("find_connection_by_channel", {
-    p_channel_id:    channelId,
+    p_channel_id: channelId,
     p_channel_token: token,
   });
   if (error || !data || (Array.isArray(data) && data.length === 0)) {

@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Calendar, Clock, MapPin, Plus, FileText } from "lucide-react";
+import { Calendar, Clock, FileText, MapPin, Plus } from "lucide-react";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
+import { useEffect, useState } from "react";
 import { Tooltip } from "@/components/ui/Tooltip";
+import { createClient } from "@/lib/supabase/client";
 
 type Evento = {
   id: string;
@@ -17,12 +17,18 @@ type Evento = {
 };
 
 const ESTADO_STYLE: Record<string, string> = {
-  tentativa:  "border-warn/30 bg-warn/10 text-warn",
+  tentativa: "border-warn/30 bg-warn/10 text-warn",
   confirmada: "border-cyan/30 bg-cyan/10 text-cyan",
-  cancelada:  "border-danger/30 bg-danger/10 text-danger",
+  cancelada: "border-danger/30 bg-danger/10 text-danger",
 };
 
-export function TabHistorial({ clienteId, clienteNombre }: { clienteId: string; clienteNombre: string }) {
+export function TabHistorial({
+  clienteId,
+  clienteNombre,
+}: {
+  clienteId: string;
+  clienteNombre: string;
+}) {
   const [citas, setCitas] = useState<Evento[]>([]);
   const [cargando, setCargando] = useState(true);
 
@@ -64,7 +70,9 @@ export function TabHistorial({ clienteId, clienteNombre }: { clienteId: string; 
         <div className="flex flex-col items-center gap-2 py-8 text-center">
           <Calendar size={28} className="text-indigo-400/30" />
           <div className="text-sm font-medium text-text-hi">Sin citas todavía</div>
-          <p className="text-xs text-text-mid">Vincula este cliente al crear una cita en la agenda.</p>
+          <p className="text-xs text-text-mid">
+            Vincula este cliente al crear una cita en la agenda.
+          </p>
         </div>
       )}
 
@@ -93,7 +101,8 @@ export function TabHistorial({ clienteId, clienteNombre }: { clienteId: string; 
                   <span className="flex items-center gap-1">
                     <Clock size={10} />
                     {inicio.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
-                    {" · "}{durMin} min
+                    {" · "}
+                    {durMin} min
                   </span>
                   {c.ubicacion && (
                     <span className="flex items-center gap-1">
@@ -110,7 +119,9 @@ export function TabHistorial({ clienteId, clienteNombre }: { clienteId: string; 
               </div>
 
               <div className="flex shrink-0 flex-col items-end gap-1.5">
-                <span className={`rounded-full border px-2 py-0.5 text-[0.62rem] font-semibold ${ESTADO_STYLE[c.estado] ?? ""}`}>
+                <span
+                  className={`rounded-full border px-2 py-0.5 text-[0.62rem] font-semibold ${ESTADO_STYLE[c.estado] ?? ""}`}
+                >
                   {c.estado}
                 </span>
               </div>

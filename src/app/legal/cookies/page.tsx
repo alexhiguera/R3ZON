@@ -1,4 +1,4 @@
-import { LegalDoc, H2, UL } from "@/components/legal/LegalDoc";
+import { H2, LegalDoc, UL } from "@/components/legal/LegalDoc";
 
 export const metadata = { title: "Política de Cookies · ANTARES" };
 
@@ -6,17 +6,16 @@ export default function Page() {
   return (
     <LegalDoc eyebrow="Cookies" title="Política de Cookies">
       <p>
-        De acuerdo con el artículo 22.2 de la <b>LSSI-CE</b> y la <b>Guía sobre
-        el uso de las cookies</b> de la Agencia Española de Protección de
-        Datos, te informamos de las cookies que utiliza ANTARES.
+        De acuerdo con el artículo 22.2 de la <b>LSSI-CE</b> y la{" "}
+        <b>Guía sobre el uso de las cookies</b> de la Agencia Española de Protección de Datos, te
+        informamos de las cookies que utiliza ANTARES.
       </p>
 
       <H2>1. ¿Qué es una cookie?</H2>
       <p>
-        Una cookie es un pequeño archivo que se descarga en tu dispositivo al
-        acceder a determinadas páginas web o aplicaciones, y que permite, entre
-        otras cosas, almacenar y recuperar información sobre tus hábitos de
-        navegación.
+        Una cookie es un pequeño archivo que se descarga en tu dispositivo al acceder a determinadas
+        páginas web o aplicaciones, y que permite, entre otras cosas, almacenar y recuperar
+        información sobre tus hábitos de navegación.
       </p>
 
       <H2>2. Cookies que utilizamos</H2>
@@ -57,8 +56,8 @@ export default function Page() {
       <H2>3. Tipos de cookies por finalidad</H2>
       <UL>
         <li>
-          <b>Técnicas (exentas de consentimiento):</b> imprescindibles para el
-          funcionamiento del servicio.
+          <b>Técnicas (exentas de consentimiento):</b> imprescindibles para el funcionamiento del
+          servicio.
         </li>
         <li>
           <b>De preferencias:</b> recuerdan opciones de personalización.
@@ -68,14 +67,13 @@ export default function Page() {
         </li>
       </UL>
       <p>
-        <b>ANTARES no utiliza cookies publicitarias ni de seguimiento de
-        terceros.</b>
+        <b>ANTARES no utiliza cookies publicitarias ni de seguimiento de terceros.</b>
       </p>
 
       <H2>4. Configuración y revocación</H2>
       <p>
-        Puedes configurar tu navegador para aceptar, rechazar o eliminar las
-        cookies en cualquier momento:
+        Puedes configurar tu navegador para aceptar, rechazar o eliminar las cookies en cualquier
+        momento:
       </p>
       <UL>
         <li>
@@ -111,8 +109,8 @@ export default function Page() {
 
       <H2>5. Actualización</H2>
       <p>
-        Podemos modificar esta política para adaptarla a cambios legales. Te
-        recomendamos revisarla periódicamente.
+        Podemos modificar esta política para adaptarla a cambios legales. Te recomendamos revisarla
+        periódicamente.
       </p>
     </LegalDoc>
   );

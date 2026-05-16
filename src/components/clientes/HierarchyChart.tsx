@@ -1,25 +1,25 @@
 "use client";
 
-import { useMemo } from "react";
 import {
-  ReactFlow,
   Background,
   Controls,
-  MarkerType,
-  Position,
-  type Node,
   type Edge,
-  type NodeProps,
   Handle,
+  MarkerType,
+  type Node,
+  type NodeProps,
+  Position,
+  ReactFlow,
 } from "@xyflow/react";
+import { useMemo } from "react";
 import "@xyflow/react/dist/style.css";
-import { Crown, Users2, Plus } from "lucide-react";
+import { Crown, Plus, Users2 } from "lucide-react";
 import type { Contacto } from "./types";
 
 const NODE_W = 220;
 const NODE_H = 92;
-const GAP_X  = 32;
-const GAP_Y  = 60;
+const GAP_X = 32;
+const GAP_Y = 60;
 
 // ─── Tree layout ──────────────────────────────────────────────────────────
 // Algoritmo simple: cada nodo ocupa el ancho de sus descendientes hojas.
@@ -51,9 +51,7 @@ function computeLayout(contactos: Contacto[]): Map<string, { x: number; y: numbe
   const widthOf = (id: string): number => {
     if (widthCache.has(id)) return widthCache.get(id)!;
     const kids = childrenByParent.get(id) ?? [];
-    const w = kids.length === 0
-      ? 1
-      : kids.reduce((sum, k) => sum + widthOf(k.id), 0);
+    const w = kids.length === 0 ? 1 : kids.reduce((sum, k) => sum + widthOf(k.id), 0);
     widthCache.set(id, w);
     return w;
   };
@@ -112,13 +110,9 @@ function ContactoNode({ data }: NodeProps<Node<ContactoNodeData>>) {
           </span>
           {c.es_decisor && <Crown size={11} className="shrink-0 text-warn" />}
         </div>
-        <div className="truncate text-[0.68rem] text-text-mid">
-          {c.puesto || "Sin puesto"}
-        </div>
+        <div className="truncate text-[0.68rem] text-text-mid">{c.puesto || "Sin puesto"}</div>
         {c.departamento && (
-          <div className="truncate text-[0.62rem] text-text-lo">
-            {c.departamento}
-          </div>
+          <div className="truncate text-[0.62rem] text-text-lo">{c.departamento}</div>
         )}
       </div>
       <Handle
@@ -178,9 +172,8 @@ export function HierarchyChart({
           Aún no hay jerarquía definida
         </div>
         <p className="max-w-sm text-sm text-text-mid">
-          Empieza añadiendo a la persona de mayor cargo (CEO o director general). Después,
-          al crear nuevos contactos podrás indicar a quién reportan y el organigrama se
-          dibujará solo.
+          Empieza añadiendo a la persona de mayor cargo (CEO o director general). Después, al crear
+          nuevos contactos podrás indicar a quién reportan y el organigrama se dibujará solo.
         </p>
         {onAddFirst && (
           <button
@@ -195,10 +188,7 @@ export function HierarchyChart({
   }
 
   return (
-    <div
-      className="card-glass overflow-hidden"
-      style={{ height: 560 }}
-    >
+    <div className="card-glass overflow-hidden" style={{ height: 560 }}>
       <ReactFlow
         nodes={nodes}
         edges={edges}

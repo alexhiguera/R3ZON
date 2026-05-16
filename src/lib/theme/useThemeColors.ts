@@ -14,8 +14,8 @@ export type ResolvedColors = {
   bg: string;
   textHi: string;
   textMid: string;
-  axis: string;     // alias semántico para ejes de charts
-  grid: string;     // alias para grid
+  axis: string; // alias semántico para ejes de charts
+  grid: string; // alias para grid
   cursorBg: string;
 };
 
@@ -27,24 +27,26 @@ function readVar(name: string): string {
 
 function rgb(name: string, alpha = 1): string {
   const t = readVar(name);
-  return alpha === 1 ? `rgb(${t.replace(/\s+/g, ", ")})` : `rgba(${t.replace(/\s+/g, ", ")}, ${alpha})`;
+  return alpha === 1
+    ? `rgb(${t.replace(/\s+/g, ", ")})`
+    : `rgba(${t.replace(/\s+/g, ", ")}, ${alpha})`;
 }
 
 function snapshot(): ResolvedColors {
   return {
-    cyan:      rgb("--cyan"),
-    fuchsia:   rgb("--fuchsia"),
+    cyan: rgb("--cyan"),
+    fuchsia: rgb("--fuchsia"),
     indigo300: rgb("--indigo-300"),
     indigo400: rgb("--indigo-400"),
     indigo600: rgb("--indigo-600"),
     indigo800: rgb("--indigo-800"),
     indigo900: rgb("--indigo-900"),
-    bg:        rgb("--bg"),
-    textHi:    rgb("--text-hi"),
-    textMid:   rgb("--text-mid"),
-    axis:      rgb("--indigo-400"),
-    grid:      rgb("--indigo-600", 0.12),
-    cursorBg:  rgb("--indigo-600", 0.08),
+    bg: rgb("--bg"),
+    textHi: rgb("--text-hi"),
+    textMid: rgb("--text-mid"),
+    axis: rgb("--indigo-400"),
+    grid: rgb("--indigo-600", 0.12),
+    cursorBg: rgb("--indigo-600", 0.08),
   };
 }
 

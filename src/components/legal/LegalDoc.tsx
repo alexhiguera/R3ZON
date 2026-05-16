@@ -20,9 +20,7 @@ export function LegalDoc({
 }
 
 export function H2({ children }: { children: React.ReactNode }) {
-  return (
-    <h2 className="mt-4 font-display text-lg font-bold text-text-hi">{children}</h2>
-  );
+  return <h2 className="mt-4 font-display text-lg font-bold text-text-hi">{children}</h2>;
 }
 
 export function UL({ children }: { children: React.ReactNode }) {

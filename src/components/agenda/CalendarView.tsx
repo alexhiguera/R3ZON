@@ -12,24 +12,23 @@
  * mutaciones llaman a Server Actions del módulo `@/lib/agenda`.
  */
 
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
-import FullCalendar from "@fullcalendar/react";
-import dayGridPlugin     from "@fullcalendar/daygrid";
-import timeGridPlugin    from "@fullcalendar/timegrid";
-import multiMonthPlugin  from "@fullcalendar/multimonth";
-import interactionPlugin from "@fullcalendar/interaction";
 import type { EventDropArg, EventInput, LocaleInput } from "@fullcalendar/core";
+import dayGridPlugin from "@fullcalendar/daygrid";
 import type { EventResizeDoneArg } from "@fullcalendar/interaction";
-import { Loader2, RefreshCw, Plus, CheckCircle2, AlertCircle } from "lucide-react";
-
+import interactionPlugin from "@fullcalendar/interaction";
+import multiMonthPlugin from "@fullcalendar/multimonth";
+import FullCalendar from "@fullcalendar/react";
+import timeGridPlugin from "@fullcalendar/timegrid";
+import { AlertCircle, CheckCircle2, Loader2, Plus, RefreshCw } from "lucide-react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { getGoogleConnectionStatus } from "@/app/actions/google";
 import {
+  type AgendaEventoRow,
+  getEvent,
   listEvents,
   syncGoogleCalendar,
   updateEventTime,
-  getEvent,
-  type AgendaEventoRow,
 } from "@/lib/agenda";
-import { getGoogleConnectionStatus } from "@/app/actions/google";
 import { formatGoogleError } from "@/lib/google-errors";
 import { EventModal, type EventModalInitial } from "./EventModal";
 
@@ -44,14 +43,14 @@ const esLocale = {
   code: "es",
   week: { dow: 1, doy: 4 },
   buttonText: {
-    prev:  "Anterior",
-    next:  "Siguiente",
+    prev: "Anterior",
+    next: "Siguiente",
     today: "Hoy",
     month: "Mes",
-    week:  "Semana",
-    day:   "Día",
-    list:  "Agenda",
-    year:  "Año",
+    week: "Semana",
+    day: "Día",
+    list: "Agenda",
+    year: "Año",
   },
   weekText: "Sm",
   allDayText: "Todo el día",
@@ -63,10 +62,10 @@ type Toast = { kind: "ok" | "error" | "info"; text: string } | null;
 
 function toFcEvent(r: AgendaEventoRow): EventInput {
   return {
-    id:    r.id,
+    id: r.id,
     title: r.title,
     start: r.start_time,
-    end:   r.end_time,
+    end: r.end_time,
     extendedProps: {
       description: r.description,
       googleEventId: r.google_event_id,
@@ -80,8 +79,8 @@ function toFcEvent(r: AgendaEventoRow): EventInput {
 export default function CalendarView() {
   const calendarRef = useRef<FullCalendar | null>(null);
   const [events, setEvents] = useState<EventInput[]>([]);
-  const [isSyncing,   setIsSyncing]   = useState(false);   // sync con Google
-  const [isLoading,   setIsLoading]   = useState(false);   // refresh local
+  const [isSyncing, setIsSyncing] = useState(false); // sync con Google
+  const [isLoading, setIsLoading] = useState(false); // refresh local
   const [toast, setToast] = useState<Toast>(null);
   const [modal, setModal] = useState<EventModalInitial | null>(null);
   const [, startTx] = useTransition();
@@ -125,8 +124,7 @@ export default function CalendarView() {
       // Server Actions serializan errores como mensaje plano; detectamos
       // 429/rate_limit por contenido para mostrar un toast más claro.
       const isRateLimit =
-        (err as { code?: string } | null)?.code === "rate_limit" ||
-        /\b429\b|rate limit/i.test(raw);
+        (err as { code?: string } | null)?.code === "rate_limit" || /\b429\b|rate limit/i.test(raw);
       const msg = isRateLimit
         ? "Google Calendar ha limitado las peticiones. Espera un minuto y vuelve a sincronizar."
         : raw;
@@ -185,12 +183,10 @@ export default function CalendarView() {
   // -----------------------------------------------------------------------
   // Drag & drop + resize → actualización SILENCIOSA.
   // -----------------------------------------------------------------------
-  const persistTime = useCallback(async (
-    info: EventDropArg | EventResizeDoneArg,
-  ) => {
+  const persistTime = useCallback(async (info: EventDropArg | EventResizeDoneArg) => {
     const id = info.event.id;
     const start = info.event.start;
-    const end   = info.event.end ?? info.event.start;
+    const end = info.event.end ?? info.event.start;
     if (!id || !start || !end) return;
 
     setIsSyncing(true);
@@ -198,7 +194,7 @@ export default function CalendarView() {
       await updateEventTime({
         id,
         start: start.toISOString(),
-        end:   end.toISOString(),
+        end: end.toISOString(),
       });
       setToast({ kind: "ok", text: "Cita actualizada" });
     } catch (err: unknown) {
@@ -231,9 +227,7 @@ export default function CalendarView() {
               Al día
             </span>
           )}
-          {isLoading && (
-            <span className="text-xs text-text-mid/70">cargando…</span>
-          )}
+          {isLoading && <span className="text-xs text-text-mid/70">cargando…</span>}
         </div>
 
         <div className="flex items-center gap-2">
@@ -252,7 +246,7 @@ export default function CalendarView() {
           <button
             type="button"
             onClick={() => {
-              const now  = new Date();
+              const now = new Date();
               now.setMinutes(0, 0, 0);
               now.setHours(now.getHours() + 1);
               const next = new Date(now.getTime() + 60 * 60 * 1000);
@@ -274,8 +268,8 @@ export default function CalendarView() {
             toast.kind === "error"
               ? "bg-red-500/15 text-red-200"
               : toast.kind === "ok"
-              ? "bg-green-500/15 text-green-200"
-              : "bg-indigo-500/15 text-indigo-200"
+                ? "bg-green-500/15 text-green-200"
+                : "bg-indigo-500/15 text-indigo-200"
           }`}
           role="status"
           aria-live="polite"
@@ -301,16 +295,16 @@ export default function CalendarView() {
           firstDay={1}
           height="auto"
           headerToolbar={{
-            left:   "prev,next today",
+            left: "prev,next today",
             center: "title",
-            right:  "multiMonthYear,dayGridMonth,timeGridWeek,timeGridDay",
+            right: "multiMonthYear,dayGridMonth,timeGridWeek,timeGridDay",
           }}
           buttonText={{
             today: "Hoy",
             month: "Mes",
-            week:  "Semana",
-            day:   "Día",
-            year:  "Año",
+            week: "Semana",
+            day: "Día",
+            year: "Año",
           }}
           views={{
             multiMonthYear: {
@@ -351,7 +345,7 @@ export default function CalendarView() {
                 title: row.title,
                 description: row.description,
                 start: new Date(row.start_time),
-                end:   new Date(row.end_time),
+                end: new Date(row.end_time),
                 color: row.color,
                 ubicacion: row.ubicacion,
                 cliente_id: row.cliente_id,
@@ -359,10 +353,10 @@ export default function CalendarView() {
               });
             });
           }}
-          eventDrop={(arg)   => void persistTime(arg)}
+          eventDrop={(arg) => void persistTime(arg)}
           eventResize={(arg) => void persistTime(arg)}
           eventTimeFormat={{
-            hour:   "2-digit",
+            hour: "2-digit",
             minute: "2-digit",
             meridiem: false,
             hour12: false,

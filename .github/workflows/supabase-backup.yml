@@ -19,8 +19,29 @@ jobs:
   backup:
     runs-on: ubuntu-latest
     env:
-      # Tablas a respaldar. Ajusta esta lista según tu modelo.
-      TABLES: "clientes configuracion negocios"
+      # Tablas críticas a respaldar diariamente. Sin tablas archivo (`*_archivo`)
+      # ni auxiliares (rgpd, terminos, dispositivos) que cambian poco y/o son
+      # reconstruibles. Si añades un módulo nuevo con datos críticos, añade
+      # su tabla aquí.
+      TABLES: >-
+        perfiles_negocio
+        miembros_negocio
+        clientes
+        contactos_cliente
+        finanzas
+        documentos
+        productos
+        citas
+        agenda_eventos
+        tareas_kanban
+        kanban_columnas
+        fichajes
+        pagos_stripe
+        proveedores
+        gastos_proveedor
+        tpv_ventas
+        tpv_venta_items
+        stock_movimientos
     steps:
       - name: Checkout backups branch
         uses: actions/checkout@v4

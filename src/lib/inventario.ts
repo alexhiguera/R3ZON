@@ -1,8 +1,8 @@
 // Lógica pura para Productos / Stock / TPV. Sin red ni Supabase: determinístico
 // y testeable.
 
-import { eur, round2, round3 } from "./formato";
 import type { Database } from "./database.types";
+import { eur, round2, round3 } from "./formato";
 
 export { eur };
 
@@ -11,19 +11,14 @@ export type TipoProducto = "producto" | "servicio";
 type ProductoRow = Database["public"]["Tables"]["productos"]["Row"];
 export type Producto = Omit<ProductoRow, "tipo"> & { tipo: TipoProducto };
 
-export type TipoMovimientoStock =
-  | "entrada"
-  | "salida"
-  | "ajuste"
-  | "venta_tpv"
-  | "devolucion";
+export type TipoMovimientoStock = "entrada" | "salida" | "ajuste" | "venta_tpv" | "devolucion";
 
 export type StockMovimiento = {
   id: string;
   negocio_id: string;
   producto_id: string;
   tipo: TipoMovimientoStock;
-  cantidad: number;          // firmado
+  cantidad: number; // firmado
   motivo: string | null;
   referencia: string | null;
   ts: string;
@@ -90,9 +85,9 @@ export function aplicarMovimiento(actual: number, m: { cantidad: number }): numb
 // ── TPV ──────────────────────────────────────────────────────────────────────
 
 export type TotalesTPV = {
-  subtotal: number;       // Σ importe línea (sin IVA, ya con descuento)
-  iva_total: number;      // Σ IVA por línea
-  total: number;          // subtotal + iva
+  subtotal: number; // Σ importe línea (sin IVA, ya con descuento)
+  iva_total: number; // Σ IVA por línea
+  total: number; // subtotal + iva
   num_items: number;
   num_unidades: number;
 };
@@ -104,22 +99,22 @@ export function calcularTotalVenta(items: ItemTPV[]): TotalesTPV {
   let unidades = 0;
 
   for (const it of items) {
-    const cant   = Number(it.cantidad) || 0;
+    const cant = Number(it.cantidad) || 0;
     const precio = Number(it.precio_unit) || 0;
-    const desc   = Number(it.descuento_pct) || 0;
+    const desc = Number(it.descuento_pct) || 0;
     const ivaPct = Number(it.iva_pct) || 0;
 
     const linea = cant * precio * (1 - desc / 100);
     subtotal += linea;
-    iva      += linea * (ivaPct / 100);
+    iva += linea * (ivaPct / 100);
     unidades += cant;
   }
 
   return {
-    subtotal:     round2(subtotal),
-    iva_total:    round2(iva),
-    total:        round2(subtotal + iva),
-    num_items:    items.length,
+    subtotal: round2(subtotal),
+    iva_total: round2(iva),
+    total: round2(subtotal + iva),
+    num_items: items.length,
     num_unidades: round3(unidades),
   };
 }
@@ -128,28 +123,29 @@ export function calcularTotalVenta(items: ItemTPV[]): TotalesTPV {
  * Añade un producto al ticket. Si ya está, incrementa la cantidad para evitar
  * duplicar líneas idénticas. Devuelve un nuevo array (immutable).
  */
-export function añadirItem(items: ItemTPV[], producto: {
-  id: string;
-  nombre: string;
-  precio_venta: number;
-  iva_pct: number;
-}): ItemTPV[] {
+export function añadirItem(
+  items: ItemTPV[],
+  producto: {
+    id: string;
+    nombre: string;
+    precio_venta: number;
+    iva_pct: number;
+  },
+): ItemTPV[] {
   const idx = items.findIndex(
     (it) => it.producto_id === producto.id && (it.descuento_pct ?? 0) === 0,
   );
   if (idx >= 0) {
-    return items.map((it, i) =>
-      i === idx ? { ...it, cantidad: round3(it.cantidad + 1) } : it,
-    );
+    return items.map((it, i) => (i === idx ? { ...it, cantidad: round3(it.cantidad + 1) } : it));
   }
   return [
     ...items,
     {
-      producto_id:   producto.id,
-      nombre:        producto.nombre,
-      cantidad:      1,
-      precio_unit:   producto.precio_venta,
-      iva_pct:       producto.iva_pct,
+      producto_id: producto.id,
+      nombre: producto.nombre,
+      cantidad: 1,
+      precio_unit: producto.precio_venta,
+      iva_pct: producto.iva_pct,
       descuento_pct: 0,
     },
   ];
@@ -170,10 +166,10 @@ export function eliminarItem(items: ItemTPV[], idx: number): ItemTPV[] {
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 export const ETIQUETA_MOVIMIENTO: Record<TipoMovimientoStock, string> = {
-  entrada:    "Entrada",
-  salida:     "Salida",
-  ajuste:     "Ajuste",
-  venta_tpv:  "Venta TPV",
+  entrada: "Entrada",
+  salida: "Salida",
+  ajuste: "Ajuste",
+  venta_tpv: "Venta TPV",
   devolucion: "Devolución",
 };
 

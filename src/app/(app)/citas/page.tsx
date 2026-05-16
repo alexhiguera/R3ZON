@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import { CalendarDays, List } from "lucide-react";
+import { useState } from "react";
 import CalendarViewLazy from "@/components/agenda/CalendarViewLazy";
 import { CitasLista } from "@/components/agenda/CitasLista";
 
@@ -15,13 +15,10 @@ export default function Page() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <div className="section-label mb-1">Citas</div>
-          <h1 className="font-display text-2xl font-bold text-text-hi sm:text-3xl">
-            Agenda
-          </h1>
+          <h1 className="font-display text-2xl font-bold text-text-hi sm:text-3xl">Agenda</h1>
           <p className="mt-1 max-w-2xl text-sm text-text-mid">
-            Calendario sincronizado con Google. Arrastra una cita para moverla,
-            estira el borde para cambiar la duración. Cambia a vista de lista
-            para verlas todas en un único listado.
+            Calendario sincronizado con Google. Arrastra una cita para moverla, estira el borde para
+            cambiar la duración. Cambia a vista de lista para verlas todas en un único listado.
           </p>
         </div>
 

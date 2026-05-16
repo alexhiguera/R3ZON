@@ -1,5 +1,5 @@
+import { ArrowLeft, Compass, Home } from "lucide-react";
 import Link from "next/link";
-import { Home, ArrowLeft, Compass } from "lucide-react";
 
 export const metadata = {
   title: "Página no encontrada · ANTARES",
@@ -23,8 +23,15 @@ export default function NotFound() {
             Error 404
           </div>
 
-          <div className="mt-3 font-display text-7xl font-extrabold leading-none tracking-tight text-transparent sm:text-8xl"
-               style={{ backgroundImage: "linear-gradient(90deg, var(--cyan, #22d3ee), var(--fuchsia, #e879f9))", WebkitBackgroundClip: "text", backgroundClip: "text" }}>
+          <div
+            className="mt-3 font-display text-7xl font-extrabold leading-none tracking-tight text-transparent sm:text-8xl"
+            style={{
+              backgroundImage:
+                "linear-gradient(90deg, var(--cyan, #22d3ee), var(--fuchsia, #e879f9))",
+              WebkitBackgroundClip: "text",
+              backgroundClip: "text",
+            }}
+          >
             404
           </div>
 
@@ -33,8 +40,8 @@ export default function NotFound() {
           </h1>
           <div className="accent-bar mx-auto mt-3 w-12" />
           <p className="mx-auto mt-4 max-w-sm text-sm text-text-mid">
-            Comprueba la URL, vuelve al panel principal o avísanos si llegaste aquí desde un
-            enlace de la app — algo se nos habrá despistado.
+            Comprueba la URL, vuelve al panel principal o avísanos si llegaste aquí desde un enlace
+            de la app — algo se nos habrá despistado.
           </p>
 
           <div className="mt-7 flex flex-wrap items-center justify-center gap-3">

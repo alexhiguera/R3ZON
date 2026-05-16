@@ -8,7 +8,7 @@
  */
 
 import { readFileSync } from "node:fs";
-import { resolve, dirname } from "node:path";
+import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import pg from "pg";
 
@@ -24,11 +24,11 @@ const env = Object.fromEntries(
     .map((l) => {
       const i = l.indexOf("=");
       return [l.slice(0, i).trim(), l.slice(i + 1).trim()];
-    })
+    }),
 );
 
 const PROJECT_REF = env.SUPABASE_PROJECT_REF;
-const PASSWORD    = env.SUPABASE_DB_PASSWORD;
+const PASSWORD = env.SUPABASE_DB_PASSWORD;
 if (!PROJECT_REF || !PASSWORD) {
   console.error("✖ Faltan SUPABASE_PROJECT_REF / SUPABASE_DB_PASSWORD en .env.local");
   process.exit(1);
@@ -83,7 +83,9 @@ async function tryConnect() {
       return client;
     } catch (err) {
       console.warn(`⚠ ${c.host}: ${err.code || err.message}`);
-      try { await client.end(); } catch {}
+      try {
+        await client.end();
+      } catch {}
     }
   }
   throw new Error("No se pudo conectar a Supabase.");
@@ -94,7 +96,7 @@ async function run() {
   try {
     for (const rel of FILES) {
       const path = resolve(ROOT, rel);
-      const sql  = readFileSync(path, "utf8");
+      const sql = readFileSync(path, "utf8");
       console.log(`→ Aplicando ${rel} (${sql.length} bytes)…`);
       await client.query(sql);
       console.log(`✔ ${rel}`);
@@ -103,7 +105,7 @@ async function run() {
     // Sanity checks
     const checks = [
       ["user_preferences existe", "select 1 from public.user_preferences limit 1"],
-      ["proveedores existe",      "select 1 from public.proveedores limit 1"],
+      ["proveedores existe", "select 1 from public.proveedores limit 1"],
       ["gastos_proveedor existe", "select 1 from public.gastos_proveedor limit 1"],
     ];
     for (const [label, q] of checks) {
@@ -117,9 +119,11 @@ async function run() {
 
     const { rows: buckets } = await client.query(
       "select id from storage.buckets where id = any($1::text[])",
-      [["avatars", "producto-imagenes"]]
+      [["avatars", "producto-imagenes"]],
     );
-    console.log(`✔ Buckets storage: ${buckets.map((b) => b.id).join(", ") || "ninguno (revisar permisos)"}`);
+    console.log(
+      `✔ Buckets storage: ${buckets.map((b) => b.id).join(", ") || "ninguno (revisar permisos)"}`,
+    );
   } finally {
     await client.end();
   }
@@ -128,6 +132,6 @@ async function run() {
 run().catch((err) => {
   console.error("\n✖ Error:", err.message);
   if (err.detail) console.error("   detail:", err.detail);
-  if (err.hint)   console.error("   hint:",   err.hint);
+  if (err.hint) console.error("   hint:", err.hint);
   process.exit(1);
 });

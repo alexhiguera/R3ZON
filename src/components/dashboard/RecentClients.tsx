@@ -1,7 +1,7 @@
 "use client";
 
+import { ArrowRight, Building2 } from "lucide-react";
 import Link from "next/link";
-import { Building2, ArrowRight } from "lucide-react";
 
 export type DashboardCliente = {
   id: string;
@@ -16,7 +16,7 @@ function relativo(iso: string) {
   const dias = Math.floor(diffMs / (1000 * 60 * 60 * 24));
   if (dias <= 0) return "hoy";
   if (dias === 1) return "ayer";
-  if (dias < 7)  return `hace ${dias}d`;
+  if (dias < 7) return `hace ${dias}d`;
   if (dias < 30) return `hace ${Math.floor(dias / 7)}sem`;
   if (dias < 365) return `hace ${Math.floor(dias / 30)}mes`;
   return `hace ${Math.floor(dias / 365)}a`;

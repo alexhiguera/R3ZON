@@ -1,20 +1,13 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { Camera, CheckCircle, Loader2, RefreshCw, ScanLine, Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
-import {
-  Camera,
-  Upload,
-  Loader2,
-  CheckCircle,
-  ScanLine,
-  RefreshCw,
-} from "lucide-react";
+import { useRef, useState } from "react";
+import { PageHeader } from "@/components/ui/PageHeader";
 import { ocrImagen } from "@/lib/ocr/engine";
 import { parseSpanishReceipt, type ReceiptData } from "@/lib/ocr/parser";
 import { createClient } from "@/lib/supabase/client";
 import { useNegocioId } from "@/lib/useNegocioId";
-import { PageHeader } from "@/components/ui/PageHeader";
 
 type Estado = "idle" | "ocr" | "revisar" | "guardando" | "ok";
 
@@ -200,9 +193,7 @@ export default function OCRPage() {
                   label="IVA %"
                   type="number"
                   value={datos.iva_porcentaje?.toString() ?? "21"}
-                  onChange={(v) =>
-                    setDatos({ ...datos, iva_porcentaje: parseFloat(v) || 0 })
-                  }
+                  onChange={(v) => setDatos({ ...datos, iva_porcentaje: parseFloat(v) || 0 })}
                 />
                 <Field
                   label="Total con IVA"

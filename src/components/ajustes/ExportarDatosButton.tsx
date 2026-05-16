@@ -1,7 +1,7 @@
 "use client";
 
+import { AlertCircle, Download, Loader2 } from "lucide-react";
 import { useState } from "react";
-import { Loader2, Download, AlertCircle } from "lucide-react";
 import { exportarMisDatos } from "@/lib/rgpd/exportar-datos";
 
 export function ExportarDatosButton() {
@@ -23,9 +23,7 @@ export function ExportarDatosButton() {
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (err) {
       setError(
-        err instanceof Error
-          ? err.message
-          : "No se pudo generar el ZIP. Inténtalo de nuevo."
+        err instanceof Error ? err.message : "No se pudo generar el ZIP. Inténtalo de nuevo.",
       );
     } finally {
       setLoading(false);
@@ -40,11 +38,7 @@ export function ExportarDatosButton() {
         disabled={loading}
         className="flex items-center gap-2 rounded-xl border border-cyan/40 bg-cyan/10 px-4 py-2.5 text-sm font-bold text-cyan transition hover:border-cyan/70 hover:bg-cyan/15 disabled:opacity-50"
       >
-        {loading ? (
-          <Loader2 className="animate-spin" size={15} />
-        ) : (
-          <Download size={15} />
-        )}
+        {loading ? <Loader2 className="animate-spin" size={15} /> : <Download size={15} />}
         {loading ? "Generando ZIP…" : "Exportar mis datos"}
       </button>
       {error && (

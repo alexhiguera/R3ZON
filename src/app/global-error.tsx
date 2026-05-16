@@ -49,12 +49,21 @@ export default function GlobalError({
             <h1 style={{ fontSize: "1.75rem", margin: 0, fontWeight: 800 }}>
               No hemos podido cargar la aplicación
             </h1>
-            <p style={{ marginTop: "1rem", color: "rgba(240, 244, 255, 0.7)", fontSize: "0.95rem" }}>
-              Algo ha fallado al inicializar ANTARES. Por favor, recarga la página o
-              vuelve a intentarlo en unos segundos.
+            <p
+              style={{ marginTop: "1rem", color: "rgba(240, 244, 255, 0.7)", fontSize: "0.95rem" }}
+            >
+              Algo ha fallado al inicializar ANTARES. Por favor, recarga la página o vuelve a
+              intentarlo en unos segundos.
             </p>
             {error?.digest && (
-              <p style={{ marginTop: "0.5rem", fontFamily: "monospace", fontSize: "0.75rem", color: "rgba(240, 244, 255, 0.4)" }}>
+              <p
+                style={{
+                  marginTop: "0.5rem",
+                  fontFamily: "monospace",
+                  fontSize: "0.75rem",
+                  color: "rgba(240, 244, 255, 0.4)",
+                }}
+              >
                 ref: {error.digest}
               </p>
             )}

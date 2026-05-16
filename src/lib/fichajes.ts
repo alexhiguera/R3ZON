@@ -1,11 +1,7 @@
 // Lógica pura del registro de jornada laboral (sin red ni Supabase).
 // Todas las funciones son determinísticas para poder cubrirlas con tests.
 
-export type TipoFichaje =
-  | "entrada"
-  | "inicio_descanso"
-  | "fin_descanso"
-  | "salida";
+export type TipoFichaje = "entrada" | "inicio_descanso" | "fin_descanso" | "salida";
 
 export type Fichaje = {
   id: string;
@@ -22,11 +18,11 @@ export type Fichaje = {
 // ── Máquina de estados ────────────────────────────────────────────────────────
 
 const TRANSICIONES: Record<TipoFichaje | "_inicial", TipoFichaje[]> = {
-  _inicial:        ["entrada"],
-  entrada:         ["inicio_descanso", "salida"],
+  _inicial: ["entrada"],
+  entrada: ["inicio_descanso", "salida"],
   inicio_descanso: ["fin_descanso"],
-  fin_descanso:    ["inicio_descanso", "salida"],
-  salida:          ["entrada"],
+  fin_descanso: ["inicio_descanso", "salida"],
+  salida: ["entrada"],
 };
 
 /** Tipos de fichaje válidos tras el último conocido (null = sin fichajes previos). */
@@ -35,10 +31,7 @@ export function siguientesPermitidos(ultimo: TipoFichaje | null): TipoFichaje[] 
 }
 
 /** Comprueba si la transición de `ultimo` a `nuevo` es válida. */
-export function transicionValida(
-  ultimo: TipoFichaje | null,
-  nuevo: TipoFichaje,
-): boolean {
+export function transicionValida(ultimo: TipoFichaje | null, nuevo: TipoFichaje): boolean {
   return siguientesPermitidos(ultimo).includes(nuevo);
 }
 
@@ -80,9 +73,7 @@ export function calcularJornada(
     };
   }
 
-  const orden = [...fichajes].sort(
-    (a, b) => new Date(a.ts).getTime() - new Date(b.ts).getTime(),
-  );
+  const orden = [...fichajes].sort((a, b) => new Date(a.ts).getTime() - new Date(b.ts).getTime());
 
   let trabajado = 0;
   let descanso = 0;
@@ -139,7 +130,13 @@ export function calcularJornada(
     if (abiertoDescanso !== null) descanso += Math.max(0, tNow - abiertoDescanso);
   }
 
-  return { trabajado_ms: trabajado, descanso_ms: descanso, cerrada, primera_entrada, ultima_salida };
+  return {
+    trabajado_ms: trabajado,
+    descanso_ms: descanso,
+    cerrada,
+    primera_entrada,
+    ultima_salida,
+  };
 }
 
 /** Formatea milisegundos como "Xh YYm". Negativos, NaN o Infinity → "0h 00m". */
@@ -169,8 +166,8 @@ export function fichajesDelDia<T extends { ts: string }>(
 }
 
 export const ETIQUETA_TIPO: Record<TipoFichaje, string> = {
-  entrada:         "Entrada",
+  entrada: "Entrada",
   inicio_descanso: "Inicio de descanso",
-  fin_descanso:    "Fin de descanso",
-  salida:          "Salida",
+  fin_descanso: "Fin de descanso",
+  salida: "Salida",
 };

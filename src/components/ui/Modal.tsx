@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useId, useRef } from "react";
 import { X } from "lucide-react";
+import { useEffect, useId, useRef } from "react";
 import { cn } from "@/lib/utils";
 
 type ModalProps = {
@@ -18,10 +18,10 @@ type ModalProps = {
 };
 
 const SIZE_CLS: Record<NonNullable<ModalProps["size"]>, string> = {
-  sm:   "max-w-md",
-  md:   "max-w-lg",
-  lg:   "max-w-2xl",
-  xl:   "max-w-4xl",
+  sm: "max-w-md",
+  md: "max-w-lg",
+  lg: "max-w-2xl",
+  xl: "max-w-4xl",
   full: "max-w-none m-0 h-screen rounded-none",
 };
 
@@ -63,7 +63,9 @@ export function Modal({
     if (!open) return;
     const original = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = original; };
+    return () => {
+      document.body.style.overflow = original;
+    };
   }, [open]);
 
   // Focus management: guardar foco previo al abrir, restaurar al cerrar,
@@ -95,8 +97,9 @@ export function Modal({
       if (e.key !== "Tab") return;
       const root = dialogRef.current;
       if (!root) return;
-      const items = Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR))
-        .filter((el) => el.offsetParent !== null);
+      const items = Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
+        (el) => el.offsetParent !== null,
+      );
       if (items.length === 0) {
         e.preventDefault();
         root.focus();

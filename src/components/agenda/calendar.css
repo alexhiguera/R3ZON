@@ -4,25 +4,25 @@
 
 .r3zon-calendar {
   /* Tokens FullCalendar redefinidos con paleta R3ZON */
-  --fc-border-color:        rgba(129, 140, 248, 0.18);
-  --fc-page-bg-color:       transparent;
-  --fc-neutral-bg-color:    rgba(30, 27, 75, 0.45);
-  --fc-neutral-text-color:  #c7d2fe;
+  --fc-border-color: rgba(129, 140, 248, 0.18);
+  --fc-page-bg-color: transparent;
+  --fc-neutral-bg-color: rgba(30, 27, 75, 0.45);
+  --fc-neutral-text-color: #c7d2fe;
 
-  --fc-today-bg-color:      rgba(34, 211, 238, 0.08);
+  --fc-today-bg-color: rgba(34, 211, 238, 0.08);
   --fc-now-indicator-color: #e879f9;
 
-  --fc-event-bg-color:      rgba(99, 102, 241, 0.85);
-  --fc-event-border-color:  rgba(165, 180, 252, 0.45);
-  --fc-event-text-color:    #f0f4ff;
+  --fc-event-bg-color: rgba(99, 102, 241, 0.85);
+  --fc-event-border-color: rgba(165, 180, 252, 0.45);
+  --fc-event-text-color: #f0f4ff;
 
-  --fc-button-bg-color:        rgba(49, 46, 129, 0.55);
-  --fc-button-border-color:    rgba(129, 140, 248, 0.28);
-  --fc-button-hover-bg-color:  rgba(79, 70, 229, 0.65);
+  --fc-button-bg-color: rgba(49, 46, 129, 0.55);
+  --fc-button-border-color: rgba(129, 140, 248, 0.28);
+  --fc-button-hover-bg-color: rgba(79, 70, 229, 0.65);
   --fc-button-hover-border-color: rgba(165, 180, 252, 0.5);
   --fc-button-active-bg-color: rgba(232, 121, 249, 0.25);
   --fc-button-active-border-color: rgba(232, 121, 249, 0.7);
-  --fc-button-text-color:      #f0f4ff;
+  --fc-button-text-color: #f0f4ff;
 
   --fc-list-event-hover-bg-color: rgba(99, 102, 241, 0.18);
 
@@ -68,7 +68,9 @@
   border-color: rgba(232, 121, 249, 0.55);
   color: #f0f4ff;
 }
-.r3zon-calendar .fc .fc-button-group { gap: 2px; }
+.r3zon-calendar .fc .fc-button-group {
+  gap: 2px;
+}
 
 /* --- Cuadrícula --------------------------------------------------------- */
 .r3zon-calendar .fc-scrollgrid,
@@ -137,7 +139,9 @@
   font-size: 0.82rem;
   font-weight: 500;
   cursor: grab;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
 }
 .r3zon-calendar .fc-event:hover {
   box-shadow: 0 8px 22px rgba(99, 102, 241, 0.45);
@@ -155,11 +159,21 @@
 }
 
 /* Variantes de color (clase r3zon-color-* asignada por CalendarView) */
-.r3zon-calendar .fc-event.r3zon-color-cyan    { background: linear-gradient(135deg, rgba(34, 211, 238, 0.85), rgba(59, 130, 246, 0.65)); }
-.r3zon-calendar .fc-event.r3zon-color-fuchsia { background: linear-gradient(135deg, rgba(232, 121, 249, 0.85), rgba(168, 85, 247, 0.65)); }
-.r3zon-calendar .fc-event.r3zon-color-green   { background: linear-gradient(135deg, rgba(52, 211, 153, 0.85), rgba(16, 185, 129, 0.65)); }
-.r3zon-calendar .fc-event.r3zon-color-orange  { background: linear-gradient(135deg, rgba(251, 146, 60, 0.85), rgba(234, 88, 12, 0.65)); }
-.r3zon-calendar .fc-event.r3zon-color-red     { background: linear-gradient(135deg, rgba(248, 113, 113, 0.85), rgba(220, 38, 38, 0.65)); }
+.r3zon-calendar .fc-event.r3zon-color-cyan {
+  background: linear-gradient(135deg, rgba(34, 211, 238, 0.85), rgba(59, 130, 246, 0.65));
+}
+.r3zon-calendar .fc-event.r3zon-color-fuchsia {
+  background: linear-gradient(135deg, rgba(232, 121, 249, 0.85), rgba(168, 85, 247, 0.65));
+}
+.r3zon-calendar .fc-event.r3zon-color-green {
+  background: linear-gradient(135deg, rgba(52, 211, 153, 0.85), rgba(16, 185, 129, 0.65));
+}
+.r3zon-calendar .fc-event.r3zon-color-orange {
+  background: linear-gradient(135deg, rgba(251, 146, 60, 0.85), rgba(234, 88, 12, 0.65));
+}
+.r3zon-calendar .fc-event.r3zon-color-red {
+  background: linear-gradient(135deg, rgba(248, 113, 113, 0.85), rgba(220, 38, 38, 0.65));
+}
 
 /* --- Vista Mes ---------------------------------------------------------- */
 .r3zon-calendar .fc-daygrid-event {

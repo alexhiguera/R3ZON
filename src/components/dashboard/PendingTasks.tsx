@@ -1,7 +1,7 @@
 "use client";
 
+import { AlertCircle, ArrowRight, Clock, Kanban } from "lucide-react";
 import Link from "next/link";
-import { ArrowRight, Kanban, Clock, AlertCircle } from "lucide-react";
 
 export type DashboardTask = {
   id: string;
@@ -12,9 +12,9 @@ export type DashboardTask = {
 };
 
 const PRIO: Record<string, { label: string; className: string }> = {
-  alta:  { label: "Alta",  className: "border-rose-400/40 bg-rose-400/10 text-rose-300" },
+  alta: { label: "Alta", className: "border-rose-400/40 bg-rose-400/10 text-rose-300" },
   media: { label: "Media", className: "border-amber-400/40 bg-amber-400/10 text-amber-300" },
-  baja:  { label: "Baja",  className: "border-emerald-400/40 bg-emerald-400/10 text-emerald-300" },
+  baja: { label: "Baja", className: "border-emerald-400/40 bg-emerald-400/10 text-emerald-300" },
 };
 
 function dueInfo(fecha: string | null) {
@@ -22,19 +22,22 @@ function dueInfo(fecha: string | null) {
   const d = new Date(fecha);
   const now = new Date();
   const diffDays = Math.floor((d.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-  if (diffDays < 0)  return { text: `Vencida hace ${Math.abs(diffDays)}d`, tone: "text-rose-300", icon: AlertCircle };
+  if (diffDays < 0)
+    return {
+      text: `Vencida hace ${Math.abs(diffDays)}d`,
+      tone: "text-rose-300",
+      icon: AlertCircle,
+    };
   if (diffDays === 0) return { text: "Vence hoy", tone: "text-amber-300", icon: AlertCircle };
-  if (diffDays <= 3)  return { text: `Vence en ${diffDays}d`, tone: "text-amber-300", icon: Clock };
-  return { text: d.toLocaleDateString("es-ES", { day: "numeric", month: "short" }), tone: "text-text-mid", icon: Clock };
+  if (diffDays <= 3) return { text: `Vence en ${diffDays}d`, tone: "text-amber-300", icon: Clock };
+  return {
+    text: d.toLocaleDateString("es-ES", { day: "numeric", month: "short" }),
+    tone: "text-text-mid",
+    icon: Clock,
+  };
 }
 
-export function PendingTasks({
-  tasks,
-  loading,
-}: {
-  tasks: DashboardTask[];
-  loading?: boolean;
-}) {
+export function PendingTasks({ tasks, loading }: { tasks: DashboardTask[]; loading?: boolean }) {
   return (
     <section className="card-glass p-5">
       <header className="mb-4 flex items-center justify-between">

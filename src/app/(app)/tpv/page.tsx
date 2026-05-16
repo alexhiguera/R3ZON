@@ -1,28 +1,25 @@
 "use client";
 
-import { useMemo, useState } from "react";
 import {
-  ShoppingCart,
-  Search,
-  Plus,
-  Minus,
-  Trash2,
-  Loader2,
+  AlertCircle,
   Banknote,
   CreditCard,
+  Loader2,
+  Minus,
+  Plus,
+  Search,
+  ShoppingCart,
   Smartphone,
-  Wallet,
+  Trash2,
   Users,
-  AlertCircle,
+  Wallet,
 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
-import { useNegocioId } from "@/lib/useNegocioId";
-import { useToast } from "@/components/ui/Toast";
-import { useSupabaseQuery } from "@/lib/useSupabaseQuery";
-import { Modal } from "@/components/ui/Modal";
-import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { useMemo, useState } from "react";
 import { ActionButton } from "@/components/ui/ActionButton";
+import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Input } from "@/components/ui/Input";
+import { Modal } from "@/components/ui/Modal";
+import { useToast } from "@/components/ui/Toast";
 import {
   añadirItem,
   calcularTotalVenta,
@@ -34,14 +31,17 @@ import {
   type ItemTPV,
   type Producto,
 } from "@/lib/inventario";
+import { createClient } from "@/lib/supabase/client";
+import { useNegocioId } from "@/lib/useNegocioId";
+import { useSupabaseQuery } from "@/lib/useSupabaseQuery";
 
 type MetodoPagoTPV = "efectivo" | "tarjeta" | "bizum" | "otro";
 
 const METODOS: { id: MetodoPagoTPV; label: string; Icon: typeof Banknote }[] = [
   { id: "efectivo", label: "Efectivo", Icon: Banknote },
-  { id: "tarjeta",  label: "Tarjeta",  Icon: CreditCard },
-  { id: "bizum",    label: "Bizum",    Icon: Smartphone },
-  { id: "otro",     label: "Otro",     Icon: Wallet },
+  { id: "tarjeta", label: "Tarjeta", Icon: CreditCard },
+  { id: "bizum", label: "Bizum", Icon: Smartphone },
+  { id: "otro", label: "Otro", Icon: Wallet },
 ];
 
 // Solo las columnas que la UI consume — evitamos `descripcion`, `precio_coste`,
@@ -135,13 +135,13 @@ export default function TPVPage() {
 
     // 2. Insertar items
     const filas = items.map((it) => ({
-      negocio_id:    negocioId,
-      venta_id:      venta.id,
-      producto_id:   it.producto_id,
-      nombre:        it.nombre,
-      cantidad:      it.cantidad,
-      precio_unit:   it.precio_unit,
-      iva_pct:       it.iva_pct,
+      negocio_id: negocioId,
+      venta_id: venta.id,
+      producto_id: it.producto_id,
+      nombre: it.nombre,
+      cantidad: it.cantidad,
+      precio_unit: it.precio_unit,
+      iva_pct: it.iva_pct,
       descuento_pct: it.descuento_pct,
     }));
     const { error: errI } = await supabase.from("tpv_venta_items").insert(filas);
@@ -170,12 +170,13 @@ export default function TPVPage() {
     for (const it of items) {
       restas.set(it.producto_id, (restas.get(it.producto_id) ?? 0) + it.cantidad);
     }
-    setProductos((prev) =>
-      prev?.map((p) =>
-        p.stock_tracking && restas.has(p.id)
-          ? { ...p, stock_actual: Number(p.stock_actual) - (restas.get(p.id) ?? 0) }
-          : p,
-      ) ?? prev,
+    setProductos(
+      (prev) =>
+        prev?.map((p) =>
+          p.stock_tracking && restas.has(p.id)
+            ? { ...p, stock_actual: Number(p.stock_actual) - (restas.get(p.id) ?? 0) }
+            : p,
+        ) ?? prev,
     );
 
     toast.ok(`Cobrado ${eur(totales.total)} (${metodo})`);
@@ -214,12 +215,15 @@ export default function TPVPage() {
           {categorias.length > 1 && (
             <div className="flex flex-wrap gap-1.5">
               {categorias.map((c) => (
-                <button key={c} onClick={() => setCategoria(c)}
+                <button
+                  key={c}
+                  onClick={() => setCategoria(c)}
                   className={`rounded-lg border px-3 py-1.5 text-xs font-semibold capitalize ${
                     categoria === c
                       ? "border-cyan/50 bg-cyan/10 text-cyan"
                       : "border-indigo-400/15 bg-indigo-900/20 text-text-mid hover:text-text-hi"
-                  }`}>
+                  }`}
+                >
                   {c}
                 </button>
               ))}
@@ -240,9 +244,13 @@ export default function TPVPage() {
                 const est = estadoStock(p);
                 const agotado = est === "agotado";
                 return (
-                  <button key={p.id} onClick={() => agregar(p)} disabled={agotado}
+                  <button
+                    key={p.id}
+                    onClick={() => agregar(p)}
+                    disabled={agotado}
                     style={{ background: p.color || colorCategoria(p.categoria) }}
-                    className="group relative flex flex-col items-start justify-between rounded-2xl p-2.5 text-left text-white shadow-md transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40 active:scale-95">
+                    className="group relative flex flex-col items-start justify-between rounded-2xl p-2.5 text-left text-white shadow-md transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40 active:scale-95"
+                  >
                     <div className="line-clamp-2 text-sm font-bold leading-tight">{p.nombre}</div>
                     <div className="flex w-full items-end justify-between">
                       <span className="text-[0.65rem] opacity-80">
@@ -276,12 +284,16 @@ export default function TPVPage() {
               <div>
                 <div className="section-label">Ticket</div>
                 <div className="font-display text-sm font-bold text-text-hi">
-                  {items.length === 0 ? "Vacío" : `${totales.num_unidades} unidades · ${items.length} líneas`}
+                  {items.length === 0
+                    ? "Vacío"
+                    : `${totales.num_unidades} unidades · ${items.length} líneas`}
                 </div>
               </div>
               {items.length > 0 && (
-                <button onClick={descartarTicket}
-                  className="text-xs text-danger hover:text-danger/80">
+                <button
+                  onClick={descartarTicket}
+                  className="text-xs text-danger hover:text-danger/80"
+                >
                   Descartar
                 </button>
               )}
@@ -302,11 +314,15 @@ export default function TPVPage() {
             ) : (
               <ul className="flex flex-col gap-1.5">
                 {items.map((it, i) => (
-                  <li key={`${it.producto_id}-${i}`}
-                    className="rounded-xl border border-indigo-400/15 bg-indigo-900/20 p-2.5">
+                  <li
+                    key={`${it.producto_id}-${i}`}
+                    className="rounded-xl border border-indigo-400/15 bg-indigo-900/20 p-2.5"
+                  >
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0 flex-1">
-                        <div className="truncate text-sm font-semibold text-text-hi">{it.nombre}</div>
+                        <div className="truncate text-sm font-semibold text-text-hi">
+                          {it.nombre}
+                        </div>
                         <div className="text-[0.7rem] text-text-lo">
                           {eur(it.precio_unit)} × {it.cantidad}
                           {it.descuento_pct > 0 && ` · −${it.descuento_pct}%`}
@@ -317,8 +333,10 @@ export default function TPVPage() {
                       </div>
                     </div>
                     <div className="mt-2 flex items-center gap-1.5">
-                      <button onClick={() => setItems(cambiarCantidad(items, i, it.cantidad - 1))}
-                        className="flex h-7 w-7 items-center justify-center rounded-lg border border-indigo-400/20 bg-indigo-900/30 text-text-mid">
+                      <button
+                        onClick={() => setItems(cambiarCantidad(items, i, it.cantidad - 1))}
+                        className="flex h-7 w-7 items-center justify-center rounded-lg border border-indigo-400/20 bg-indigo-900/30 text-text-mid"
+                      >
                         <Minus size={11} />
                       </button>
                       <Input
@@ -330,13 +348,18 @@ export default function TPVPage() {
                         }
                         className="h-7 w-16 px-2 text-center text-xs"
                       />
-                      <button onClick={() => setItems(cambiarCantidad(items, i, it.cantidad + 1))}
-                        className="flex h-7 w-7 items-center justify-center rounded-lg border border-indigo-400/20 bg-indigo-900/30 text-text-mid">
+                      <button
+                        onClick={() => setItems(cambiarCantidad(items, i, it.cantidad + 1))}
+                        className="flex h-7 w-7 items-center justify-center rounded-lg border border-indigo-400/20 bg-indigo-900/30 text-text-mid"
+                      >
                         <Plus size={11} />
                       </button>
                       <div className="flex-1" />
-                      <button onClick={() => setItems(eliminarItem(items, i))} aria-label="Eliminar"
-                        className="flex h-7 w-7 items-center justify-center rounded-lg border border-danger/30 bg-danger/5 text-danger">
+                      <button
+                        onClick={() => setItems(eliminarItem(items, i))}
+                        aria-label="Eliminar"
+                        className="flex h-7 w-7 items-center justify-center rounded-lg border border-danger/30 bg-danger/5 text-danger"
+                      >
                         <Trash2 size={11} />
                       </button>
                     </div>
@@ -349,15 +372,17 @@ export default function TPVPage() {
           <div className="border-t border-indigo-400/15 p-4">
             <div className="space-y-1 text-sm">
               <FilaTotal label="Subtotal" valor={eur(totales.subtotal)} />
-              <FilaTotal label="IVA"      valor={eur(totales.iva_total)} />
+              <FilaTotal label="IVA" valor={eur(totales.iva_total)} />
             </div>
             <div className="mt-2 flex items-center justify-between rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 px-4 py-3 text-white">
               <span className="font-display text-sm font-bold uppercase tracking-wide">Total</span>
               <span className="font-display text-2xl font-extrabold">{eur(totales.total)}</span>
             </div>
-            <button onClick={() => setModalCobro(true)}
+            <button
+              onClick={() => setModalCobro(true)}
               disabled={items.length === 0}
-              className="mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-cyan text-base font-bold text-bg shadow-glow disabled:cursor-not-allowed disabled:bg-text-lo disabled:opacity-40">
+              className="mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-cyan text-base font-bold text-bg shadow-glow disabled:cursor-not-allowed disabled:bg-text-lo disabled:opacity-40"
+            >
               <Wallet size={16} /> Cobrar
             </button>
           </div>
@@ -372,7 +397,9 @@ export default function TPVPage() {
         title={
           <div>
             <div className="section-label">Cobrar</div>
-            <div className="font-display text-3xl font-extrabold text-text-hi">{eur(totales.total)}</div>
+            <div className="font-display text-3xl font-extrabold text-text-hi">
+              {eur(totales.total)}
+            </div>
           </div>
         }
       >

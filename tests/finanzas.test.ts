@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { agregarPorMes, totales, type MovimientoFila } from "@/lib/finanzas";
+import { describe, expect, it } from "vitest";
+import { agregarPorMes, type MovimientoFila, totales } from "@/lib/finanzas";
 
 const ingreso = (fecha: string, base: number, iva: number, irpf = 0): MovimientoFila => ({
   tipo: "ingreso",
@@ -36,10 +36,7 @@ describe("totales", () => {
   });
 
   it("ivaAPagar negativo cuando soportado > repercutido (Hacienda devuelve)", () => {
-    const filas = [
-      ingreso("2026-01-01", 100, 21),
-      gasto("2026-01-02", 1000, 210),
-    ];
+    const filas = [ingreso("2026-01-01", 100, 21), gasto("2026-01-02", 1000, 210)];
     const t = totales(filas);
     expect(t.ivaAPagar).toBe(-189);
   });
@@ -53,8 +50,14 @@ describe("totales", () => {
 
   it("acepta strings numéricos sin romper (Number coerción)", () => {
     const filas: MovimientoFila[] = [
-      { tipo: "ingreso", fecha: "2026-01-01", base_imponible: "100" as unknown as number,
-        iva_importe: "21" as unknown as number, irpf_importe: 0, total: 121 },
+      {
+        tipo: "ingreso",
+        fecha: "2026-01-01",
+        base_imponible: "100" as unknown as number,
+        iva_importe: "21" as unknown as number,
+        irpf_importe: 0,
+        total: 121,
+      },
     ];
     const t = totales(filas);
     expect(t.ganado).toBe(100);
@@ -82,10 +85,7 @@ describe("agregarPorMes", () => {
   });
 
   it("ignora movimientos de otro año", () => {
-    const filas = [
-      ingreso("2025-06-01", 9999, 0, 0),
-      ingreso("2026-06-01", 100, 21, 0),
-    ];
+    const filas = [ingreso("2025-06-01", 9999, 0, 0), ingreso("2026-06-01", 100, 21, 0)];
     const buckets = agregarPorMes(filas, 2026);
     expect(buckets[5].ganado).toBe(100);
   });

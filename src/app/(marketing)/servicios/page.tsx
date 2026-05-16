@@ -1,18 +1,18 @@
-import type { Metadata } from "next";
-import Link from "next/link";
 import {
   ArrowRight,
+  Boxes,
   Building2,
   Calendar,
-  Kanban,
   Clock,
-  ShoppingCart,
-  Wallet,
   FileText,
-  Boxes,
-  Truck,
+  Kanban,
   type LucideIcon,
+  ShoppingCart,
+  Truck,
+  Wallet,
 } from "lucide-react";
+import type { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Servicios",
@@ -93,8 +93,8 @@ export default function ServiciosPage() {
           Todo lo que necesita tu negocio.
         </h1>
         <p className="mt-4 text-base text-text-mid sm:text-lg">
-          Nueve módulos pensados para trabajar juntos. Empieza por el que más te
-          urja y descubre el resto cuando te haga falta.
+          Nueve módulos pensados para trabajar juntos. Empieza por el que más te urja y descubre el
+          resto cuando te haga falta.
         </p>
       </header>
 
@@ -104,9 +104,7 @@ export default function ServiciosPage() {
             <div className="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-xl border border-cyan/40 bg-cyan/10 text-cyan">
               <Icon size={20} strokeWidth={2} />
             </div>
-            <h2 className="font-display text-xl font-bold text-text-hi">
-              {title}
-            </h2>
+            <h2 className="font-display text-xl font-bold text-text-hi">{title}</h2>
             <p className="mt-1 text-sm text-text-mid">{desc}</p>
             <ul className="mt-4 space-y-1.5 text-sm text-text-mid">
               {bullets.map((b) => (

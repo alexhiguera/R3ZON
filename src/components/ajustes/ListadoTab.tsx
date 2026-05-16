@@ -1,7 +1,7 @@
 "use client";
 
+import { AlertCircle, Boxes, CheckCircle2, Loader2 } from "lucide-react";
 import { useState } from "react";
-import { Loader2, CheckCircle2, AlertCircle, Boxes } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { formatSupabaseError } from "@/lib/supabase-errors";
 import type { PerfilNegocio } from "./types";
@@ -62,10 +62,9 @@ export function ListadoTab({ perfil }: { perfil: PerfilNegocio }) {
               <div>
                 <div className="font-semibold text-text-hi">Modo stock</div>
                 <p className="mt-1 text-xs text-text-mid">
-                  Activa el control de inventario: stock actual, mínimo, movimientos
-                  y etiquetas (En stock / Stock bajo / Agotado) en cada fila. Si lo
-                  desactivas, los productos siguen funcionando como catálogo pero
-                  sin contadores.
+                  Activa el control de inventario: stock actual, mínimo, movimientos y etiquetas (En
+                  stock / Stock bajo / Agotado) en cada fila. Si lo desactivas, los productos siguen
+                  funcionando como catálogo pero sin contadores.
                 </p>
               </div>
 
@@ -76,9 +75,7 @@ export function ListadoTab({ perfil }: { perfil: PerfilNegocio }) {
                 disabled={saving}
                 onClick={() => toggle(!stockMode)}
                 className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full border transition ${
-                  stockMode
-                    ? "border-cyan/40 bg-cyan/30"
-                    : "border-indigo-400/30 bg-indigo-900/60"
+                  stockMode ? "border-cyan/40 bg-cyan/30" : "border-indigo-400/30 bg-indigo-900/60"
                 } disabled:opacity-50`}
               >
                 <span

@@ -1,8 +1,8 @@
 // Lógica pura de documentos comerciales (factura, ticket, presupuesto, …).
 // Sin red ni Supabase: todo determinístico para tests.
 
-import { eur, round2 } from "./formato";
 import type { Database } from "./database.types";
+import { eur, round2 } from "./formato";
 
 export { eur };
 
@@ -22,20 +22,15 @@ export type TipoDocumento =
 export type FormatoDocumento = "a4" | "ticket";
 
 export const FORMATO_TIPO: Record<TipoDocumento, FormatoDocumento> = {
-  factura:     "a4",
-  ticket:      "ticket",
+  factura: "a4",
+  ticket: "ticket",
   presupuesto: "a4",
-  albaran:     "a4",
-  proforma:    "a4",
-  recibo:      "a4",
+  albaran: "a4",
+  proforma: "a4",
+  recibo: "a4",
 };
 
-export type EstadoDocumento =
-  | "borrador"
-  | "generado"
-  | "enviado"
-  | "pagado"
-  | "anulado";
+export type EstadoDocumento = "borrador" | "generado" | "enviado" | "pagado" | "anulado";
 
 export type LineaDocumento = {
   descripcion: string;
@@ -73,21 +68,21 @@ export type Documento = Omit<
 };
 
 export const ETIQUETA_TIPO: Record<TipoDocumento, string> = {
-  factura:     "Factura",
-  ticket:      "Ticket",
+  factura: "Factura",
+  ticket: "Ticket",
   presupuesto: "Presupuesto",
-  albaran:     "Albarán",
-  proforma:    "Proforma",
-  recibo:      "Recibo",
+  albaran: "Albarán",
+  proforma: "Proforma",
+  recibo: "Recibo",
 };
 
 export const DESCRIPCION_TIPO: Record<TipoDocumento, string> = {
-  factura:     "Documento legal con validez fiscal. Numeración correlativa obligatoria.",
-  ticket:      "Justificante de venta para clientes finales (sin datos fiscales).",
+  factura: "Documento legal con validez fiscal. Numeración correlativa obligatoria.",
+  ticket: "Justificante de venta para clientes finales (sin datos fiscales).",
   presupuesto: "Oferta económica vinculante hasta su fecha de validez.",
-  albaran:     "Justificante de entrega de mercancía o servicio.",
-  proforma:    "Borrador de factura sin validez fiscal.",
-  recibo:      "Justificante de cobro: confirma el pago de una cantidad recibida.",
+  albaran: "Justificante de entrega de mercancía o servicio.",
+  proforma: "Borrador de factura sin validez fiscal.",
+  recibo: "Justificante de cobro: confirma el pago de una cantidad recibida.",
 };
 
 export const TIPOS_DOCUMENTO: TipoDocumento[] = [
@@ -105,20 +100,17 @@ export const REQUIERE_CLIENTE_FISCAL: TipoDocumento[] = ["factura", "proforma"];
 // ── Cálculo de totales ────────────────────────────────────────────────────────
 
 export type TotalesDocumento = {
-  subtotal: number;          // Σ cantidad × precio_unit (sin descuento)
-  descuento_total: number;   // Σ descuentos por línea
-  base_imponible: number;    // subtotal − descuento_total
-  iva_total: number;         // Σ IVA por línea (sobre la base con descuento)
-  irpf_total: number;        // base_imponible × irpf_pct
-  total: number;             // base_imponible + iva_total − irpf_total
+  subtotal: number; // Σ cantidad × precio_unit (sin descuento)
+  descuento_total: number; // Σ descuentos por línea
+  base_imponible: number; // subtotal − descuento_total
+  iva_total: number; // Σ IVA por línea (sobre la base con descuento)
+  irpf_total: number; // base_imponible × irpf_pct
+  total: number; // base_imponible + iva_total − irpf_total
   desglose_iva: Map<number, { base: number; cuota: number }>;
 };
 
 /** Calcula totales de un documento. Determinístico, sin efectos secundarios. */
-export function calcularTotales(
-  lineas: LineaDocumento[],
-  irpf_pct = 0,
-): TotalesDocumento {
+export function calcularTotales(lineas: LineaDocumento[], irpf_pct = 0): TotalesDocumento {
   let subtotal = 0;
   let descuento_total = 0;
   let iva_total = 0;
@@ -126,21 +118,21 @@ export function calcularTotales(
 
   for (const l of lineas) {
     const cantidad = Number(l.cantidad) || 0;
-    const precio   = Number(l.precio_unit) || 0;
-    const descPct  = Number(l.descuento_pct) || 0;
-    const ivaPct   = Number(l.iva_pct) || 0;
+    const precio = Number(l.precio_unit) || 0;
+    const descPct = Number(l.descuento_pct) || 0;
+    const ivaPct = Number(l.iva_pct) || 0;
 
-    const bruto    = cantidad * precio;
-    const desc     = bruto * (descPct / 100);
-    const baseLin  = bruto - desc;
-    const ivaLin   = baseLin * (ivaPct / 100);
+    const bruto = cantidad * precio;
+    const desc = bruto * (descPct / 100);
+    const baseLin = bruto - desc;
+    const ivaLin = baseLin * (ivaPct / 100);
 
-    subtotal        += bruto;
+    subtotal += bruto;
     descuento_total += desc;
-    iva_total       += ivaLin;
+    iva_total += ivaLin;
 
     const acc = desglose_iva.get(ivaPct) ?? { base: 0, cuota: 0 };
-    acc.base  += baseLin;
+    acc.base += baseLin;
     acc.cuota += ivaLin;
     desglose_iva.set(ivaPct, acc);
   }
@@ -156,24 +148,24 @@ export function calcularTotales(
   }
 
   return {
-    subtotal:        round2(subtotal),
+    subtotal: round2(subtotal),
     descuento_total: round2(descuento_total),
-    base_imponible:  round2(base_imponible),
-    iva_total:       round2(iva_total),
-    irpf_total:      round2(irpf_total),
-    total:           round2(total),
-    desglose_iva:    desglose_redondeado,
+    base_imponible: round2(base_imponible),
+    iva_total: round2(iva_total),
+    irpf_total: round2(irpf_total),
+    total: round2(total),
+    desglose_iva: desglose_redondeado,
   };
 }
 
 /** Línea vacía para inicializar el formulario. */
 export function lineaVacia(): LineaDocumento {
   return {
-    descripcion:   "",
-    cantidad:      1,
-    precio_unit:   0,
+    descripcion: "",
+    cantidad: 1,
+    precio_unit: 0,
     descuento_pct: 0,
-    iva_pct:       21,
+    iva_pct: 21,
   };
 }
 
@@ -199,7 +191,7 @@ export function validarParaGenerar(d: {
   if (!d.emisor_snapshot.nombre) errores.push("Falta el nombre del emisor.");
   if (REQUIERE_CLIENTE_FISCAL.includes(d.tipo)) {
     if (!d.cliente_snapshot.nombre) errores.push("Selecciona o introduce el cliente.");
-    if (!d.cliente_snapshot.cif)    errores.push("La factura requiere CIF/NIF del cliente.");
+    if (!d.cliente_snapshot.cif) errores.push("La factura requiere CIF/NIF del cliente.");
   }
   if (d.lineas.length === 0) errores.push("Añade al menos una línea.");
   if (d.lineas.some((l) => !l.descripcion.trim()))
@@ -208,15 +200,19 @@ export function validarParaGenerar(d: {
     errores.push("Las cantidades deben ser mayores que cero.");
   if (d.lineas.some((l) => (Number(l.precio_unit) || 0) < 0))
     errores.push("Los precios unitarios no pueden ser negativos.");
-  if (d.lineas.some((l) => {
-    const iva = Number(l.iva_pct) || 0;
-    return iva < 0 || iva > 100;
-  }))
+  if (
+    d.lineas.some((l) => {
+      const iva = Number(l.iva_pct) || 0;
+      return iva < 0 || iva > 100;
+    })
+  )
     errores.push("El IVA debe estar entre 0 % y 100 %.");
-  if (d.lineas.some((l) => {
-    const dto = Number(l.descuento_pct) || 0;
-    return dto < 0 || dto > 100;
-  }))
+  if (
+    d.lineas.some((l) => {
+      const dto = Number(l.descuento_pct) || 0;
+      return dto < 0 || dto > 100;
+    })
+  )
     errores.push("El descuento debe estar entre 0 % y 100 %.");
   return errores;
 }

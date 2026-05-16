@@ -2,11 +2,11 @@
 
 export const dynamic = "force-dynamic";
 
-import { useState } from "react";
+import { AlertCircle, Loader2, UserPlus } from "lucide-react";
 import Link from "next/link";
-import { Loader2, UserPlus, AlertCircle } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
+import { useState } from "react";
 import { OAuthButtons } from "@/components/auth/OAuthButtons";
+import { createClient } from "@/lib/supabase/client";
 
 const LEGAL_VERSION = "2026-04-28";
 
@@ -31,9 +31,9 @@ export default function RegistroPage() {
     setLoading(true);
     setError(null);
     const pendingConsents = [
-      { tipo: "privacidad", aceptado: true,      version: LEGAL_VERSION },
-      { tipo: "cookies",    aceptado: cookies,   version: LEGAL_VERSION },
-      { tipo: "marketing",  aceptado: marketing, version: LEGAL_VERSION },
+      { tipo: "privacidad", aceptado: true, version: LEGAL_VERSION },
+      { tipo: "cookies", aceptado: cookies, version: LEGAL_VERSION },
+      { tipo: "marketing", aceptado: marketing, version: LEGAL_VERSION },
     ];
     const { error } = await supabase.auth.signUp({
       email,
@@ -44,9 +44,7 @@ export default function RegistroPage() {
           pending_consents: pendingConsents,
         },
         emailRedirectTo:
-          typeof window !== "undefined"
-            ? `${window.location.origin}/auth/callback`
-            : undefined,
+          typeof window !== "undefined" ? `${window.location.origin}/auth/callback` : undefined,
       },
     });
     setLoading(false);
@@ -101,11 +99,19 @@ export default function RegistroPage() {
             label={
               <>
                 He leído y acepto la{" "}
-                <Link href="/legal/privacidad" target="_blank" className="text-cyan hover:underline">
+                <Link
+                  href="/legal/privacidad"
+                  target="_blank"
+                  className="text-cyan hover:underline"
+                >
                   política de privacidad
                 </Link>{" "}
                 y el{" "}
-                <Link href="/legal/aviso-legal" target="_blank" className="text-cyan hover:underline">
+                <Link
+                  href="/legal/aviso-legal"
+                  target="_blank"
+                  className="text-cyan hover:underline"
+                >
                   aviso legal
                 </Link>{" "}
                 <span className="text-rose-300">*</span>

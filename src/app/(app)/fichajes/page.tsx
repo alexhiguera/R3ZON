@@ -1,31 +1,31 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Clock,
-  LogIn,
-  LogOut,
-  Coffee,
-  Play,
-  MapPin,
-  Loader2,
   AlertTriangle,
   CheckCircle2,
+  Clock,
+  Coffee,
+  Loader2,
+  LogIn,
+  LogOut,
+  MapPin,
+  Play,
 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { PanelAdmin } from "@/components/fichajes/PanelAdmin";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { useToast } from "@/components/ui/Toast";
 import {
-  type Fichaje,
-  type TipoFichaje,
-  ETIQUETA_TIPO,
   calcularJornada,
+  ETIQUETA_TIPO,
   estadoTrabajador,
+  type Fichaje,
   fichajesDelDia,
   formatearDuracion,
   siguientesPermitidos,
+  type TipoFichaje,
 } from "@/lib/fichajes";
-import { PanelAdmin } from "@/components/fichajes/PanelAdmin";
+import { createClient } from "@/lib/supabase/client";
 
 type Coords = { lat: number; lng: number; accuracy: number };
 
@@ -57,16 +57,16 @@ function obtenerGPS(timeoutMs = 10000): Promise<GpsResult> {
           err.code === err.PERMISSION_DENIED
             ? "denegado"
             : err.code === err.POSITION_UNAVAILABLE
-            ? "no_disponible"
-            : "timeout";
+              ? "no_disponible"
+              : "timeout";
         const message =
           code === "denegado"
             ? "Has denegado el acceso a tu ubicación. El GPS es obligatorio para fichar (RD-ley 8/2019). Acepta el permiso en tu navegador y vuelve a intentarlo."
             : code === "no_disponible"
-            ? "No se pudo obtener una señal GPS. Comprueba que la ubicación está activada."
-            : code === "timeout"
-            ? "El GPS tardó demasiado en responder. Inténtalo de nuevo."
-            : "No se pudo capturar la ubicación.";
+              ? "No se pudo obtener una señal GPS. Comprueba que la ubicación está activada."
+              : code === "timeout"
+                ? "El GPS tardó demasiado en responder. Inténtalo de nuevo."
+                : "No se pudo capturar la ubicación.";
         resolve({ ok: false, code, message });
       },
       { enableHighAccuracy: true, timeout: timeoutMs, maximumAge: 0 },
@@ -89,9 +89,9 @@ export default function FichajesPage() {
   const [enviando, setEnviando] = useState<TipoFichaje | null>(null);
   const [fichajes, setFichajes] = useState<Fichaje[]>([]);
   const [tick, setTick] = useState(0);
-  const [ownerNegocio, setOwnerNegocio] = useState<
-    { id: string; horas_default: number } | null
-  >(null);
+  const [ownerNegocio, setOwnerNegocio] = useState<{ id: string; horas_default: number } | null>(
+    null,
+  );
 
   // Refresca el contador de jornada cada minuto.
   useEffect(() => {
@@ -118,13 +118,17 @@ export default function FichajesPage() {
     setCargando(false);
   }, [supabase, toast]);
 
-  useEffect(() => { cargar(); }, [cargar]);
+  useEffect(() => {
+    cargar();
+  }, [cargar]);
 
   // Detectar si el usuario es owner de un negocio (para mostrar el panel admin).
   useEffect(() => {
     let alive = true;
     (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user || !alive) return;
       const { data } = await supabase
         .from("perfiles_negocio")
@@ -137,7 +141,9 @@ export default function FichajesPage() {
         horas_default: Number(data.horas_objetivo_dia_default ?? 8),
       });
     })();
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+    };
   }, [supabase]);
 
   const ultimoTipo: TipoFichaje | null = fichajes[0]?.tipo ?? null;
@@ -168,8 +174,7 @@ export default function FichajesPage() {
       p_gps_lat: gps.coords.lat,
       p_gps_lng: gps.coords.lng,
       p_gps_accuracy_m: gps.coords.accuracy,
-      p_user_agent:
-        typeof navigator !== "undefined" ? navigator.userAgent.slice(0, 500) : null,
+      p_user_agent: typeof navigator !== "undefined" ? navigator.userAgent.slice(0, 500) : null,
     });
 
     setEnviando(null);
@@ -178,8 +183,8 @@ export default function FichajesPage() {
       const msg = error.message.includes("GPS_REQUERIDO")
         ? "El servidor rechazó el fichaje: GPS obligatorio."
         : error.message.includes("TRANSICION_INVALIDA")
-        ? "Ese fichaje no está permitido en tu estado actual."
-        : error.message;
+          ? "Ese fichaje no está permitido en tu estado actual."
+          : error.message;
       toast.err(msg);
       return;
     }
@@ -199,9 +204,8 @@ export default function FichajesPage() {
       <div className="flex items-start gap-2 rounded-2xl border border-amber-400/30 bg-amber-500/10 px-4 py-3 text-xs text-amber-200">
         <AlertTriangle size={14} className="mt-0.5 shrink-0" />
         <span>
-          Para fichar es <strong>obligatorio compartir tu ubicación</strong>. Si tu
-          navegador la pide, acéptala — es el justificante de presencia exigido
-          por la Inspección de Trabajo.
+          Para fichar es <strong>obligatorio compartir tu ubicación</strong>. Si tu navegador la
+          pide, acéptala — es el justificante de presencia exigido por la Inspección de Trabajo.
         </span>
       </div>
 
@@ -228,28 +232,28 @@ export default function FichajesPage() {
                       onClick={() => fichar(t)}
                       disabled={!habilitado || enviando !== null}
                       className={`flex flex-col items-center justify-center gap-2 rounded-2xl border px-3 py-5 text-sm font-bold transition-all
-                        ${habilitado
-                          ? "border-cyan/40 bg-gradient-to-br from-cyan/10 to-fuchsia/10 text-text-hi hover:border-cyan/70 hover:shadow-glow"
-                          : "cursor-not-allowed border-indigo-400/10 bg-indigo-900/10 text-text-lo opacity-40"
+                        ${
+                          habilitado
+                            ? "border-cyan/40 bg-gradient-to-br from-cyan/10 to-fuchsia/10 text-text-hi hover:border-cyan/70 hover:shadow-glow"
+                            : "cursor-not-allowed border-indigo-400/10 bg-indigo-900/10 text-text-lo opacity-40"
                         }
                         ${enviandoEste ? "animate-pulse" : ""}
                       `}
                     >
-                      {enviandoEste
-                        ? <Loader2 size={22} className="animate-spin" />
-                        : <Icono size={22} />
-                      }
-                      <span className="text-center text-xs leading-tight">
-                        {ETIQUETA_TIPO[t]}
-                      </span>
+                      {enviandoEste ? (
+                        <Loader2 size={22} className="animate-spin" />
+                      ) : (
+                        <Icono size={22} />
+                      )}
+                      <span className="text-center text-xs leading-tight">{ETIQUETA_TIPO[t]}</span>
                     </button>
                   );
                 },
               )}
             </div>
             <p className="mt-3 text-xs text-text-lo">
-              Solo están activos los fichajes válidos según tu estado actual. Los registros
-              son inmutables una vez guardados (RD-ley 8/2019).
+              Solo están activos los fichajes válidos según tu estado actual. Los registros son
+              inmutables una vez guardados (RD-ley 8/2019).
             </p>
           </div>
 
@@ -281,21 +285,23 @@ function EstadoActual({
     estado === "trabajando"
       ? "text-emerald-400"
       : estado === "en_descanso"
-      ? "text-amber-400"
-      : "text-text-mid";
+        ? "text-amber-400"
+        : "text-text-mid";
 
   const etiqueta =
     estado === "trabajando"
       ? "En el trabajo"
       : estado === "en_descanso"
-      ? "En descanso"
-      : "Fuera del trabajo";
+        ? "En descanso"
+        : "Fuera del trabajo";
 
   return (
     <div className="card-glass p-5">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className={`flex h-12 w-12 items-center justify-center rounded-2xl border border-indigo-400/20 bg-indigo-900/40 ${color}`}>
+          <div
+            className={`flex h-12 w-12 items-center justify-center rounded-2xl border border-indigo-400/20 bg-indigo-900/40 ${color}`}
+          >
             <Clock size={22} />
           </div>
           <div>
@@ -303,8 +309,7 @@ function EstadoActual({
             <div className={`font-display text-xl font-bold ${color}`}>{etiqueta}</div>
             {ultimo && (
               <div className="text-xs text-text-lo">
-                Último: {ETIQUETA_TIPO[ultimo.tipo]} ·{" "}
-                {new Date(ultimo.ts).toLocaleString("es-ES")}
+                Último: {ETIQUETA_TIPO[ultimo.tipo]} · {new Date(ultimo.ts).toLocaleString("es-ES")}
               </div>
             )}
           </div>
@@ -360,12 +365,11 @@ function ListaFichajes({ fichajes }: { fichajes: Fichaje[] }) {
           return (
             <div key={dia}>
               <div className="mb-2 flex items-baseline justify-between gap-3">
-                <div className="font-display text-sm font-bold capitalize text-text-hi">
-                  {dia}
-                </div>
+                <div className="font-display text-sm font-bold capitalize text-text-hi">{dia}</div>
                 <div className="shrink-0 text-xs text-text-lo">
                   {formatearDuracion(resumen.trabajado_ms)} trabajados
-                  {resumen.descanso_ms > 0 && ` · ${formatearDuracion(resumen.descanso_ms)} descanso`}
+                  {resumen.descanso_ms > 0 &&
+                    ` · ${formatearDuracion(resumen.descanso_ms)} descanso`}
                   {!resumen.cerrada && " · en curso"}
                 </div>
               </div>
@@ -379,9 +383,7 @@ function ListaFichajes({ fichajes }: { fichajes: Fichaje[] }) {
                       className="flex items-center gap-3 rounded-xl border border-indigo-400/10 bg-indigo-900/20 px-3 py-2 text-sm"
                     >
                       <Icono size={15} className="shrink-0 text-cyan" />
-                      <span className="font-medium text-text-hi">
-                        {ETIQUETA_TIPO[f.tipo]}
-                      </span>
+                      <span className="font-medium text-text-hi">{ETIQUETA_TIPO[f.tipo]}</span>
                       <span className="text-text-mid">
                         {new Date(f.ts).toLocaleTimeString("es-ES", {
                           hour: "2-digit",

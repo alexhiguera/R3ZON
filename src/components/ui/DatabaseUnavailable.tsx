@@ -18,8 +18,7 @@ export function DatabaseUnavailable() {
           No se puede conectar con la base de datos
         </h1>
         <p className="mt-3 text-sm text-text-mid">
-          Comprueba tu conexión a internet. Si el problema persiste, prueba en
-          unos minutos.
+          Comprueba tu conexión a internet. Si el problema persiste, prueba en unos minutos.
         </p>
         <button
           type="button"

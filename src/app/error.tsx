@@ -1,8 +1,8 @@
 "use client";
 
+import { AlertTriangle, Home, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { useEffect } from "react";
-import { AlertTriangle, Home, RefreshCw } from "lucide-react";
 
 /**
  * Error boundary global de App Router. Se monta cuando un Server o Client
@@ -39,13 +39,11 @@ export default function GlobalAppError({
           </h1>
           <div className="accent-bar mx-auto mt-3 w-12" />
           <p className="mx-auto mt-4 max-w-sm text-sm text-text-mid">
-            Ha ocurrido un error inesperado mientras cargábamos esta página. Puedes
-            intentarlo de nuevo o volver al panel principal.
+            Ha ocurrido un error inesperado mientras cargábamos esta página. Puedes intentarlo de
+            nuevo o volver al panel principal.
           </p>
           {error?.digest && (
-            <p className="mt-3 text-[0.7rem] font-mono text-text-lo">
-              ref: {error.digest}
-            </p>
+            <p className="mt-3 text-[0.7rem] font-mono text-text-lo">ref: {error.digest}</p>
           )}
 
           <div className="mt-7 flex flex-wrap items-center justify-center gap-3">

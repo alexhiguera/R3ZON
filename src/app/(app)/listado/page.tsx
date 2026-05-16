@@ -1,49 +1,49 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Image from "next/image";
 import {
-  Package,
-  Briefcase,
-  Plus,
-  Minus,
-  Search,
-  Pencil,
-  Trash2,
-  Loader2,
-  CheckCircle2,
-  ScanLine,
-  Upload,
-  ChevronDown,
-  Sliders,
-  Boxes,
   ArrowDownLeft,
   ArrowUpRight,
+  Boxes,
+  Briefcase,
+  CheckCircle2,
+  ChevronDown,
+  Loader2,
+  Minus,
+  Package,
+  Pencil,
+  Plus,
   RotateCcw,
+  ScanLine,
+  Search,
   ShoppingCart,
+  Sliders,
+  Trash2,
+  Upload,
 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
-import { useNegocioId } from "@/lib/useNegocioId";
-import { useToast } from "@/components/ui/Toast";
-import { useSupabaseQuery } from "@/lib/useSupabaseQuery";
-import { PageHeader } from "@/components/ui/PageHeader";
-import { Field } from "@/components/ui/Field";
+import Image from "next/image";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { BarcodeScanModal } from "@/components/productos/BarcodeScanModal";
 import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
-import { formatSupabaseError } from "@/lib/supabase-errors";
+import { Field } from "@/components/ui/Field";
 import { Input, Select, Textarea } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
-import { BarcodeScanModal } from "@/components/productos/BarcodeScanModal";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { useToast } from "@/components/ui/Toast";
 import {
+  type EstadoStock,
   ETIQUETA_MOVIMIENTO,
   estadoStock,
   eur,
-  type EstadoStock,
   type Producto,
   type StockMovimiento,
   type TipoMovimientoStock,
   type TipoProducto,
 } from "@/lib/inventario";
+import { createClient } from "@/lib/supabase/client";
+import { formatSupabaseError } from "@/lib/supabase-errors";
 import { COLOR_MOV_STOCK, ESTADO_STOCK_BADGE } from "@/lib/ui-constants";
+import { useNegocioId } from "@/lib/useNegocioId";
+import { useSupabaseQuery } from "@/lib/useSupabaseQuery";
 
 const PRODUCTO_IMG_BUCKET = "producto-imagenes";
 const PRODUCTO_IMG_MAX_BYTES = 3 * 1024 * 1024;
@@ -56,10 +56,10 @@ const COLUMNAS_LISTA =
   "stock_tracking,stock_actual,stock_minimo,color,imagen_url,activo,created_at,updated_at";
 
 const ICONO_MOV: Record<TipoMovimientoStock, typeof ArrowDownLeft> = {
-  entrada:    ArrowDownLeft,
-  salida:     ArrowUpRight,
-  ajuste:     Sliders,
-  venta_tpv:  ShoppingCart,
+  entrada: ArrowDownLeft,
+  salida: ArrowUpRight,
+  ajuste: Sliders,
+  venta_tpv: ShoppingCart,
   devolucion: RotateCcw,
 };
 
@@ -136,7 +136,9 @@ export default function ListadoPage() {
     if (stockMode) cargarMov();
   }, [cargarMov, stockMode]);
 
-  const refreshMov = useCallback(() => { cargarMov(); }, [cargarMov]);
+  const refreshMov = useCallback(() => {
+    cargarMov();
+  }, [cargarMov]);
 
   async function cargarMasMov() {
     const ultimo = movimientosRaw[movimientosRaw.length - 1];
@@ -166,10 +168,7 @@ export default function ListadoPage() {
         if (est !== filtroEstado) return false;
       }
       if (!q) return true;
-      return (
-        p.nombre.toLowerCase().includes(q) ||
-        (p.codigo ?? "").toLowerCase().includes(q)
-      );
+      return p.nombre.toLowerCase().includes(q) || (p.codigo ?? "").toLowerCase().includes(q);
     });
   }, [productos, busqueda, filtroTipo, filtroCategoria, filtroEstado, stockMode]);
 
@@ -192,15 +191,22 @@ export default function ListadoPage() {
   }
 
   const productoVacio = (): Partial<Producto> => ({
-    nombre: "", precio_venta: 0, precio_coste: 0, iva_pct: 21,
-    tipo: "producto", unidad: "ud", stock_tracking: stockMode,
-    stock_actual: 0, stock_minimo: 0, activo: true,
+    nombre: "",
+    precio_venta: 0,
+    precio_coste: 0,
+    iva_pct: 21,
+    tipo: "producto",
+    unidad: "ud",
+    stock_tracking: stockMode,
+    stock_actual: 0,
+    stock_minimo: 0,
+    activo: true,
   });
 
   // KPIs sólo cuando el modo stock está activo.
   const inventariables = productos.filter((p) => p.tipo !== "servicio");
   const agotados = inventariables.filter((p) => estadoStock(p) === "agotado").length;
-  const bajos    = inventariables.filter((p) => estadoStock(p) === "bajo").length;
+  const bajos = inventariables.filter((p) => estadoStock(p) === "bajo").length;
   const conStock = inventariables.filter((p) => estadoStock(p) === "ok").length;
 
   return (
@@ -217,9 +223,9 @@ export default function ListadoPage() {
 
       {stockMode && (
         <div className="grid gap-3 sm:grid-cols-3">
-          <KpiCard label="Con stock"  valor={conStock} tono="ok" />
-          <KpiCard label="Stock bajo" valor={bajos}    tono="warn" />
-          <KpiCard label="Agotados"   valor={agotados} tono="danger" />
+          <KpiCard label="Con stock" valor={conStock} tono="ok" />
+          <KpiCard label="Stock bajo" valor={bajos} tono="warn" />
+          <KpiCard label="Agotados" valor={agotados} tono="danger" />
         </div>
       )}
 
@@ -227,7 +233,10 @@ export default function ListadoPage() {
         <section className="flex flex-col gap-3">
           <div className="card-glass flex flex-wrap items-center gap-3 p-4">
             <div className="relative flex-1 min-w-[220px]">
-              <Search className="pointer-events-none absolute left-3 top-3 text-text-lo" size={14} />
+              <Search
+                className="pointer-events-none absolute left-3 top-3 text-text-lo"
+                size={14}
+              />
               <Input
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
@@ -238,11 +247,13 @@ export default function ListadoPage() {
 
             {/* Filtro Producto / Servicio */}
             <div className="inline-flex rounded-lg border border-indigo-400/20 bg-indigo-900/30 p-0.5">
-              {([
-                { v: "todos",    label: "Todos",      Icon: Boxes },
-                { v: "producto", label: "Productos",  Icon: Package },
-                { v: "servicio", label: "Servicios",  Icon: Briefcase },
-              ] as const).map(({ v, label, Icon }) => {
+              {(
+                [
+                  { v: "todos", label: "Todos", Icon: Boxes },
+                  { v: "producto", label: "Productos", Icon: Package },
+                  { v: "servicio", label: "Servicios", Icon: Briefcase },
+                ] as const
+              ).map(({ v, label, Icon }) => {
                 const sel = filtroTipo === v;
                 return (
                   <button
@@ -267,7 +278,11 @@ export default function ListadoPage() {
               className="w-auto"
             >
               <option value="todas">Todas las categorías</option>
-              {categorias.map((c) => <option key={c} value={c}>{c}</option>)}
+              {categorias.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
             </Select>
 
             {stockMode && (
@@ -346,18 +361,20 @@ export default function ListadoPage() {
                     const Icono = ICONO_MOV[m.tipo];
                     const positivo = m.cantidad > 0;
                     return (
-                      <li key={m.id}
-                        className="flex items-center gap-2 rounded-lg border border-indigo-400/10 bg-indigo-900/20 p-2 text-xs">
+                      <li
+                        key={m.id}
+                        className="flex items-center gap-2 rounded-lg border border-indigo-400/10 bg-indigo-900/20 p-2 text-xs"
+                      >
                         <Icono size={12} className={`shrink-0 ${COLOR_MOV_STOCK[m.tipo]}`} />
                         <div className="min-w-0 flex-1">
                           <div className="truncate font-medium text-text-hi">{m.nombre}</div>
                           <div className="text-[0.65rem] text-text-lo">
-                            {ETIQUETA_MOVIMIENTO[m.tipo]} ·{" "}
-                            {new Date(m.ts).toLocaleString("es-ES")}
+                            {ETIQUETA_MOVIMIENTO[m.tipo]} · {new Date(m.ts).toLocaleString("es-ES")}
                           </div>
                         </div>
                         <span className={`font-bold ${positivo ? "text-ok" : "text-danger"}`}>
-                          {positivo ? "+" : ""}{m.cantidad}
+                          {positivo ? "+" : ""}
+                          {m.cantidad}
                         </span>
                       </li>
                     );
@@ -385,14 +402,21 @@ export default function ListadoPage() {
         stockMode={stockMode}
         negocioId={negocioId}
         onCerrar={() => setEditando(null)}
-        onGuardado={() => { setEditando(null); refresh(); }}
+        onGuardado={() => {
+          setEditando(null);
+          refresh();
+        }}
       />
 
       <MovimientoModal
         producto={movimientoDe}
         negocioId={negocioId}
         onCerrar={() => setMovimientoDe(null)}
-        onGuardado={() => { setMovimientoDe(null); refresh(); refreshMov(); }}
+        onGuardado={() => {
+          setMovimientoDe(null);
+          refresh();
+          refreshMov();
+        }}
       />
       {confirmDialogNode}
     </div>
@@ -435,13 +459,7 @@ function FilaProducto({
       <div className="flex flex-1 items-center gap-3 rounded-2xl border border-indigo-400/15 bg-indigo-900/30 px-4 py-3 hover:border-indigo-400/30">
         {p.imagen_url ? (
           <span className="relative h-10 w-10 shrink-0 overflow-hidden rounded-xl border border-indigo-400/20 bg-indigo-900/30">
-            <Image
-              src={p.imagen_url}
-              alt={p.nombre}
-              fill
-              sizes="40px"
-              className="object-cover"
-            />
+            <Image src={p.imagen_url} alt={p.nombre} fill sizes="40px" className="object-cover" />
           </span>
         ) : (
           <span
@@ -455,9 +473,7 @@ function FilaProducto({
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2 text-sm">
             <span className="font-semibold text-text-hi">{p.nombre}</span>
-            {p.codigo && (
-              <span className="font-mono text-[0.7rem] text-text-lo">{p.codigo}</span>
-            )}
+            {p.codigo && <span className="font-mono text-[0.7rem] text-text-lo">{p.codigo}</span>}
             {p.tipo === "servicio" && (
               <span className="inline-flex items-center gap-1 rounded-md border border-fuchsia/30 bg-fuchsia/10 px-1.5 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wider text-fuchsia">
                 <Briefcase size={9} /> Servicio
@@ -476,8 +492,7 @@ function FilaProducto({
               : stockMode && p.stock_tracking
                 ? `${p.stock_actual} ${p.unidad}`
                 : `${p.unidad}`}
-            {stockMode && p.stock_tracking && p.stock_minimo > 0 &&
-              ` · mín ${p.stock_minimo}`}
+            {stockMode && p.stock_tracking && p.stock_minimo > 0 && ` · mín ${p.stock_minimo}`}
           </div>
         </div>
 
@@ -529,8 +544,8 @@ function KpiCard({
   tono: "ok" | "warn" | "danger";
 }) {
   const map = {
-    ok:     "border-ok/30 bg-ok/10 text-ok",
-    warn:   "border-warn/30 bg-warn/10 text-warn",
+    ok: "border-ok/30 bg-ok/10 text-ok",
+    warn: "border-warn/30 bg-warn/10 text-warn",
     danger: "border-danger/30 bg-danger/10 text-danger",
   };
   return (
@@ -572,11 +587,7 @@ async function abrirEdicion(
   setEditando: (p: Partial<Producto> | null) => void,
   toast: { err: (msg: string) => void },
 ) {
-  const { data, error } = await supabase
-    .from("productos")
-    .select("*")
-    .eq("id", p.id)
-    .single();
+  const { data, error } = await supabase.from("productos").select("*").eq("id", p.id).single();
   if (error) {
     toast.err(`No se pudo cargar el producto: ${error.message}`);
     return;
@@ -632,7 +643,9 @@ function ProductoModal({
     if (upErr) {
       setSubiendoImg(false);
       if (/bucket .* not found/i.test(upErr.message)) {
-        toast.err("Bucket 'producto-imagenes' no existe. Aplica supabase/inventario_imagenes_ext.sql.");
+        toast.err(
+          "Bucket 'producto-imagenes' no existe. Aplica supabase/inventario_imagenes_ext.sql.",
+        );
       } else toast.err(upErr.message);
       return;
     }
@@ -648,22 +661,22 @@ function ProductoModal({
 
     const esServicio = (p.tipo ?? "producto") === "servicio";
     const payload = {
-      negocio_id:     negocioId,
-      codigo:         p.codigo || null,
-      nombre:         p.nombre,
-      descripcion:    p.descripcion || null,
-      categoria:      p.categoria || null,
-      tipo:           (p.tipo ?? "producto") as TipoProducto,
-      unidad:         p.unidad ?? "ud",
-      precio_venta:   Number(p.precio_venta) || 0,
-      precio_coste:   Number(p.precio_coste) || 0,
-      iva_pct:        Number(p.iva_pct) || 0,
-      stock_tracking: esServicio ? false : (stockMode ? (p.stock_tracking ?? true) : false),
-      stock_actual:   Number(p.stock_actual) || 0,
-      stock_minimo:   Number(p.stock_minimo) || 0,
-      color:          p.color || null,
-      imagen_url:     p.imagen_url || null,
-      activo:         p.activo ?? true,
+      negocio_id: negocioId,
+      codigo: p.codigo || null,
+      nombre: p.nombre,
+      descripcion: p.descripcion || null,
+      categoria: p.categoria || null,
+      tipo: (p.tipo ?? "producto") as TipoProducto,
+      unidad: p.unidad ?? "ud",
+      precio_venta: Number(p.precio_venta) || 0,
+      precio_coste: Number(p.precio_coste) || 0,
+      iva_pct: Number(p.iva_pct) || 0,
+      stock_tracking: esServicio ? false : stockMode ? (p.stock_tracking ?? true) : false,
+      stock_actual: Number(p.stock_actual) || 0,
+      stock_minimo: Number(p.stock_minimo) || 0,
+      color: p.color || null,
+      imagen_url: p.imagen_url || null,
+      activo: p.activo ?? true,
     };
 
     const q = esNuevo
@@ -692,7 +705,13 @@ function ProductoModal({
         <div className="mb-4 flex items-center gap-4 rounded-2xl border border-indigo-400/15 bg-indigo-900/30 p-3">
           <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-indigo-400/20 bg-indigo-900/40">
             {p.imagen_url ? (
-              <Image src={p.imagen_url} alt={p.nombre ?? "producto"} fill sizes="80px" className="object-cover" />
+              <Image
+                src={p.imagen_url}
+                alt={p.nombre ?? "producto"}
+                fill
+                sizes="80px"
+                className="object-cover"
+              />
             ) : (
               <span
                 className="flex h-full w-full items-center justify-center text-lg font-bold text-white"
@@ -719,7 +738,11 @@ function ProductoModal({
                 disabled={subiendoImg}
                 className="inline-flex items-center gap-1 rounded-lg border border-cyan/40 bg-cyan/10 px-2.5 py-1 text-[11px] font-semibold text-cyan hover:bg-cyan/20 disabled:opacity-50"
               >
-                {subiendoImg ? <Loader2 size={11} className="animate-spin" /> : <Upload size={11} />}
+                {subiendoImg ? (
+                  <Loader2 size={11} className="animate-spin" />
+                ) : (
+                  <Upload size={11} />
+                )}
                 {p.imagen_url ? "Cambiar imagen" : "Subir imagen"}
               </button>
               {p.imagen_url && (
@@ -737,29 +760,50 @@ function ProductoModal({
 
         <div className="grid grid-cols-2 gap-3">
           <Field label="Nombre" full>
-            <Input value={p.nombre ?? ""} onChange={(e) => setP({ ...p, nombre: e.target.value })}
-              required autoFocus />
+            <Input
+              value={p.nombre ?? ""}
+              onChange={(e) => setP({ ...p, nombre: e.target.value })}
+              required
+              autoFocus
+            />
           </Field>
           <Field label="Código / SKU" hint="Compatible con pistola de barras.">
-            <Input value={p.codigo ?? ""} onChange={(e) => setP({ ...p, codigo: e.target.value })} />
+            <Input
+              value={p.codigo ?? ""}
+              onChange={(e) => setP({ ...p, codigo: e.target.value })}
+            />
           </Field>
           <Field label="Tipo">
-            <Select value={p.tipo ?? "producto"} onChange={(e) => setP({ ...p, tipo: e.target.value as TipoProducto })}>
+            <Select
+              value={p.tipo ?? "producto"}
+              onChange={(e) => setP({ ...p, tipo: e.target.value as TipoProducto })}
+            >
               <option value="producto">Producto</option>
               <option value="servicio">Servicio</option>
             </Select>
           </Field>
           <Field label="Categoría" full>
-            <Input value={p.categoria ?? ""} onChange={(e) => setP({ ...p, categoria: e.target.value })}
-              placeholder="Bebidas, Postres, Camisetas…" />
+            <Input
+              value={p.categoria ?? ""}
+              onChange={(e) => setP({ ...p, categoria: e.target.value })}
+              placeholder="Bebidas, Postres, Camisetas…"
+            />
           </Field>
           <Field label="Precio venta (€)">
-            <Input type="number" step="0.01" value={p.precio_venta ?? 0}
-              onChange={(e) => setP({ ...p, precio_venta: parseFloat(e.target.value) || 0 })} />
+            <Input
+              type="number"
+              step="0.01"
+              value={p.precio_venta ?? 0}
+              onChange={(e) => setP({ ...p, precio_venta: parseFloat(e.target.value) || 0 })}
+            />
           </Field>
           <Field label="IVA %">
-            <Input type="number" step="0.01" value={p.iva_pct ?? 21}
-              onChange={(e) => setP({ ...p, iva_pct: parseFloat(e.target.value) || 0 })} />
+            <Input
+              type="number"
+              step="0.01"
+              value={p.iva_pct ?? 21}
+              onChange={(e) => setP({ ...p, iva_pct: parseFloat(e.target.value) || 0 })}
+            />
           </Field>
         </div>
 
@@ -770,23 +814,40 @@ function ProductoModal({
           className="mt-4 flex w-full items-center justify-between rounded-xl border border-indigo-400/20 bg-indigo-900/30 px-4 py-2.5 text-sm font-semibold text-text-hi transition hover:border-indigo-400/40"
         >
           <span>Información adicional</span>
-          <ChevronDown size={15} className={`transition-transform ${verAdicional ? "rotate-180" : ""}`} />
+          <ChevronDown
+            size={15}
+            className={`transition-transform ${verAdicional ? "rotate-180" : ""}`}
+          />
         </button>
 
         {verAdicional && (
           <div className="mt-3 grid grid-cols-2 gap-3 rounded-xl border border-indigo-400/15 bg-indigo-900/20 p-3">
             <Field label="Unidad">
-              <Select value={p.unidad ?? "ud"} onChange={(e) => setP({ ...p, unidad: e.target.value })}>
-                {UNIDADES.map((u) => <option key={u} value={u}>{u}</option>)}
+              <Select
+                value={p.unidad ?? "ud"}
+                onChange={(e) => setP({ ...p, unidad: e.target.value })}
+              >
+                {UNIDADES.map((u) => (
+                  <option key={u} value={u}>
+                    {u}
+                  </option>
+                ))}
               </Select>
             </Field>
             <Field label="Precio coste (€)">
-              <Input type="number" step="0.01" value={p.precio_coste ?? 0}
-                onChange={(e) => setP({ ...p, precio_coste: parseFloat(e.target.value) || 0 })} />
+              <Input
+                type="number"
+                step="0.01"
+                value={p.precio_coste ?? 0}
+                onChange={(e) => setP({ ...p, precio_coste: parseFloat(e.target.value) || 0 })}
+              />
             </Field>
             <Field label="Color (TPV)">
-              <Input type="color" value={p.color ?? "#4f46e5"}
-                onChange={(e) => setP({ ...p, color: e.target.value })} />
+              <Input
+                type="color"
+                value={p.color ?? "#4f46e5"}
+                onChange={(e) => setP({ ...p, color: e.target.value })}
+              />
             </Field>
 
             {stockMode && p.tipo !== "servicio" && (
@@ -795,45 +856,72 @@ function ProductoModal({
                   label="Stock inicial"
                   hint={!esNuevo ? "Se ajusta con un movimiento." : undefined}
                 >
-                  <Input type="number" step="0.001" value={p.stock_actual ?? 0}
+                  <Input
+                    type="number"
+                    step="0.001"
+                    value={p.stock_actual ?? 0}
                     onChange={(e) => setP({ ...p, stock_actual: parseFloat(e.target.value) || 0 })}
-                    disabled={!esNuevo} />
+                    disabled={!esNuevo}
+                  />
                 </Field>
                 <Field label="Stock mínimo (alerta)">
-                  <Input type="number" step="0.001" value={p.stock_minimo ?? 0}
-                    onChange={(e) => setP({ ...p, stock_minimo: parseFloat(e.target.value) || 0 })} />
+                  <Input
+                    type="number"
+                    step="0.001"
+                    value={p.stock_minimo ?? 0}
+                    onChange={(e) => setP({ ...p, stock_minimo: parseFloat(e.target.value) || 0 })}
+                  />
                 </Field>
                 <label className="col-span-2 flex items-center gap-2 text-xs text-text-mid">
-                  <input type="checkbox" checked={p.stock_tracking ?? true}
+                  <input
+                    type="checkbox"
+                    checked={p.stock_tracking ?? true}
                     onChange={(e) => setP({ ...p, stock_tracking: e.target.checked })}
-                    className="h-4 w-4 rounded border-indigo-400/30 bg-indigo-900/30" />
+                    className="h-4 w-4 rounded border-indigo-400/30 bg-indigo-900/30"
+                  />
                   Rastrear stock
                 </label>
               </>
             )}
 
             <Field label="Descripción" full>
-              <Textarea value={p.descripcion ?? ""} rows={2}
-                onChange={(e) => setP({ ...p, descripcion: e.target.value })} />
+              <Textarea
+                value={p.descripcion ?? ""}
+                rows={2}
+                onChange={(e) => setP({ ...p, descripcion: e.target.value })}
+              />
             </Field>
 
             <label className="col-span-2 flex items-center gap-2 text-xs text-text-mid">
-              <input type="checkbox" checked={p.activo ?? true}
+              <input
+                type="checkbox"
+                checked={p.activo ?? true}
                 onChange={(e) => setP({ ...p, activo: e.target.checked })}
-                className="h-4 w-4 rounded border-indigo-400/30 bg-indigo-900/30" />
+                className="h-4 w-4 rounded border-indigo-400/30 bg-indigo-900/30"
+              />
               Activo (visible en TPV y catálogo)
             </label>
           </div>
         )}
 
         <div className="mt-5 flex gap-2">
-          <button type="button" onClick={onCerrar}
-            className="flex-1 rounded-lg border border-indigo-400/20 bg-indigo-900/20 py-2.5 text-sm font-semibold text-text-mid">
+          <button
+            type="button"
+            onClick={onCerrar}
+            className="flex-1 rounded-lg border border-indigo-400/20 bg-indigo-900/20 py-2.5 text-sm font-semibold text-text-mid"
+          >
             Cancelar
           </button>
-          <button type="submit" disabled={guardando || !negocioId || !p.nombre}
-            className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-emerald-500 to-emerald-600 py-2.5 text-sm font-bold text-white disabled:opacity-50">
-            {guardando ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
+          <button
+            type="submit"
+            disabled={guardando || !negocioId || !p.nombre}
+            className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-emerald-500 to-emerald-600 py-2.5 text-sm font-bold text-white disabled:opacity-50"
+          >
+            {guardando ? (
+              <Loader2 size={14} className="animate-spin" />
+            ) : (
+              <CheckCircle2 size={14} />
+            )}
             Guardar
           </button>
         </div>
@@ -894,21 +982,36 @@ function MovimientoModal({
         <div className="mb-3 rounded-xl border border-indigo-400/15 bg-indigo-900/20 p-3 text-sm">
           <div className="font-semibold text-text-hi">{producto.nombre}</div>
           <div className="text-xs text-text-mid">
-            Stock actual: <strong>{producto.stock_actual} {producto.unidad}</strong>
+            Stock actual:{" "}
+            <strong>
+              {producto.stock_actual} {producto.unidad}
+            </strong>
           </div>
         </div>
 
         <div className="mb-3 grid grid-cols-3 gap-2">
           {(["entrada", "salida", "ajuste"] as const).map((t) => (
-            <button key={t} type="button" onClick={() => setTipo(t)}
+            <button
+              key={t}
+              type="button"
+              onClick={() => setTipo(t)}
               className={`flex flex-col items-center gap-1 rounded-xl border py-2.5 text-xs font-semibold capitalize ${
                 tipo === t
-                  ? t === "entrada" ? "border-ok/40 bg-ok/10 text-ok"
-                    : t === "salida" ? "border-fuchsia/40 bg-fuchsia/10 text-fuchsia"
-                    : "border-warn/40 bg-warn/10 text-warn"
+                  ? t === "entrada"
+                    ? "border-ok/40 bg-ok/10 text-ok"
+                    : t === "salida"
+                      ? "border-fuchsia/40 bg-fuchsia/10 text-fuchsia"
+                      : "border-warn/40 bg-warn/10 text-warn"
                   : "border-indigo-400/15 bg-indigo-900/20 text-text-mid"
-              }`}>
-              {t === "entrada" ? <Plus size={14} /> : t === "salida" ? <Minus size={14} /> : <Sliders size={14} />}
+              }`}
+            >
+              {t === "entrada" ? (
+                <Plus size={14} />
+              ) : t === "salida" ? (
+                <Minus size={14} />
+              ) : (
+                <Sliders size={14} />
+              )}
               {t}
             </button>
           ))}
@@ -938,13 +1041,23 @@ function MovimientoModal({
         </div>
 
         <div className="mt-4 flex gap-2">
-          <button type="button" onClick={onCerrar}
-            className="flex-1 rounded-lg border border-indigo-400/20 bg-indigo-900/20 py-2.5 text-sm font-semibold text-text-mid">
+          <button
+            type="button"
+            onClick={onCerrar}
+            className="flex-1 rounded-lg border border-indigo-400/20 bg-indigo-900/20 py-2.5 text-sm font-semibold text-text-mid"
+          >
             Cancelar
           </button>
-          <button type="submit" disabled={guardando || cantidad === 0}
-            className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-emerald-500 to-emerald-600 py-2.5 text-sm font-bold text-white disabled:opacity-50">
-            {guardando ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
+          <button
+            type="submit"
+            disabled={guardando || cantidad === 0}
+            className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-emerald-500 to-emerald-600 py-2.5 text-sm font-bold text-white disabled:opacity-50"
+          >
+            {guardando ? (
+              <Loader2 size={14} className="animate-spin" />
+            ) : (
+              <CheckCircle2 size={14} />
+            )}
             Registrar
           </button>
         </div>
@@ -954,10 +1067,7 @@ function MovimientoModal({
 }
 
 // Helper: sincroniza el estado interno cuando cambia el `inicial` por props.
-function useStateSync<T>(
-  value: T | null,
-  setter: React.Dispatch<React.SetStateAction<T>>,
-) {
+function useStateSync<T>(value: T | null, setter: React.Dispatch<React.SetStateAction<T>>) {
   useEffect(() => {
     if (value) setter(value);
   }, [value, setter]);

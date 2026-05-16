@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // ─── Mock de createAdminClient ────────────────────────────────────────────────
 const rpcMock = vi.fn();
@@ -6,25 +6,25 @@ vi.mock("@/lib/supabase/admin", () => ({
   createAdminClient: () => ({ rpc: rpcMock }),
 }));
 
-process.env.GOOGLE_CLIENT_ID     = "test-client-id";
+process.env.GOOGLE_CLIENT_ID = "test-client-id";
 process.env.GOOGLE_CLIENT_SECRET = "test-client-secret";
-process.env.NEXT_PUBLIC_SUPABASE_URL  = "http://localhost";
+process.env.NEXT_PUBLIC_SUPABASE_URL = "http://localhost";
 process.env.SUPABASE_SERVICE_ROLE_KEY = "service-role-test";
 
 import {
-  loadTokensFor,
-  googleFetchAdmin,
-  persistSyncTokenFor,
   type AdminTokens,
+  googleFetchAdmin,
+  loadTokensFor,
+  persistSyncTokenFor,
 } from "@/lib/google-admin";
 
 const fakeTokens = (overrides: Partial<AdminTokens> = {}): AdminTokens => ({
-  access_token:  "access-1",
+  access_token: "access-1",
   refresh_token: "refresh-1",
-  expires_at:    new Date(Date.now() + 60_000).toISOString(),
-  sync_token:    null,
-  email:         "u@example.com",
-  negocio_id:    "neg-1",
+  expires_at: new Date(Date.now() + 60_000).toISOString(),
+  sync_token: null,
+  email: "u@example.com",
+  negocio_id: "neg-1",
   ...overrides,
 });
 
@@ -85,10 +85,12 @@ describe("googleFetchAdmin", () => {
     });
 
     (globalThis.fetch as any)
-      .mockResolvedValueOnce(new Response(
-        JSON.stringify({ access_token: "access-2", expires_in: 3600 }),
-        { status: 200, headers: { "content-type": "application/json" } },
-      ))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ access_token: "access-2", expires_in: 3600 }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        }),
+      )
       .mockResolvedValueOnce(new Response("{}", { status: 200 }));
 
     rpcMock.mockResolvedValueOnce({ data: null, error: null }); // update_google_access_token_admin
@@ -114,12 +116,13 @@ describe("googleFetchAdmin", () => {
   it("ante 401 reactivo, refresca y reintenta una vez", async () => {
     const tokens = fakeTokens();
     (globalThis.fetch as any)
-      .mockResolvedValueOnce(new Response("Unauthorized", { status: 401 }))   // primer intento
-      .mockResolvedValueOnce(new Response(
-        JSON.stringify({ access_token: "access-retry", expires_in: 3600 }),
-        { status: 200 },
-      ))                                                                       // refresh
-      .mockResolvedValueOnce(new Response("{}", { status: 200 }));            // retry
+      .mockResolvedValueOnce(new Response("Unauthorized", { status: 401 })) // primer intento
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ access_token: "access-retry", expires_in: 3600 }), {
+          status: 200,
+        }),
+      ) // refresh
+      .mockResolvedValueOnce(new Response("{}", { status: 200 })); // retry
 
     rpcMock.mockResolvedValueOnce({ data: null, error: null });
 
@@ -132,9 +135,7 @@ describe("googleFetchAdmin", () => {
 
   it("propaga error sin filtrar el body si Google rechaza el refresh", async () => {
     const tokens = fakeTokens({ expires_at: new Date(Date.now() - 1000).toISOString() });
-    (globalThis.fetch as any).mockResolvedValueOnce(
-      new Response("invalid_grant", { status: 400 }),
-    );
+    (globalThis.fetch as any).mockResolvedValueOnce(new Response("invalid_grant", { status: 400 }));
 
     await expect(
       googleFetchAdmin("user-1", "/calendars/primary/events", {}, tokens),

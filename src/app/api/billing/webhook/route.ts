@@ -1,4 +1,4 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { getStripe, planFromPriceId } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -47,7 +47,11 @@ export async function POST(request: NextRequest) {
         break;
     }
   } catch (err) {
-    console.error("stripe_webhook_handler_failed", event.type, err instanceof Error ? err.message : err);
+    console.error(
+      "stripe_webhook_handler_failed",
+      event.type,
+      err instanceof Error ? err.message : err,
+    );
     return NextResponse.json({ error: "Error al procesar el evento" }, { status: 500 });
   }
 
@@ -66,7 +70,8 @@ async function syncSubscription(
 
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
-    customerId = typeof session.customer === "string" ? session.customer : session.customer?.id ?? null;
+    customerId =
+      typeof session.customer === "string" ? session.customer : (session.customer?.id ?? null);
     if (typeof session.subscription === "string") {
       subscription = await stripe.subscriptions.retrieve(session.subscription);
     } else if (session.subscription) {
@@ -74,14 +79,16 @@ async function syncSubscription(
     }
   } else {
     subscription = event.data.object as Stripe.Subscription;
-    customerId = typeof subscription.customer === "string" ? subscription.customer : subscription.customer?.id ?? null;
+    customerId =
+      typeof subscription.customer === "string"
+        ? subscription.customer
+        : (subscription.customer?.id ?? null);
   }
 
   if (!customerId) return;
 
   // Localizar el negocio por customerId (preferido) o por metadata.negocio_id.
-  const negocioId =
-    (subscription?.metadata?.negocio_id as string | undefined) ?? null;
+  const negocioId = (subscription?.metadata?.negocio_id as string | undefined) ?? null;
 
   const query = admin.from("perfiles_negocio").select("id");
   const { data } = negocioId
@@ -95,8 +102,8 @@ async function syncSubscription(
       .from("perfiles_negocio")
       .update({
         stripe_subscription_id: null,
-        subscription_status:    "canceled",
-        subscription_price_id:  null,
+        subscription_status: "canceled",
+        subscription_price_id: null,
         subscription_period_end: null,
         subscription_cancel_at_period_end: false,
         plan: "free",
@@ -111,10 +118,10 @@ async function syncSubscription(
   await admin
     .from("perfiles_negocio")
     .update({
-      stripe_customer_id:     customerId,
+      stripe_customer_id: customerId,
       stripe_subscription_id: subscription.id,
-      subscription_status:    subscription.status,
-      subscription_price_id:  priceId,
+      subscription_status: subscription.status,
+      subscription_price_id: priceId,
       subscription_period_end: periodEnd ? new Date(periodEnd * 1000).toISOString() : null,
       subscription_cancel_at_period_end: subscription.cancel_at_period_end,
       plan: planFromPriceId(priceId),
@@ -139,23 +146,26 @@ async function persistInvoice(
 
   await admin.from("pagos_stripe").upsert(
     {
-      negocio_id:         perfil.id,
-      stripe_invoice_id:  invoice.id,
+      negocio_id: perfil.id,
+      stripe_invoice_id: invoice.id,
       // `invoice.charge` se eliminó en versiones recientes del SDK; el charge se
       // resuelve en la línea de PaymentIntent si lo necesitamos en el futuro.
-      stripe_charge_id:   null,
-      amount_cents:       invoice.amount_paid ?? invoice.amount_due ?? 0,
-      currency:           invoice.currency ?? "eur",
-      status:             invoice.status === "paid" ? "paid"
-                          : invoice.status === "open" ? "failed"
-                          : invoice.status ?? "unknown",
-      description:        invoice.lines.data[0]?.description ?? null,
+      stripe_charge_id: null,
+      amount_cents: invoice.amount_paid ?? invoice.amount_due ?? 0,
+      currency: invoice.currency ?? "eur",
+      status:
+        invoice.status === "paid"
+          ? "paid"
+          : invoice.status === "open"
+            ? "failed"
+            : (invoice.status ?? "unknown"),
+      description: invoice.lines.data[0]?.description ?? null,
       hosted_invoice_url: invoice.hosted_invoice_url ?? null,
-      invoice_pdf_url:    invoice.invoice_pdf ?? null,
-      paid_at:            invoice.status_transitions?.paid_at
-                          ? new Date(invoice.status_transitions.paid_at * 1000).toISOString()
-                          : null,
+      invoice_pdf_url: invoice.invoice_pdf ?? null,
+      paid_at: invoice.status_transitions?.paid_at
+        ? new Date(invoice.status_transitions.paid_at * 1000).toISOString()
+        : null,
     },
-    { onConflict: "stripe_invoice_id" }
+    { onConflict: "stripe_invoice_id" },
   );
 }

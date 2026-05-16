@@ -1,10 +1,9 @@
+import { Apple, Download, type LucideIcon, Monitor, Smartphone } from "lucide-react";
 import type { Metadata } from "next";
-import { Smartphone, Apple, Monitor, Download, type LucideIcon } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Descargas",
-  description:
-    "Descarga ANTARES para Android, macOS y Windows. Versión web siempre disponible.",
+  description: "Descarga ANTARES para Android, macOS y Windows. Versión web siempre disponible.",
 };
 
 type Build = {
@@ -50,8 +49,8 @@ export default function DescargasPage() {
           Descargas
         </h1>
         <p className="mt-4 text-base text-text-mid sm:text-lg">
-          Lleva ANTARES contigo. Móvil y escritorio sincronizados con tu cuenta.
-          La versión web sigue disponible siempre desde el navegador.
+          Lleva ANTARES contigo. Móvil y escritorio sincronizados con tu cuenta. La versión web
+          sigue disponible siempre desde el navegador.
         </p>
       </header>
 
@@ -59,16 +58,11 @@ export default function DescargasPage() {
         {DOWNLOADS.map(({ platform, desc, ext, url, Icon }) => {
           const available = !!url;
           return (
-            <article
-              key={platform}
-              className="card-glass flex flex-col items-start p-6"
-            >
+            <article key={platform} className="card-glass flex flex-col items-start p-6">
               <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl border border-cyan/40 bg-cyan/10 text-cyan">
                 <Icon size={22} strokeWidth={2} />
               </div>
-              <h2 className="font-display text-xl font-bold text-text-hi">
-                {platform}
-              </h2>
+              <h2 className="font-display text-xl font-bold text-text-hi">{platform}</h2>
               <p className="mt-1 text-sm text-text-mid">{desc}</p>
               <div className="mt-4 text-xs uppercase tracking-wider text-text-lo">
                 Formato {ext}
@@ -93,9 +87,8 @@ export default function DescargasPage() {
       </div>
 
       <div className="mt-10 text-center text-xs text-text-lo">
-        Las builds se publican en{" "}
-        <span className="text-text-mid">GitHub Releases</span>. Si tienes dudas
-        sobre la instalación, contáctanos desde tu panel.
+        Las builds se publican en <span className="text-text-mid">GitHub Releases</span>. Si tienes
+        dudas sobre la instalación, contáctanos desde tu panel.
       </div>
     </div>
   );

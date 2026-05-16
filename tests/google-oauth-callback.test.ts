@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const rpcMock = vi.fn();
 const getUserMock = vi.fn();
@@ -9,11 +9,11 @@ vi.mock("@/lib/supabase/server", () => ({
   }),
 }));
 
-process.env.GOOGLE_CLIENT_ID     = "cid";
+process.env.GOOGLE_CLIENT_ID = "cid";
 process.env.GOOGLE_CLIENT_SECRET = "csec";
 
-import { GET } from "@/app/api/integrations/google/callback/route";
 import { NextRequest } from "next/server";
+import { GET } from "@/app/api/integrations/google/callback/route";
 
 const ORIGIN = "http://localhost";
 
@@ -41,56 +41,53 @@ describe("OAuth callback — validaciones de seguridad", () => {
   });
 
   it("rechaza con `invalid_state` si el state no coincide con la cookie", async () => {
-    const req = makeReq(
-      `${ORIGIN}/api/integrations/google/callback?code=abc&state=remoto`,
-      { g_oauth_state: "local-distinto" },
-    );
+    const req = makeReq(`${ORIGIN}/api/integrations/google/callback?code=abc&state=remoto`, {
+      g_oauth_state: "local-distinto",
+    });
     const res = await GET(req);
     expect(res.headers.get("location")).toMatch(/google_error=invalid_state/);
   });
 
   it("redirige a /login si el usuario no está autenticado", async () => {
     getUserMock.mockResolvedValueOnce({ data: { user: null } });
-    const req = makeReq(
-      `${ORIGIN}/api/integrations/google/callback?code=abc&state=s1`,
-      { g_oauth_state: "s1" },
-    );
+    const req = makeReq(`${ORIGIN}/api/integrations/google/callback?code=abc&state=s1`, {
+      g_oauth_state: "s1",
+    });
     const res = await GET(req);
     expect(res.headers.get("location")).toMatch(/\/login/);
   });
 
   it("rechaza con `no_refresh_token` si Google no devuelve refresh_token", async () => {
     getUserMock.mockResolvedValueOnce({ data: { user: { id: "u1" } } });
-    (globalThis.fetch as any).mockResolvedValueOnce(new Response(
-      JSON.stringify({ access_token: "a", expires_in: 3600 }),
-      { status: 200 },
-    ));
-
-    const req = makeReq(
-      `${ORIGIN}/api/integrations/google/callback?code=abc&state=s1`,
-      { g_oauth_state: "s1" },
+    (globalThis.fetch as any).mockResolvedValueOnce(
+      new Response(JSON.stringify({ access_token: "a", expires_in: 3600 }), { status: 200 }),
     );
+
+    const req = makeReq(`${ORIGIN}/api/integrations/google/callback?code=abc&state=s1`, {
+      g_oauth_state: "s1",
+    });
     const res = await GET(req);
     expect(res.headers.get("location")).toMatch(/google_error=no_refresh_token/);
   });
 
   it("flujo completo: intercambia code y persiste vía set_google_tokens", async () => {
     getUserMock.mockResolvedValueOnce({ data: { user: { id: "u1" } } });
-    (globalThis.fetch as any).mockResolvedValueOnce(new Response(
-      JSON.stringify({
-        access_token:  "ACC",
-        refresh_token: "REF",
-        expires_in:    3600,
-        scope:         "calendar.events",
-      }),
-      { status: 200 },
-    ));
+    (globalThis.fetch as any).mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          access_token: "ACC",
+          refresh_token: "REF",
+          expires_in: 3600,
+          scope: "calendar.events",
+        }),
+        { status: 200 },
+      ),
+    );
     rpcMock.mockResolvedValueOnce({ error: null });
 
-    const req = makeReq(
-      `${ORIGIN}/api/integrations/google/callback?code=abc&state=s1`,
-      { g_oauth_state: "s1" },
-    );
+    const req = makeReq(`${ORIGIN}/api/integrations/google/callback?code=abc&state=s1`, {
+      g_oauth_state: "s1",
+    });
     const res = await GET(req);
 
     // El POST a Google fue con grant_type=authorization_code
@@ -98,11 +95,14 @@ describe("OAuth callback — validaciones de seguridad", () => {
     expect(String(init.body)).toContain("grant_type=authorization_code");
     expect(String(init.body)).toContain("code=abc");
 
-    expect(rpcMock).toHaveBeenCalledWith("set_google_tokens", expect.objectContaining({
-      p_access_token:  "ACC",
-      p_refresh_token: "REF",
-      p_scope:         "calendar.events",
-    }));
+    expect(rpcMock).toHaveBeenCalledWith(
+      "set_google_tokens",
+      expect.objectContaining({
+        p_access_token: "ACC",
+        p_refresh_token: "REF",
+        p_scope: "calendar.events",
+      }),
+    );
     expect(res.headers.get("location")).toMatch(/google=connected/);
   });
 });

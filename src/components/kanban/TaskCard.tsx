@@ -13,14 +13,10 @@ type Props = {
 };
 
 export function TaskCard({ tarea, onClick, isDragOverlay = false }: Props) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: tarea.id, data: { type: "task", tarea } });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: tarea.id,
+    data: { type: "task", tarea },
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -28,9 +24,7 @@ export function TaskCard({ tarea, onClick, isDragOverlay = false }: Props) {
   };
 
   const vencida =
-    tarea.fecha_limite && !tarea.completada
-      ? new Date(tarea.fecha_limite) < new Date()
-      : false;
+    tarea.fecha_limite && !tarea.completada ? new Date(tarea.fecha_limite) < new Date() : false;
 
   const meta = PRIORIDAD_META[tarea.prioridad];
 
@@ -56,15 +50,17 @@ export function TaskCard({ tarea, onClick, isDragOverlay = false }: Props) {
       {...(!isDragOverlay ? listeners : {})}
       onClick={!isDragOverlay ? onClick : undefined}
       className={`group relative flex select-none flex-col gap-2.5 rounded-2xl border p-3.5 transition-all touch-none
-        ${isDragOverlay
-          ? "rotate-1 scale-105 shadow-2xl shadow-indigo-900/50 cursor-grabbing"
-          : "cursor-grab hover:-translate-y-0.5 hover:shadow-lg hover:shadow-indigo-900/30 active:cursor-grabbing"
+        ${
+          isDragOverlay
+            ? "rotate-1 scale-105 shadow-2xl shadow-indigo-900/50 cursor-grabbing"
+            : "cursor-grab hover:-translate-y-0.5 hover:shadow-lg hover:shadow-indigo-900/30 active:cursor-grabbing"
         }
-        ${tarea.completada
-          ? "border-indigo-400/10 bg-indigo-900/20 opacity-60"
-          : vencida
-          ? "border-danger/30 bg-danger/5"
-          : "border-indigo-400/15 bg-indigo-900/30"
+        ${
+          tarea.completada
+            ? "border-indigo-400/10 bg-indigo-900/20 opacity-60"
+            : vencida
+              ? "border-danger/30 bg-danger/5"
+              : "border-indigo-400/15 bg-indigo-900/30"
         }`}
     >
       {/* Título */}

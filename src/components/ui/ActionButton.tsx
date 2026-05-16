@@ -6,12 +6,12 @@ import { cn } from "@/lib/utils";
 export type Tono = "cyan" | "fuchsia" | "ok" | "warn" | "danger" | "indigo";
 
 const TONOS: Record<Tono, string> = {
-  cyan:    "border-cyan/40 bg-cyan/10 text-cyan hover:bg-cyan/20",
+  cyan: "border-cyan/40 bg-cyan/10 text-cyan hover:bg-cyan/20",
   fuchsia: "border-fuchsia/40 bg-fuchsia/10 text-fuchsia hover:bg-fuchsia/20",
-  ok:      "border-ok/40 bg-ok/10 text-ok hover:bg-ok/20",
-  warn:    "border-warn/40 bg-warn/10 text-warn hover:bg-warn/20",
-  danger:  "border-danger/40 bg-danger/10 text-danger hover:bg-danger/20",
-  indigo:  "border-indigo-400/30 bg-indigo-900/30 text-text-hi hover:bg-indigo-900/50",
+  ok: "border-ok/40 bg-ok/10 text-ok hover:bg-ok/20",
+  warn: "border-warn/40 bg-warn/10 text-warn hover:bg-warn/20",
+  danger: "border-danger/40 bg-danger/10 text-danger hover:bg-danger/20",
+  indigo: "border-indigo-400/30 bg-indigo-900/30 text-text-hi hover:bg-indigo-900/50",
 };
 
 type Props = {

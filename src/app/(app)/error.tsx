@@ -1,8 +1,8 @@
 "use client";
 
+import { AlertTriangle, Home, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { useEffect } from "react";
-import { AlertTriangle, Home, RefreshCw } from "lucide-react";
 
 /**
  * Boundary específico del grupo (app). Mantiene la jerarquía del AppShell
@@ -34,8 +34,7 @@ export default function AppGroupError({
           </h1>
           <div className="accent-bar mx-auto mt-3 w-12" />
           <p className="mx-auto mt-3 max-w-sm text-sm text-text-mid">
-            Ha habido un problema mostrando este contenido. Puedes reintentar o
-            volver al panel.
+            Ha habido un problema mostrando este contenido. Puedes reintentar o volver al panel.
           </p>
           {error?.digest && (
             <p className="mt-2 text-[0.7rem] font-mono text-text-lo">ref: {error.digest}</p>

@@ -1,15 +1,11 @@
-import { redirect } from "next/navigation";
 import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import { AppShell } from "@/components/layout/AppShell";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
-import { ThemeProvider } from "@/lib/theme/ThemeProvider";
 import { createClient } from "@/lib/supabase/server";
+import { ThemeProvider } from "@/lib/theme/ThemeProvider";
 
-export default async function AppLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
   const {
     data: { user },

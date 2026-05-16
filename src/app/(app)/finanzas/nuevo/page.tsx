@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { ArrowLeft, Loader2, TrendingUp, TrendingDown, CheckCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle, Loader2, TrendingDown, TrendingUp } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { PageHeader } from "@/components/ui/PageHeader";
 import { createClient } from "@/lib/supabase/client";
 import { useNegocioId } from "@/lib/useNegocioId";
-import { PageHeader } from "@/components/ui/PageHeader";
 
 export default function NuevoMovimiento() {
   const router = useRouter();
@@ -87,10 +87,23 @@ export default function NuevoMovimiento() {
         </div>
 
         <form onSubmit={submit} className="mt-5 flex flex-col gap-4">
-          <Input label="¿En qué?" value={concepto} onChange={setConcepto} placeholder="Ej: Trabajo para Juan" required />
+          <Input
+            label="¿En qué?"
+            value={concepto}
+            onChange={setConcepto}
+            placeholder="Ej: Trabajo para Juan"
+            required
+          />
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Input label="Fecha" type="date" value={fecha} onChange={setFecha} required />
-            <Input label="Cantidad sin IVA (€)" type="number" step="0.01" value={base} onChange={setBase} required />
+            <Input
+              label="Cantidad sin IVA (€)"
+              type="number"
+              step="0.01"
+              value={base}
+              onChange={setBase}
+              required
+            />
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Input label="IVA %" type="number" value={iva} onChange={setIva} />
@@ -98,7 +111,9 @@ export default function NuevoMovimiento() {
           </div>
 
           <div className="rounded-2xl border border-cyan/25 bg-cyan/5 p-4">
-            <div className="section-label mb-1">Total {tipo === "ingreso" ? "que cobras" : "que pagas"}</div>
+            <div className="section-label mb-1">
+              Total {tipo === "ingreso" ? "que cobras" : "que pagas"}
+            </div>
             <div className="font-display text-2xl font-bold text-text-hi">
               {total.toFixed(2).replace(".", ",")} €
             </div>
@@ -141,7 +156,9 @@ function Toggle({
   onClick: () => void;
 }) {
   const accent =
-    color === "ok" ? "text-ok bg-ok/10 border-ok/30" : "text-fuchsia bg-fuchsia/10 border-fuchsia/30";
+    color === "ok"
+      ? "text-ok bg-ok/10 border-ok/30"
+      : "text-fuchsia bg-fuchsia/10 border-fuchsia/30";
   return (
     <button
       type="button"
@@ -174,7 +191,9 @@ function Input({
 }) {
   return (
     <label className="flex flex-col gap-1.5">
-      <span className="text-[0.7rem] font-medium uppercase tracking-wider text-text-lo">{label}</span>
+      <span className="text-[0.7rem] font-medium uppercase tracking-wider text-text-lo">
+        {label}
+      </span>
       <input
         type={type}
         step={step}

@@ -1,9 +1,9 @@
 "use client";
 
-import Link from "next/link";
+import { ChevronDown, Loader2, LogOut, Repeat, Settings, User } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronDown, LogOut, User, Repeat, Loader2, Settings } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 type UserInfo = {
@@ -22,9 +22,9 @@ export function UserMenu({
   compact?: boolean;
 }) {
   const supabase = useMemo(() => createClient(), []);
-  const [user, setUser]   = useState<UserInfo | null>(null);
-  const [open, setOpen]   = useState(false);
-  const [busy, setBusy]   = useState(false);
+  const [user, setUser] = useState<UserInfo | null>(null);
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -49,7 +49,9 @@ export function UserMenu({
         plan: (perfil?.plan as string | undefined) ?? "free",
       });
     })();
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+    };
   }, [supabase]);
 
   // Cerrar al hacer click fuera o pulsar Escape.
@@ -58,7 +60,9 @@ export function UserMenu({
     const onClick = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     };
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
     document.addEventListener("mousedown", onClick);
     document.addEventListener("keydown", onKey);
     return () => {
@@ -90,7 +94,10 @@ export function UserMenu({
         >
           <Link
             href="/perfil"
-            onClick={() => { setOpen(false); onNavigate?.(); }}
+            onClick={() => {
+              setOpen(false);
+              onNavigate?.();
+            }}
             className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-text-hi transition hover:bg-indigo-900/40"
             role="menuitem"
           >
@@ -98,7 +105,10 @@ export function UserMenu({
           </Link>
           <Link
             href="/ajustes"
-            onClick={() => { setOpen(false); onNavigate?.(); }}
+            onClick={() => {
+              setOpen(false);
+              onNavigate?.();
+            }}
             className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-text-hi transition hover:bg-indigo-900/40"
             role="menuitem"
           >
@@ -137,7 +147,7 @@ export function UserMenu({
         }
         aria-haspopup="menu"
         aria-expanded={open}
-        title={compact ? user?.displayName ?? "Usuario" : undefined}
+        title={compact ? (user?.displayName ?? "Usuario") : undefined}
       >
         <span className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-cyan/30 bg-gradient-to-br from-cyan/15 to-fuchsia/15 text-cyan">
           {user?.avatarUrl ? (

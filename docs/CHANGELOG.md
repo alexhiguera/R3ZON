@@ -7,6 +7,18 @@ Historial cronológico de **R3ZON ANTARES** ordenado de más reciente a más ant
 ---
 
 
+### Iteración 68 — *2026-05-16* — Lint con Biome, CI completo, backup con tablas reales
+
+Tras la auditoría, varias tareas de plataforma agrupadas en una sesión.
+
+- **Migración a Biome 2.4** ([biome.json](biome.json)) — sustituye al combo ESLint 9 + `eslint-config-next` que estaba roto por la transición de Next 16. Una sola dep, una config, sin peer-dep hell. Config calibrada para el código existente: 0 errores, 4 warnings (unused vars/imports en scripts y `documentos/nuevo`). 181 archivos auto-formateados; espacios y comillas dobles unificados. Scripts nuevos en [package.json](package.json): `lint`, `lint:fix`, `format`.
+- **Lint reactivado en CI** ([.github/workflows/ci.yml](.github/workflows/ci.yml)) — step `Lint (Biome)` añadido tras `npm ci`, y nuevo step `Tests (Vitest)` antes del build. CI ahora corre: install → lint → typecheck → tests → build → notify Discord. Cualquier regresión rompe el pipeline.
+- **Backup con tablas reales** ([.github/workflows/supabase-backup.yml](.github/workflows/supabase-backup.yml)) — lista anterior (`clientes configuracion negocios`) era inventada. Reemplazada por las 18 tablas críticas del schema: `perfiles_negocio`, `miembros_negocio`, `clientes`, `contactos_cliente`, `finanzas`, `documentos`, `productos`, `citas`, `agenda_eventos`, `tareas_kanban`, `kanban_columnas`, `fichajes`, `pagos_stripe`, `proveedores`, `gastos_proveedor`, `tpv_ventas`, `tpv_venta_items`, `stock_movimientos`. Quedan fuera las tablas archivo (`*_archivo`), auxiliares (rgpd, terminos, dispositivos) y de configuración (config_keys, user_preferences) que cambian poco o son reconstruibles.
+- **Fixes colaterales del format**: [src/lib/ocr/parser.ts](src/lib/ocr/parser.ts) `parseInt` ahora con radix, [src/lib/csv.ts](src/lib/csv.ts) `escape` renombrada a `escapeCell` para no sombrear `globalThis.escape`, [tests/inventario.test.ts](tests/inventario.test.ts) `@ts-expect-error` movido a la línea correcta tras la reorganización.
+- **Verificación local**: `npm run lint` ✅ · `npm run typecheck` ✅ · `npm run test:run` → 13 archivos, 132 tests pasan · `npm audit` 0 vulns.
+- **Decisión sobre los gigantes**: [documentos/nuevo/page.tsx](src/app/(app)/documentos/nuevo/page.tsx) (1143 líneas) y [listado/page.tsx](src/app/(app)/listado/page.tsx) (964 líneas) **se mantienen sin tocar** en esta iteración. Refactor sin scaffolding de tests específicos es jugarse regresiones invisibles. Iteración dedicada cuando se aborden.
+
+
 ### Iteración 67 — *2026-05-16* — Auditoría: hardening tras advisors de Supabase + CodeQL
 
 Auditoría completa (código, Supabase, Vercel). Vercel quedó fuera por falta de link CLI. Hallazgos críticos accionados:

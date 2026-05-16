@@ -1,9 +1,9 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
-import { getStripe, PLANS, type PlanId } from "@/lib/stripe";
 import { withApiHandler } from "@/lib/api-handler";
+import { getStripe, PLANS, type PlanId } from "@/lib/stripe";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 
 const Body = z.object({
   plan: z.enum(["pro", "business"]),
@@ -11,18 +11,23 @@ const Body = z.object({
 
 export const POST = withApiHandler("billing/checkout", async (request: NextRequest) => {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
 
   let body;
-  try { body = Body.parse(await request.json()); }
-  catch { return NextResponse.json({ error: "Plan inválido" }, { status: 400 }); }
+  try {
+    body = Body.parse(await request.json());
+  } catch {
+    return NextResponse.json({ error: "Plan inválido" }, { status: 400 });
+  }
 
   const plan = PLANS.find((p) => p.id === body.plan);
   if (!plan?.priceId) {
     return NextResponse.json(
       { error: `STRIPE_PRICE_${(body.plan as PlanId).toUpperCase()} no configurado` },
-      { status: 500 }
+      { status: 500 },
     );
   }
 
@@ -46,7 +51,7 @@ export const POST = withApiHandler("billing/checkout", async (request: NextReque
     const customer = await stripe.customers.create(
       {
         email: perfil.email_contacto ?? user.email ?? undefined,
-        name:  perfil.nombre_negocio ?? undefined,
+        name: perfil.nombre_negocio ?? undefined,
         metadata: { negocio_id: perfil.id, user_id: user.id },
       },
       { idempotencyKey: `negocio-${perfil.id}-customer` },
@@ -68,7 +73,7 @@ export const POST = withApiHandler("billing/checkout", async (request: NextReque
     line_items: [{ price: plan.priceId, quantity: 1 }],
     allow_promotion_codes: true,
     success_url: `${origin}/ajustes?billing=success`,
-    cancel_url:  `${origin}/ajustes?billing=cancelled`,
+    cancel_url: `${origin}/ajustes?billing=cancelled`,
     subscription_data: {
       metadata: { negocio_id: perfil.id, plan: plan.id },
     },

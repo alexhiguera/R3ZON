@@ -19,9 +19,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             />
           </div>
           <div className="text-center">
-            <div className="font-display text-2xl font-extrabold tracking-tight">
-              R3ZON ANTARES
-            </div>
+            <div className="font-display text-2xl font-extrabold tracking-tight">R3ZON ANTARES</div>
             <div className="accent-bar mx-auto mt-1.5" style={{ width: 56 }} />
           </div>
         </div>

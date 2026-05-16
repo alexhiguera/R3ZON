@@ -1,4 +1,4 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { refreshExpiringWatchChannels } from "@/lib/agenda-admin";
 
 /**
@@ -17,22 +17,17 @@ import { refreshExpiringWatchChannels } from "@/lib/agenda-admin";
  *   · GitHub Actions — workflow scheduled que haga `curl -H Authorization`.
  */
 export async function GET(request: NextRequest) {
-  const authHeader  = request.headers.get("authorization");
-  const vercelCron  = request.headers.get("x-vercel-cron");
-  const expected    = process.env.CRON_SECRET;
+  const authHeader = request.headers.get("authorization");
+  const vercelCron = request.headers.get("x-vercel-cron");
+  const expected = process.env.CRON_SECRET;
 
   if (!expected) {
-    return NextResponse.json(
-      { error: "CRON_SECRET no configurado" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "CRON_SECRET no configurado" }, { status: 500 });
   }
 
   // Vercel Cron envía header propio Y autoriza con el bearer si lo configuras.
   // Aceptamos cualquiera de los dos.
-  const ok =
-    authHeader === `Bearer ${expected}` ||
-    vercelCron === "1";
+  const ok = authHeader === `Bearer ${expected}` || vercelCron === "1";
 
   if (!ok) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
@@ -48,7 +43,10 @@ export async function GET(request: NextRequest) {
         ts: new Date().toISOString(),
       });
     } else {
-      console.log("cron_google_channels_ok", { renewed: result.renewed, ts: new Date().toISOString() });
+      console.log("cron_google_channels_ok", {
+        renewed: result.renewed,
+        ts: new Date().toISOString(),
+      });
     }
     return NextResponse.json({ ok: true, ...result });
   } catch (err) {

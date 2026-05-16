@@ -1,57 +1,57 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
 import {
-  ArrowLeft,
-  CheckCircle2,
-  Plus,
-  Trash2,
-  Download,
-  Send,
-  Save,
-  Loader2,
-  Wallet,
-  FileText,
-  Receipt,
-  FileSpreadsheet,
-  ClipboardList,
-  FileSignature,
   AlertCircle,
-  UserPlus,
-  Pencil,
-  Maximize2,
-  ChevronDown,
+  ArrowLeft,
   BadgeCheck,
+  CheckCircle2,
+  ChevronDown,
+  ClipboardList,
+  Download,
+  FileSignature,
+  FileSpreadsheet,
+  FileText,
+  Loader2,
+  Maximize2,
   Package,
+  Pencil,
+  Plus,
+  Receipt,
+  Save,
+  Send,
+  Trash2,
+  UserPlus,
+  Wallet,
 } from "lucide-react";
-import { useThemeEngine } from "@/lib/theme/ThemeProvider";
-import { createClient } from "@/lib/supabase/client";
-import { useNegocioId } from "@/lib/useNegocioId";
-import { useToast } from "@/components/ui/Toast";
-import { PageHeader } from "@/components/ui/PageHeader";
-import { Field } from "@/components/ui/Field";
-import { Input, Select, Textarea, INPUT_CLS } from "@/components/ui/Input";
-import { Modal } from "@/components/ui/Modal";
-import { ActionButton } from "@/components/ui/ActionButton";
-import { hoyISO, hoyMas, formatearFechaCorta } from "@/lib/formato";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { PlantillaDocumento } from "@/components/documentos/PlantillaDocumento";
+import { ActionButton } from "@/components/ui/ActionButton";
+import { Field } from "@/components/ui/Field";
+import { INPUT_CLS, Input, Select, Textarea } from "@/components/ui/Input";
+import { Modal } from "@/components/ui/Modal";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { useToast } from "@/components/ui/Toast";
 import {
-  DESCRIPCION_TIPO,
-  ETIQUETA_TIPO,
-  FORMATO_TIPO,
-  TIPOS_DOCUMENTO,
-  REQUIERE_CLIENTE_FISCAL,
-  calcularTotales,
-  eur,
-  lineaVacia,
-  validarParaGenerar,
   type ClienteSnapshot,
+  calcularTotales,
+  DESCRIPCION_TIPO,
   type EmisorSnapshot,
+  ETIQUETA_TIPO,
+  eur,
+  FORMATO_TIPO,
   type LineaDocumento,
+  lineaVacia,
+  REQUIERE_CLIENTE_FISCAL,
+  TIPOS_DOCUMENTO,
   type TipoDocumento,
+  validarParaGenerar,
 } from "@/lib/documentos";
+import { formatearFechaCorta, hoyISO, hoyMas } from "@/lib/formato";
+import { createClient } from "@/lib/supabase/client";
+import { useThemeEngine } from "@/lib/theme/ThemeProvider";
+import { useNegocioId } from "@/lib/useNegocioId";
 
 type ClienteFila = {
   id: string;
@@ -86,12 +86,12 @@ type DocumentoGenerado = {
 };
 
 const ICONO_TIPO: Record<TipoDocumento, typeof FileText> = {
-  factura:     FileText,
-  ticket:      Receipt,
+  factura: FileText,
+  ticket: Receipt,
   presupuesto: FileSpreadsheet,
-  albaran:     ClipboardList,
-  proforma:    FileSignature,
-  recibo:      BadgeCheck,
+  albaran: ClipboardList,
+  proforma: FileSignature,
+  recibo: BadgeCheck,
 };
 
 export default function NuevoDocumentoPage() {
@@ -106,14 +106,22 @@ export default function NuevoDocumentoPage() {
 
   // ── Datos del emisor ────────────────────────────────────────────────────
   const [emisor, setEmisor] = useState<EmisorSnapshot>({
-    nombre: "", cif: null, direccion: null, email: null, telefono: null, logo_url: null,
+    nombre: "",
+    cif: null,
+    direccion: null,
+    email: null,
+    telefono: null,
+    logo_url: null,
   });
 
   // ── Cliente ─────────────────────────────────────────────────────────────
   const [clientes, setClientes] = useState<ClienteFila[]>([]);
   const [clienteId, setClienteId] = useState<string | null>(null);
   const [cliente, setCliente] = useState<ClienteSnapshot>({
-    nombre: "", cif: null, direccion: null, email: null,
+    nombre: "",
+    cif: null,
+    direccion: null,
+    email: null,
   });
   const [mostrarManual, setMostrarManual] = useState(false);
   const [guardarComoCliente, setGuardarComoCliente] = useState(true);
@@ -157,10 +165,7 @@ export default function NuevoDocumentoPage() {
           .from("perfiles_negocio")
           .select("nombre_negocio,cif_nif,direccion,email_contacto,telefono,logo_url")
           .single(),
-        supabase
-          .from("clientes")
-          .select("id,nombre,cif,direccion,email")
-          .order("nombre"),
+        supabase.from("clientes").select("id,nombre,cif,direccion,email").order("nombre"),
         supabase
           .from("metodos_pago")
           .select("id,etiqueta,tipo,detalle,predeterminado")
@@ -175,12 +180,12 @@ export default function NuevoDocumentoPage() {
 
       if (perfil) {
         setEmisor({
-          nombre:    perfil.nombre_negocio ?? "",
-          cif:       perfil.cif_nif ?? null,
+          nombre: perfil.nombre_negocio ?? "",
+          cif: perfil.cif_nif ?? null,
           direccion: perfil.direccion ?? null,
-          email:     perfil.email_contacto ?? null,
-          telefono:  perfil.telefono ?? null,
-          logo_url:  perfil.logo_url ?? null,
+          email: perfil.email_contacto ?? null,
+          telefono: perfil.telefono ?? null,
+          logo_url: perfil.logo_url ?? null,
         });
       }
       setClientes((cls ?? []) as ClienteFila[]);
@@ -207,10 +212,10 @@ export default function NuevoDocumentoPage() {
     if (!c) return;
     setClienteId(c.id);
     setCliente({
-      nombre:    c.nombre,
-      cif:       c.cif,
+      nombre: c.nombre,
+      cif: c.cif,
       direccion: c.direccion,
-      email:     c.email,
+      email: c.email,
     });
     setMostrarManual(false);
   }
@@ -228,16 +233,16 @@ export default function NuevoDocumentoPage() {
     actualizarLinea(i, {
       descripcion: p.descripcion ? `${p.nombre} — ${p.descripcion}` : p.nombre,
       precio_unit: Number(p.precio_venta) || 0,
-      iva_pct:     Number(p.iva_pct) || 0,
+      iva_pct: Number(p.iva_pct) || 0,
     });
   }
 
   // ── Colores del documento (desde el tema configurable en Ajustes) ───────
   const coloresDocumento = useMemo(
     () => ({
-      primario:    theme["doc.primario"]    ?? "#4f46e5",
-      texto:       theme["doc.texto"]       ?? "#0f172a",
-      acento:      theme["doc.acento"]      ?? "#eef2ff",
+      primario: theme["doc.primario"] ?? "#4f46e5",
+      texto: theme["doc.texto"] ?? "#0f172a",
+      acento: theme["doc.acento"] ?? "#eef2ff",
       acentoSuave: theme["doc.acentoSuave"] ?? "#f8fafc",
     }),
     [theme],
@@ -286,10 +291,10 @@ export default function NuevoDocumentoPage() {
         .from("clientes")
         .insert({
           negocio_id: negocioId,
-          nombre:    cliente.nombre,
-          cif:       cliente.cif,
+          nombre: cliente.nombre,
+          cif: cliente.cif,
           direccion: cliente.direccion,
-          email:     cliente.email,
+          email: cliente.email,
         })
         .select("id")
         .single();
@@ -330,19 +335,19 @@ export default function NuevoDocumentoPage() {
         emisor_snapshot: emisor,
         cliente_snapshot: cliente,
         lineas,
-        subtotal:        totales.subtotal,
+        subtotal: totales.subtotal,
         descuento_total: totales.descuento_total,
-        base_imponible:  totales.base_imponible,
-        iva_total:       totales.iva_total,
-        irpf_pct:        irpfPct,
-        irpf_total:      totales.irpf_total,
-        total:           totales.total,
-        notas:           notas || "",
+        base_imponible: totales.base_imponible,
+        iva_total: totales.iva_total,
+        irpf_pct: irpfPct,
+        irpf_total: totales.irpf_total,
+        total: totales.total,
+        notas: notas || "",
         condiciones_pago: condicionesPago || "",
-        metodo_pago:     metodoPago || "",
+        metodo_pago: metodoPago || "",
       },
       p_serie: serie,
-      p_anio:  anio,
+      p_anio: anio,
     });
 
     setGenerando(false);
@@ -409,9 +414,7 @@ export default function NuevoDocumentoPage() {
   async function añadirAFinanzas() {
     if (!generado || !negocioId || enviadoFinanzas || !tipo) return;
     const ivaPctMedio =
-      totales.base_imponible > 0
-        ? (totales.iva_total / totales.base_imponible) * 100
-        : 21;
+      totales.base_imponible > 0 ? (totales.iva_total / totales.base_imponible) * 100 : 21;
     const { data, error } = await supabase
       .from("finanzas")
       .insert({
@@ -433,10 +436,7 @@ export default function NuevoDocumentoPage() {
       toast.err(`No se pudo añadir a finanzas: ${error?.message ?? "desconocido"}`);
       return;
     }
-    await supabase
-      .from("documentos")
-      .update({ finanza_id: data.id })
-      .eq("id", generado.id);
+    await supabase.from("documentos").update({ finanza_id: data.id }).eq("id", generado.id);
     setEnviadoFinanzas(true);
     toast.ok("Movimiento añadido a Finanzas como ingreso pendiente.");
   }
@@ -490,8 +490,7 @@ export default function NuevoDocumentoPage() {
     (fechaVencimiento ? ` · vence ${formatearFechaCorta(fechaVencimiento)}` : "") +
     (irpfPct > 0 ? ` · IRPF ${irpfPct}%` : "");
 
-  const pagoResumen =
-    metodoPago + (condicionesPago ? ` · ${condicionesPago}` : "");
+  const pagoResumen = metodoPago + (condicionesPago ? ` · ${condicionesPago}` : "");
 
   return (
     <div className="flex flex-col gap-5">
@@ -512,16 +511,17 @@ export default function NuevoDocumentoPage() {
 
       <PageHeader
         eyebrow={ETIQUETA_TIPO[tipo]}
-        title={generado ? `${ETIQUETA_TIPO[tipo]} ${generado.referencia}` : `Nueva ${ETIQUETA_TIPO[tipo].toLowerCase()}`}
+        title={
+          generado
+            ? `${ETIQUETA_TIPO[tipo]} ${generado.referencia}`
+            : `Nueva ${ETIQUETA_TIPO[tipo].toLowerCase()}`
+        }
         description={DESCRIPCION_TIPO[tipo]}
       />
 
       <div className="grid gap-5 lg:grid-cols-2">
         {/* ─── FORMULARIO (izquierda) ──────────────────────────────── */}
-        <fieldset
-          disabled={generado !== null}
-          className="flex flex-col gap-4 disabled:opacity-60"
-        >
+        <fieldset disabled={generado !== null} className="flex flex-col gap-4 disabled:opacity-60">
           {/* CLIENTE */}
           <Card title="Cliente">
             {!mostrarManual ? (
@@ -541,10 +541,7 @@ export default function NuevoDocumentoPage() {
                     ))}
                   </select>
                   {clientes.length === 0 && (
-                    <Link
-                      href="/clientes"
-                      className="mt-1 text-[0.7rem] text-cyan hover:underline"
-                    >
+                    <Link href="/clientes" className="mt-1 text-[0.7rem] text-cyan hover:underline">
                       Aún no tienes clientes guardados — créalos en el módulo Clientes
                     </Link>
                   )}
@@ -746,9 +743,7 @@ export default function NuevoDocumentoPage() {
                       type="text"
                       placeholder="Descripción (o añade manualmente)"
                       value={l.descripcion}
-                      onChange={(e) =>
-                        actualizarLinea(i, { descripcion: e.target.value })
-                      }
+                      onChange={(e) => actualizarLinea(i, { descripcion: e.target.value })}
                       className={`${inputCls} col-span-12`}
                     />
                     <NumInput
@@ -833,10 +828,7 @@ export default function NuevoDocumentoPage() {
                   <option value="manual">— Introducir manualmente —</option>
                 </select>
                 {metodosGuardados.length === 0 && (
-                  <Link
-                    href="/ajustes"
-                    className="mt-1 text-[0.7rem] text-cyan hover:underline"
-                  >
+                  <Link href="/ajustes" className="mt-1 text-[0.7rem] text-cyan hover:underline">
                     Aún no tienes métodos guardados — añádelos en Ajustes
                   </Link>
                 )}
@@ -903,7 +895,6 @@ export default function NuevoDocumentoPage() {
               className={`${inputCls} h-auto resize-none py-2`}
             />
           </Card>
-
         </fieldset>
 
         {/* ─── PREVISUALIZACIÓN (derecha) ─────────────────────────── */}
@@ -948,7 +939,9 @@ export default function NuevoDocumentoPage() {
                     <AlertCircle size={13} /> Faltan datos para generar
                   </div>
                   <ul className="list-disc pl-4">
-                    {errores.map((e, i) => <li key={i}>{e}</li>)}
+                    {errores.map((e, i) => (
+                      <li key={i}>{e}</li>
+                    ))}
                   </ul>
                 </div>
               )}
@@ -958,7 +951,11 @@ export default function NuevoDocumentoPage() {
                 disabled={generando || errores.length > 0 || !negocioId}
                 className="flex h-14 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-base font-bold text-white shadow-glow transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:from-text-lo disabled:to-text-lo disabled:opacity-50 disabled:hover:translate-y-0"
               >
-                {generando ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle2 size={18} />}
+                {generando ? (
+                  <Loader2 size={18} className="animate-spin" />
+                ) : (
+                  <CheckCircle2 size={18} />
+                )}
                 Generar {ETIQUETA_TIPO[tipo].toLowerCase()}
               </button>
             </>
@@ -968,7 +965,12 @@ export default function NuevoDocumentoPage() {
             <div className="card-glass p-4">
               <div className="section-label mb-3">¿Qué quieres hacer ahora?</div>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                <AccionBtn onClick={() => abrirVentanaImpresion("pdf")} Icono={Download} label="Descargar PDF" tono="cyan" />
+                <AccionBtn
+                  onClick={() => abrirVentanaImpresion("pdf")}
+                  Icono={Download}
+                  label="Descargar PDF"
+                  tono="cyan"
+                />
                 <AccionBtn
                   onClick={enviarPorEmail}
                   Icono={Send}

@@ -23,11 +23,11 @@ function humanName(ua: string, platform: string) {
   const browser = /Edg/.test(ua)
     ? "Edge"
     : /Chrome/.test(ua)
-    ? "Chrome"
-    : /Safari/.test(ua)
-    ? "Safari"
-    : /Firefox/.test(ua)
-    ? "Firefox"
-    : "Navegador";
+      ? "Chrome"
+      : /Safari/.test(ua)
+        ? "Safari"
+        : /Firefox/.test(ua)
+          ? "Firefox"
+          : "Navegador";
   return `${browser} en ${platform || "dispositivo desconocido"}`;
 }

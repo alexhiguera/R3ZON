@@ -1,7 +1,7 @@
 "use client";
 
+import { HelpCircle, X } from "lucide-react";
 import { useEffect } from "react";
-import { X, HelpCircle } from "lucide-react";
 
 export type HelpStep = {
   title: string;
@@ -12,13 +12,7 @@ export type HelpStep = {
   imageAlt?: string;
 };
 
-export function HelpButton({
-  label,
-  onClick,
-}: {
-  label: string;
-  onClick: () => void;
-}) {
+export function HelpButton({ label, onClick }: { label: string; onClick: () => void }) {
   return (
     <button
       type="button"
@@ -90,10 +84,7 @@ export function HelpDrawer({
         <header className="flex items-start justify-between gap-3 border-b border-indigo-400/20 p-5">
           <div>
             <div className="section-label mb-1">Guía paso a paso</div>
-            <h2
-              id="help-drawer-title"
-              className="font-display text-lg font-bold text-text-hi"
-            >
+            <h2 id="help-drawer-title" className="font-display text-lg font-bold text-text-hi">
               {title}
             </h2>
           </div>

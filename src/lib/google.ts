@@ -11,12 +11,12 @@
 import { createClient } from "@/lib/supabase/server";
 
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
-const GOOGLE_CAL_BASE  = "https://www.googleapis.com/calendar/v3";
+const GOOGLE_CAL_BASE = "https://www.googleapis.com/calendar/v3";
 
 export type GoogleTokens = {
   access_token: string;
   refresh_token: string;
-  expires_at: string;        // ISO timestamptz
+  expires_at: string; // ISO timestamptz
   sync_token: string | null;
   email: string | null;
 };
@@ -30,7 +30,7 @@ export type GoogleCalendarEvent = {
   colorId?: string;
   etag?: string;
   start?: { dateTime?: string; date?: string; timeZone?: string };
-  end?:   { dateTime?: string; date?: string; timeZone?: string };
+  end?: { dateTime?: string; date?: string; timeZone?: string };
 };
 
 // ---------------------------------------------------------------------------
@@ -53,11 +53,11 @@ export async function saveTokens(args: {
 }) {
   const supabase = await createClient();
   const { error } = await supabase.rpc("set_google_tokens", {
-    p_access_token:  args.accessToken,
+    p_access_token: args.accessToken,
     p_refresh_token: args.refreshToken,
-    p_expires_at:    args.expiresAt.toISOString(),
-    p_email:         args.email ?? null,
-    p_scope:         args.scope ?? null,
+    p_expires_at: args.expiresAt.toISOString(),
+    p_email: args.email ?? null,
+    p_scope: args.scope ?? null,
   });
   if (error) throw new Error(`set_google_tokens: ${error.message}`);
 }
@@ -66,7 +66,7 @@ async function persistRefreshedAccessToken(accessToken: string, expiresAt: Date)
   const supabase = await createClient();
   await supabase.rpc("update_google_access_token", {
     p_access_token: accessToken,
-    p_expires_at:   expiresAt.toISOString(),
+    p_expires_at: expiresAt.toISOString(),
   });
 }
 
@@ -84,7 +84,7 @@ export async function persistSyncToken(syncToken: string) {
  * Lanza si Google rechaza el refresh (token revocado → re-conectar).
  */
 async function refreshAccessToken(refreshToken: string): Promise<string> {
-  const clientId     = process.env.GOOGLE_CLIENT_ID;
+  const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
   if (!clientId || !clientSecret) {
     throw new Error("GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET no configurados");
@@ -94,9 +94,9 @@ async function refreshAccessToken(refreshToken: string): Promise<string> {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
-      client_id:     clientId,
+      client_id: clientId,
       client_secret: clientSecret,
-      grant_type:    "refresh_token",
+      grant_type: "refresh_token",
       refresh_token: refreshToken,
     }),
   });
@@ -106,7 +106,7 @@ async function refreshAccessToken(refreshToken: string): Promise<string> {
     throw new Error(`Google refresh failed (${res.status}): ${body}`);
   }
 
-  const json = await res.json() as {
+  const json = (await res.json()) as {
     access_token: string;
     expires_in: number;
     scope?: string;
@@ -131,7 +131,7 @@ export async function googleFetch(
   init: RequestInit = {},
   tokens?: GoogleTokens,
 ): Promise<Response> {
-  const t = tokens ?? await loadTokens();
+  const t = tokens ?? (await loadTokens());
   if (!t) throw new Error("No Google connection for current user");
 
   // Refresh proactivo si el access_token está expirado.
@@ -141,14 +141,15 @@ export async function googleFetch(
   }
 
   const url = path.startsWith("http") ? path : `${GOOGLE_CAL_BASE}${path}`;
-  const doFetch = (token: string) => fetch(url, {
-    ...init,
-    headers: {
-      ...(init.headers ?? {}),
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-  });
+  const doFetch = (token: string) =>
+    fetch(url, {
+      ...init,
+      headers: {
+        ...(init.headers ?? {}),
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
 
   let res = await doFetch(accessToken);
 

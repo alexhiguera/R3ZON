@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
-import { createClient } from "@/lib/supabase/client";
 import { deviceFingerprint } from "@/lib/devices";
+import { createClient } from "@/lib/supabase/client";
 
 /**
  * Se monta en el AppShell. Tras autenticar, registra el dispositivo y, si es

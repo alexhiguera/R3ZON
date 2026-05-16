@@ -1,13 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import {
-  Mail, MessageCircle, StickyNote, Send,
-  Loader2, MessageSquare,
+  Loader2,
   type LucideIcon,
+  Mail,
+  MessageCircle,
+  MessageSquare,
+  Send,
+  StickyNote,
 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
+import { useEffect, useState } from "react";
 import { Tooltip } from "@/components/ui/Tooltip";
+import { createClient } from "@/lib/supabase/client";
 
 type Com = {
   id: string;
@@ -18,9 +22,9 @@ type Com = {
 };
 
 const TIPO_META: Record<string, { icon: LucideIcon; label: string; color: string }> = {
-  nota:            { icon: StickyNote,     label: "Nota",          color: "text-indigo-300" },
-  email_click:     { icon: Mail,           label: "Email enviado", color: "text-cyan" },
-  whatsapp_click:  { icon: MessageCircle,  label: "WhatsApp",      color: "text-ok" },
+  nota: { icon: StickyNote, label: "Nota", color: "text-indigo-300" },
+  email_click: { icon: Mail, label: "Email enviado", color: "text-cyan" },
+  whatsapp_click: { icon: MessageCircle, label: "WhatsApp", color: "text-ok" },
 };
 
 export function TabComunicaciones({
@@ -49,13 +53,12 @@ export function TabComunicaciones({
     setComs((data ?? []) as Com[]);
   };
 
-  useEffect(() => { cargar(); }, [clienteId]);
+  useEffect(() => {
+    cargar();
+  }, [clienteId]);
 
   const logAccion = async (tipo: string, asunto?: string, contenido?: string) => {
-    const { data: perfil } = await supabase
-      .from("perfiles_negocio")
-      .select("id")
-      .single();
+    const { data: perfil } = await supabase.from("perfiles_negocio").select("id").single();
     if (!perfil) return;
     await supabase.from("comunicaciones").insert({
       negocio_id: perfil.id,
@@ -190,13 +193,14 @@ export function TabComunicaciones({
                       <span className={`text-xs font-semibold ${meta.color}`}>{meta.label}</span>
                       <span className="shrink-0 text-[0.65rem] text-text-lo">
                         {new Date(c.created_at).toLocaleString("es-ES", {
-                          day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit",
+                          day: "2-digit",
+                          month: "short",
+                          hour: "2-digit",
+                          minute: "2-digit",
                         })}
                       </span>
                     </div>
-                    {c.contenido && (
-                      <p className="mt-0.5 text-xs text-text-mid">{c.contenido}</p>
-                    )}
+                    {c.contenido && <p className="mt-0.5 text-xs text-text-mid">{c.contenido}</p>}
                   </div>
                 </div>
               );

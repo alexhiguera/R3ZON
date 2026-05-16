@@ -28,7 +28,7 @@ export type GastoProveedor = {
   tipo: TipoGasto;
   concepto: string;
   categoria: string | null;
-  fecha: string;        // ISO date
+  fecha: string; // ISO date
   importe: number;
   iva_pct: number;
   recurrencia: Recurrencia | null;
@@ -41,15 +41,15 @@ export type GastoProveedor = {
 };
 
 export const TIPO_GASTO_LABEL: Record<TipoGasto, string> = {
-  general:     "Gasto general",
-  previsto:    "Gasto previsto",
+  general: "Gasto general",
+  previsto: "Gasto previsto",
   suscripcion: "Suscripción",
 };
 
 export const ESTADO_GASTO_BADGE: Record<EstadoGasto, { label: string; cls: string }> = {
-  pendiente:  { label: "Pendiente",  cls: "border-amber-400/30 bg-amber-500/10 text-amber-200" },
-  pagado:     { label: "Pagado",     cls: "border-emerald-400/30 bg-emerald-500/10 text-emerald-200" },
-  cancelado:  { label: "Cancelado",  cls: "border-rose-400/30 bg-rose-500/10 text-rose-200" },
+  pendiente: { label: "Pendiente", cls: "border-amber-400/30 bg-amber-500/10 text-amber-200" },
+  pagado: { label: "Pagado", cls: "border-emerald-400/30 bg-emerald-500/10 text-emerald-200" },
+  cancelado: { label: "Cancelado", cls: "border-rose-400/30 bg-rose-500/10 text-rose-200" },
 };
 
 export function totalIncluyendoIva(importe: number, iva_pct: number): number {
@@ -59,9 +59,13 @@ export function totalIncluyendoIva(importe: number, iva_pct: number): number {
 
 export function gastoMensualizado(g: Pick<GastoProveedor, "importe" | "recurrencia">): number {
   switch (g.recurrencia) {
-    case "mensual":    return g.importe;
-    case "trimestral": return g.importe / 3;
-    case "anual":      return g.importe / 12;
-    default:           return 0;
+    case "mensual":
+      return g.importe;
+    case "trimestral":
+      return g.importe / 3;
+    case "anual":
+      return g.importe / 12;
+    default:
+      return 0;
   }
 }

@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { createClient } from "@/lib/supabase/client";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useToast } from "@/components/ui/Toast";
+import { createClient } from "@/lib/supabase/client";
 import { formatSupabaseError } from "@/lib/supabase-errors";
 
 // El builder devuelve cualquier query de Supabase (PostgrestFilterBuilder,
@@ -85,7 +85,9 @@ export function useSupabaseQuery<T>(
   useEffect(() => {
     aliveRef.current = true;
     if (enabled) ejecutar();
-    return () => { aliveRef.current = false; };
+    return () => {
+      aliveRef.current = false;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabled, ...deps]);
 

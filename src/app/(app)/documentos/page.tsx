@@ -1,43 +1,43 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import Link from "next/link";
 import {
-  FileText,
-  Receipt,
-  FileSpreadsheet,
-  ClipboardList,
-  FileSignature,
   BadgeCheck,
-  Plus,
-  Loader2,
+  ClipboardList,
   ExternalLink,
+  FileSignature,
+  FileSpreadsheet,
+  FileText,
+  Loader2,
+  Plus,
+  Receipt,
 } from "lucide-react";
-import { useSupabaseQuery } from "@/lib/useSupabaseQuery";
+import Link from "next/link";
+import { useMemo, useState } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import {
-  ETIQUETA_TIPO,
-  TIPOS_DOCUMENTO,
-  eur,
   type Documento,
+  ETIQUETA_TIPO,
+  eur,
+  TIPOS_DOCUMENTO,
   type TipoDocumento,
 } from "@/lib/documentos";
+import { useSupabaseQuery } from "@/lib/useSupabaseQuery";
 
 const ICONO_TIPO: Record<TipoDocumento, typeof FileText> = {
-  factura:     FileText,
-  ticket:      Receipt,
+  factura: FileText,
+  ticket: Receipt,
   presupuesto: FileSpreadsheet,
-  albaran:     ClipboardList,
-  proforma:    FileSignature,
-  recibo:      BadgeCheck,
+  albaran: ClipboardList,
+  proforma: FileSignature,
+  recibo: BadgeCheck,
 };
 
 const ESTADO_COLOR: Record<string, string> = {
   borrador: "border-text-lo/30 bg-text-lo/10 text-text-mid",
   generado: "border-cyan/30 bg-cyan/10 text-cyan",
-  enviado:  "border-fuchsia/30 bg-fuchsia/10 text-fuchsia",
-  pagado:   "border-ok/30 bg-ok/10 text-ok",
-  anulado:  "border-danger/30 bg-danger/10 text-danger",
+  enviado: "border-fuchsia/30 bg-fuchsia/10 text-fuchsia",
+  pagado: "border-ok/30 bg-ok/10 text-ok",
+  anulado: "border-danger/30 bg-danger/10 text-danger",
 };
 
 // `lineas` (JSONB potencialmente grande), `emisor_snapshot` y otros campos

@@ -1,9 +1,9 @@
 "use client";
 
+import { ArrowRight, Menu, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Menu, X, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NAV = [
@@ -33,11 +33,7 @@ export function MarketingNavbar({ hasSession }: { hasSession: boolean }) {
             alt="ANTARES"
             className="h-9 w-9 dark:block hidden"
           />
-          <img
-            src="/R3ZON-ANTARES.svg"
-            alt="ANTARES"
-            className="h-9 w-9 dark:hidden block"
-          />
+          <img src="/R3ZON-ANTARES.svg" alt="ANTARES" className="h-9 w-9 dark:hidden block" />
           <span className="font-display text-lg font-extrabold tracking-tight text-text-hi">
             ANTARES
           </span>
@@ -45,8 +41,7 @@ export function MarketingNavbar({ hasSession }: { hasSession: boolean }) {
 
         <nav className="ml-6 hidden items-center gap-1 md:flex">
           {NAV.map(({ href, label }) => {
-            const active =
-              href === "/" ? pathname === "/" : pathname?.startsWith(href);
+            const active = href === "/" ? pathname === "/" : pathname?.startsWith(href);
             return (
               <Link
                 key={href}
@@ -88,8 +83,7 @@ export function MarketingNavbar({ hasSession }: { hasSession: boolean }) {
         <div className="border-t border-indigo-400/15 bg-bg/95 backdrop-blur-glass md:hidden">
           <nav className="mx-auto flex max-w-6xl flex-col gap-1 px-4 py-3 sm:px-6">
             {NAV.map(({ href, label }) => {
-              const active =
-                href === "/" ? pathname === "/" : pathname?.startsWith(href);
+              const active = href === "/" ? pathname === "/" : pathname?.startsWith(href);
               return (
                 <Link
                   key={href}

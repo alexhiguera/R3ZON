@@ -1,24 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { PiggyBank, Plus, Receipt, ScanLine, TrendingDown, TrendingUp } from "lucide-react";
 import Link from "next/link";
-import {
-  TrendingUp,
-  TrendingDown,
-  PiggyBank,
-  Receipt,
-  ScanLine,
-  Plus,
-} from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
-import {
-  agregarPorMes,
-  totales,
-  eur,
-  type MovimientoFila,
-} from "@/lib/finanzas";
+import { useEffect, useState } from "react";
 import { MonthlyBars, TaxLine } from "@/components/finanzas/Charts";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { agregarPorMes, eur, type MovimientoFila, totales } from "@/lib/finanzas";
+import { createClient } from "@/lib/supabase/client";
 
 export default function FinanzasPage() {
   const [filas, setFilas] = useState<MovimientoFila[]>([]);
@@ -98,18 +86,12 @@ export default function FinanzasPage() {
       </div>
 
       {/* Barras mensuales */}
-      <Panel
-        title="Tu año mes a mes"
-        sub="Compara lo que ganas con lo que gastas en cada mes."
-      >
+      <Panel title="Tu año mes a mes" sub="Compara lo que ganas con lo que gastas en cada mes.">
         {cargando ? <Skeleton /> : <MonthlyBars data={mensual} />}
       </Panel>
 
       {/* Previsión de impuestos */}
-      <Panel
-        title="Impuestos previstos"
-        sub="Lo que se va acumulando para tu próxima declaración."
-      >
+      <Panel title="Impuestos previstos" sub="Lo que se va acumulando para tu próxima declaración.">
         {cargando ? <Skeleton /> : <TaxLine data={mensual} />}
 
         <div className="mt-5 grid gap-3 sm:grid-cols-2">
@@ -164,7 +146,9 @@ function QuickAction({
       href={href}
       className="card-glass flex items-center gap-4 p-5 transition-all hover:-translate-y-0.5 active:scale-[0.99]"
     >
-      <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border ${cls}`}>
+      <span
+        className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border ${cls}`}
+      >
         <Icon size={20} />
       </span>
       <div className="flex-1">
@@ -199,7 +183,9 @@ function BigKPI({
     <div className="card-glass p-5">
       <div className="flex items-center justify-between">
         <span className="section-label">{label}</span>
-        <span className={`flex h-8 w-8 items-center justify-center rounded-lg border ${map[accent]}`}>
+        <span
+          className={`flex h-8 w-8 items-center justify-center rounded-lg border ${map[accent]}`}
+        >
           <Icon size={15} />
         </span>
       </div>
@@ -281,7 +267,8 @@ function UltimosMovimientos({ filas }: { filas: MovimientoFila[] }) {
               f.tipo === "ingreso" ? "text-ok" : "text-text-hi"
             }`}
           >
-            {f.tipo === "ingreso" ? "+" : "−"}{eur(Number(f.total))}
+            {f.tipo === "ingreso" ? "+" : "−"}
+            {eur(Number(f.total))}
           </div>
         </div>
       ))}
@@ -291,18 +278,14 @@ function UltimosMovimientos({ filas }: { filas: MovimientoFila[] }) {
 
 function Skeleton() {
   return (
-    <div className="flex h-56 items-center justify-center text-sm text-text-lo">
-      Cargando…
-    </div>
+    <div className="flex h-56 items-center justify-center text-sm text-text-lo">Cargando…</div>
   );
 }
 
 function Empty() {
   return (
     <div className="flex flex-col items-center gap-2 py-8 text-center">
-      <div className="font-display text-base font-bold text-text-hi">
-        Aún no hay movimientos
-      </div>
+      <div className="font-display text-base font-bold text-text-hi">Aún no hay movimientos</div>
       <p className="max-w-sm text-sm text-text-mid">
         Empieza escaneando un ticket o apuntando a mano tu primer ingreso.
       </p>

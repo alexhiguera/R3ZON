@@ -1,19 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import {
-  CreditCard,
-  Loader2,
-  ExternalLink,
-  CheckCircle2,
   AlertCircle,
-  Sparkles,
+  CheckCircle2,
+  CreditCard,
   Download,
-  Receipt,
+  ExternalLink,
+  Loader2,
   Plus,
+  Receipt,
+  Sparkles,
 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
+import { useEffect, useState } from "react";
 import { PLANS_PUBLIC } from "@/lib/plans";
+import { createClient } from "@/lib/supabase/client";
 
 type Pago = {
   id: string;
@@ -39,11 +39,11 @@ type Toast = { kind: "ok" | "err"; msg: string } | null;
 
 export function SuscripcionTab() {
   const supabase = createClient();
-  const [sub, setSub]     = useState<Sub | null>(null);
+  const [sub, setSub] = useState<Sub | null>(null);
   const [pagos, setPagos] = useState<Pago[]>([]);
   const [loading, setLoading] = useState(true);
-  const [busy, setBusy]       = useState<string | null>(null);
-  const [toast, setToast]     = useState<Toast>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [toast, setToast] = useState<Toast>(null);
 
   const flash = (t: Toast) => {
     setToast(t);
@@ -55,7 +55,10 @@ export function SuscripcionTab() {
     const params = new URLSearchParams(window.location.search);
     const billing = params.get("billing");
     if (billing === "success") {
-      flash({ kind: "ok", msg: "¡Suscripción completada! Puede tardar unos segundos en aparecer." });
+      flash({
+        kind: "ok",
+        msg: "¡Suscripción completada! Puede tardar unos segundos en aparecer.",
+      });
     } else if (billing === "cancelled") {
       flash({ kind: "err", msg: "Has cancelado el pago. No se ha cobrado nada." });
     } else if (billing === "metodo_anadido") {
@@ -74,11 +77,15 @@ export function SuscripcionTab() {
       const [{ data: perfil }, { data: pagosData }] = await Promise.all([
         supabase
           .from("perfiles_negocio")
-          .select("plan, subscription_status, subscription_period_end, subscription_cancel_at_period_end, stripe_customer_id")
+          .select(
+            "plan, subscription_status, subscription_period_end, subscription_cancel_at_period_end, stripe_customer_id",
+          )
           .single(),
         supabase
           .from("pagos_stripe")
-          .select("id, amount_cents, currency, status, description, hosted_invoice_url, invoice_pdf_url, paid_at, created_at")
+          .select(
+            "id, amount_cents, currency, status, description, hosted_invoice_url, invoice_pdf_url, paid_at, created_at",
+          )
           .order("paid_at", { ascending: false, nullsFirst: false })
           .limit(12),
       ]);
@@ -87,7 +94,9 @@ export function SuscripcionTab() {
       setPagos((pagosData as Pago[]) ?? []);
       setLoading(false);
     })();
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+    };
   }, [supabase]);
 
   const irACheckout = async (plan: "pro" | "business") => {
@@ -149,7 +158,12 @@ export function SuscripcionTab() {
       )}
 
       {/* Plan actual */}
-      <PlanActual sub={sub} onPortal={irAlPortal} busy={busy === "portal"} tieneSuscripcion={tieneSuscripcion} />
+      <PlanActual
+        sub={sub}
+        onPortal={irAlPortal}
+        busy={busy === "portal"}
+        tieneSuscripcion={tieneSuscripcion}
+      />
 
       {/* Métodos de pago */}
       <MetodosPago onFlash={flash} />
@@ -201,7 +215,9 @@ function MetodosPago({ onFlash }: { onFlash: (t: Toast) => void }) {
       setMethods((json.methods as PaymentMethod[]) ?? []);
       setLoading(false);
     })();
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+    };
   }, []);
 
   const anadirMetodo = async () => {
@@ -300,7 +316,9 @@ function PlanActual({
   const planLabel = (sub?.plan ?? "free").toUpperCase();
   const renovacion = sub?.subscription_period_end
     ? new Date(sub.subscription_period_end).toLocaleDateString("es-ES", {
-        day: "numeric", month: "long", year: "numeric",
+        day: "numeric",
+        month: "long",
+        year: "numeric",
       })
     : null;
 
@@ -352,15 +370,17 @@ function StatusBadge({ status }: { status: string | null | undefined }) {
     );
   }
   const palette: Record<string, string> = {
-    active:   "border-emerald-400/30 bg-emerald-500/10 text-emerald-200",
+    active: "border-emerald-400/30 bg-emerald-500/10 text-emerald-200",
     trialing: "border-cyan/30 bg-cyan/10 text-cyan",
     past_due: "border-amber-400/30 bg-amber-500/10 text-amber-200",
     canceled: "border-rose-400/30 bg-rose-500/10 text-rose-200",
   };
   return (
-    <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${
-      palette[status] ?? palette.active
-    }`}>
+    <span
+      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${
+        palette[status] ?? palette.active
+      }`}
+    >
       {status}
     </span>
   );
@@ -374,16 +394,14 @@ function PricingCard({
   onSelect,
   busy,
 }: {
-  plan: typeof PLANS_PUBLIC[number];
+  plan: (typeof PLANS_PUBLIC)[number];
   actual: boolean;
   onSelect: () => void;
   busy: boolean;
 }) {
   return (
     <article
-      className={`card-glass flex flex-col p-6 ${
-        plan.destacado ? "ring-1 ring-cyan/40" : ""
-      }`}
+      className={`card-glass flex flex-col p-6 ${plan.destacado ? "ring-1 ring-cyan/40" : ""}`}
     >
       {plan.destacado && (
         <div className="mb-3 inline-flex w-fit items-center gap-1 rounded-full bg-gradient-to-r from-cyan to-fuchsia px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-bg">
@@ -394,9 +412,7 @@ function PricingCard({
       <p className="mt-1 text-xs text-text-mid">{plan.tagline}</p>
 
       <div className="mt-4 flex items-baseline gap-1">
-        <span className="font-display text-4xl font-bold text-text-hi">
-          {plan.precio_eur_mes}€
-        </span>
+        <span className="font-display text-4xl font-bold text-text-hi">{plan.precio_eur_mes}€</span>
         <span className="text-sm text-text-mid">/mes</span>
       </div>
 
@@ -442,67 +458,69 @@ function HistorialPagos({ pagos }: { pagos: Pago[] }) {
       </div>
 
       {pagos.length === 0 ? (
-        <div className="p-6 text-sm italic text-text-lo">
-          Aún no hay pagos registrados.
-        </div>
+        <div className="p-6 text-sm italic text-text-lo">Aún no hay pagos registrados.</div>
       ) : (
-        <div className="overflow-x-auto"><table className="w-full min-w-[640px] text-left text-sm">
-          <thead className="bg-indigo-900/40 text-[11px] uppercase tracking-wider text-text-mid">
-            <tr>
-              <th className="px-4 py-3 font-semibold">Fecha</th>
-              <th className="px-4 py-3 font-semibold">Concepto</th>
-              <th className="px-4 py-3 font-semibold">Importe</th>
-              <th className="px-4 py-3 font-semibold">Estado</th>
-              <th className="px-4 py-3 text-right font-semibold">Factura</th>
-            </tr>
-          </thead>
-          <tbody>
-            {pagos.map((p) => (
-              <tr key={p.id} className="border-t border-indigo-400/10">
-                <td className="px-4 py-3 text-text-mid">
-                  {new Date(p.paid_at ?? p.created_at).toLocaleDateString("es-ES", {
-                    day: "2-digit", month: "short", year: "numeric",
-                  })}
-                </td>
-                <td className="px-4 py-3 text-text-hi">
-                  {p.description ?? <span className="italic text-text-lo">—</span>}
-                </td>
-                <td className="px-4 py-3 text-text-hi">
-                  {(p.amount_cents / 100).toLocaleString("es-ES", {
-                    style: "currency",
-                    currency: (p.currency ?? "eur").toUpperCase(),
-                  })}
-                </td>
-                <td className="px-4 py-3">
-                  <PagoBadge status={p.status} />
-                </td>
-                <td className="px-4 py-3 text-right">
-                  {p.invoice_pdf_url ? (
-                    <a
-                      href={p.invoice_pdf_url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-1 text-[11px] text-cyan hover:underline"
-                    >
-                      <Download size={11} /> PDF
-                    </a>
-                  ) : p.hosted_invoice_url ? (
-                    <a
-                      href={p.hosted_invoice_url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-1 text-[11px] text-cyan hover:underline"
-                    >
-                      <ExternalLink size={11} /> Ver
-                    </a>
-                  ) : (
-                    <span className="text-[11px] italic text-text-lo">—</span>
-                  )}
-                </td>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[640px] text-left text-sm">
+            <thead className="bg-indigo-900/40 text-[11px] uppercase tracking-wider text-text-mid">
+              <tr>
+                <th className="px-4 py-3 font-semibold">Fecha</th>
+                <th className="px-4 py-3 font-semibold">Concepto</th>
+                <th className="px-4 py-3 font-semibold">Importe</th>
+                <th className="px-4 py-3 font-semibold">Estado</th>
+                <th className="px-4 py-3 text-right font-semibold">Factura</th>
               </tr>
-            ))}
-          </tbody>
-        </table></div>
+            </thead>
+            <tbody>
+              {pagos.map((p) => (
+                <tr key={p.id} className="border-t border-indigo-400/10">
+                  <td className="px-4 py-3 text-text-mid">
+                    {new Date(p.paid_at ?? p.created_at).toLocaleDateString("es-ES", {
+                      day: "2-digit",
+                      month: "short",
+                      year: "numeric",
+                    })}
+                  </td>
+                  <td className="px-4 py-3 text-text-hi">
+                    {p.description ?? <span className="italic text-text-lo">—</span>}
+                  </td>
+                  <td className="px-4 py-3 text-text-hi">
+                    {(p.amount_cents / 100).toLocaleString("es-ES", {
+                      style: "currency",
+                      currency: (p.currency ?? "eur").toUpperCase(),
+                    })}
+                  </td>
+                  <td className="px-4 py-3">
+                    <PagoBadge status={p.status} />
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    {p.invoice_pdf_url ? (
+                      <a
+                        href={p.invoice_pdf_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 text-[11px] text-cyan hover:underline"
+                      >
+                        <Download size={11} /> PDF
+                      </a>
+                    ) : p.hosted_invoice_url ? (
+                      <a
+                        href={p.hosted_invoice_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 text-[11px] text-cyan hover:underline"
+                      >
+                        <ExternalLink size={11} /> Ver
+                      </a>
+                    ) : (
+                      <span className="text-[11px] italic text-text-lo">—</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );

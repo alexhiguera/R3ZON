@@ -1,5 +1,5 @@
-import { eur } from "./formato";
 import type { Database } from "./database.types";
+import { eur } from "./formato";
 
 export { eur };
 
@@ -31,40 +31,44 @@ export function agregarPorMes(filas: MovimientoFila[], anio = new Date().getFull
     const b = buckets[d.getMonth()];
     if (f.tipo === "ingreso") {
       b.ganadoCts += toCts(f.base_imponible);
-      b.ivaCts    += toCts(f.iva_importe);   // IVA repercutido (cobras al cliente)
-      b.irpfCts   += toCts(f.irpf_importe);  // IRPF retenido por el cliente
+      b.ivaCts += toCts(f.iva_importe); // IVA repercutido (cobras al cliente)
+      b.irpfCts += toCts(f.irpf_importe); // IRPF retenido por el cliente
     } else {
       b.gastadoCts += toCts(f.base_imponible);
-      b.ivaCts     -= toCts(f.iva_importe);  // IVA soportado (resta de lo que debes)
+      b.ivaCts -= toCts(f.iva_importe); // IVA soportado (resta de lo que debes)
     }
   }
 
   return buckets.map((b) => ({
     mes: b.mes,
-    ganado:  fromCts(b.ganadoCts),
+    ganado: fromCts(b.ganadoCts),
     gastado: fromCts(b.gastadoCts),
-    iva:     fromCts(b.ivaCts),
-    irpf:    fromCts(b.irpfCts),
+    iva: fromCts(b.ivaCts),
+    irpf: fromCts(b.irpfCts),
   }));
 }
 
 export function totales(filas: MovimientoFila[]) {
-  let ganadoCts = 0, gastadoCts = 0, ivaRepCts = 0, ivaSopCts = 0, irpfCts = 0;
+  let ganadoCts = 0,
+    gastadoCts = 0,
+    ivaRepCts = 0,
+    ivaSopCts = 0,
+    irpfCts = 0;
   for (const f of filas) {
     if (f.tipo === "ingreso") {
       ganadoCts += toCts(f.base_imponible);
       ivaRepCts += toCts(f.iva_importe);
-      irpfCts   += toCts(f.irpf_importe);
+      irpfCts += toCts(f.irpf_importe);
     } else {
       gastadoCts += toCts(f.base_imponible);
-      ivaSopCts  += toCts(f.iva_importe);
+      ivaSopCts += toCts(f.iva_importe);
     }
   }
   return {
-    ganado:       fromCts(ganadoCts),
-    gastado:      fromCts(gastadoCts),
-    beneficio:    fromCts(ganadoCts - gastadoCts),
-    ivaAPagar:    fromCts(ivaRepCts - ivaSopCts), // si negativo → Hacienda te devuelve
+    ganado: fromCts(ganadoCts),
+    gastado: fromCts(gastadoCts),
+    beneficio: fromCts(ganadoCts - gastadoCts),
+    ivaAPagar: fromCts(ivaRepCts - ivaSopCts), // si negativo → Hacienda te devuelve
     irpfRetenido: fromCts(irpfCts),
   };
 }

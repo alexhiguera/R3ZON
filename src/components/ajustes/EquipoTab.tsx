@@ -1,18 +1,18 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
 import {
-  UserPlus,
-  Loader2,
-  Crown,
+  AlertCircle,
+  Ban,
   CheckCircle2,
   Clock,
-  Ban,
+  Crown,
+  Loader2,
   Trash2,
-  AlertCircle,
+  UserPlus,
 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
+import { useCallback, useEffect, useState } from "react";
 import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { createClient } from "@/lib/supabase/client";
 import { InvitarMiembroModal } from "./InvitarMiembroModal";
 
 type Miembro = {
@@ -31,11 +31,11 @@ type Toast = { kind: "ok" | "err"; msg: string } | null;
 
 export function EquipoTab() {
   const supabase = createClient();
-  const [rows, setRows]       = useState<Miembro[]>([]);
+  const [rows, setRows] = useState<Miembro[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState<string | null>(null);
-  const [open, setOpen]       = useState(false);
-  const [toast, setToast]     = useState<Toast>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);
+  const [toast, setToast] = useState<Toast>(null);
   const { confirm: confirmDialog, dialog: confirmDialogNode } = useConfirmDialog();
 
   const flash = (t: Toast) => {
@@ -55,12 +55,15 @@ export function EquipoTab() {
     setLoading(false);
   }, [supabase]);
 
-  useEffect(() => { cargar(); }, [cargar]);
+  useEffect(() => {
+    cargar();
+  }, [cargar]);
 
   const revocar = async (id: string) => {
     const ok = await confirmDialog({
       title: "Revocar acceso",
-      message: "Este miembro perderá inmediatamente el acceso al negocio. Podrás volver a invitarle más adelante.",
+      message:
+        "Este miembro perderá inmediatamente el acceso al negocio. Podrás volver a invitarle más adelante.",
       confirmLabel: "Revocar",
       tone: "danger",
     });
@@ -71,7 +74,10 @@ export function EquipoTab() {
       body: JSON.stringify({ id }),
     });
     const json = await res.json().catch(() => ({}));
-    if (!res.ok) { flash({ kind: "err", msg: json.error ?? "Error al revocar" }); return; }
+    if (!res.ok) {
+      flash({ kind: "err", msg: json.error ?? "Error al revocar" });
+      return;
+    }
     flash({ kind: "ok", msg: "Miembro revocado." });
     cargar();
   };
@@ -82,11 +88,10 @@ export function EquipoTab() {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <div className="section-label mb-1">Equipo</div>
-            <h2 className="font-display text-base font-bold text-text-hi">
-              Miembros del negocio
-            </h2>
+            <h2 className="font-display text-base font-bold text-text-hi">Miembros del negocio</h2>
             <p className="mt-1 text-sm text-text-mid sm:max-w-lg">
-              Invita a tus trabajadores y asigna su rol. Cada invitación queda registrada con auditoría legal.
+              Invita a tus trabajadores y asigna su rol. Cada invitación queda registrada con
+              auditoría legal.
             </p>
           </div>
           <button
@@ -121,59 +126,68 @@ export function EquipoTab() {
         ) : error ? (
           <div className="p-6 text-sm text-rose-300">{error}</div>
         ) : (
-          <div className="overflow-x-auto"><table className="w-full min-w-[640px] text-left text-sm">
-            <thead className="bg-indigo-900/40 text-[11px] uppercase tracking-wider text-text-mid">
-              <tr>
-                <th className="px-4 py-3 font-semibold">Nombre</th>
-                <th className="px-4 py-3 font-semibold">Email</th>
-                <th className="px-4 py-3 font-semibold">Rol</th>
-                <th className="px-4 py-3 font-semibold">Estado</th>
-                <th className="px-4 py-3 text-right font-semibold">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((m) => (
-                <tr key={m.miembro_id ?? m.email} className="border-t border-indigo-400/10">
-                  <td className="px-4 py-3 text-text-hi">
-                    <div className="flex items-center gap-2">
-                      {m.es_owner && <Crown size={13} className="text-amber-300" />}
-                      {m.nombre ?? <span className="italic text-text-lo">—</span>}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-text-mid">{m.email}</td>
-                  <td className="px-4 py-3"><RolPill rol={m.rol} /></td>
-                  <td className="px-4 py-3"><EstadoPill estado={m.estado} /></td>
-                  <td className="px-4 py-3 text-right">
-                    {m.es_owner ? (
-                      <span className="text-[11px] italic text-text-lo">Titular</span>
-                    ) : m.miembro_id && m.estado !== "revocado" ? (
-                      <button
-                        type="button"
-                        onClick={() => revocar(m.miembro_id!)}
-                        className="inline-flex items-center gap-1 text-[11px] text-rose-300 hover:text-rose-200"
-                      >
-                        <Trash2 size={11} /> Revocar
-                      </button>
-                    ) : null}
-                  </td>
-                </tr>
-              ))}
-              {rows.length === 0 && (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[640px] text-left text-sm">
+              <thead className="bg-indigo-900/40 text-[11px] uppercase tracking-wider text-text-mid">
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-sm italic text-text-lo">
-                    Aún no hay miembros invitados.
-                  </td>
+                  <th className="px-4 py-3 font-semibold">Nombre</th>
+                  <th className="px-4 py-3 font-semibold">Email</th>
+                  <th className="px-4 py-3 font-semibold">Rol</th>
+                  <th className="px-4 py-3 font-semibold">Estado</th>
+                  <th className="px-4 py-3 text-right font-semibold">Acciones</th>
                 </tr>
-              )}
-            </tbody>
-          </table></div>
+              </thead>
+              <tbody>
+                {rows.map((m) => (
+                  <tr key={m.miembro_id ?? m.email} className="border-t border-indigo-400/10">
+                    <td className="px-4 py-3 text-text-hi">
+                      <div className="flex items-center gap-2">
+                        {m.es_owner && <Crown size={13} className="text-amber-300" />}
+                        {m.nombre ?? <span className="italic text-text-lo">—</span>}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-text-mid">{m.email}</td>
+                    <td className="px-4 py-3">
+                      <RolPill rol={m.rol} />
+                    </td>
+                    <td className="px-4 py-3">
+                      <EstadoPill estado={m.estado} />
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      {m.es_owner ? (
+                        <span className="text-[11px] italic text-text-lo">Titular</span>
+                      ) : m.miembro_id && m.estado !== "revocado" ? (
+                        <button
+                          type="button"
+                          onClick={() => revocar(m.miembro_id!)}
+                          className="inline-flex items-center gap-1 text-[11px] text-rose-300 hover:text-rose-200"
+                        >
+                          <Trash2 size={11} /> Revocar
+                        </button>
+                      ) : null}
+                    </td>
+                  </tr>
+                ))}
+                {rows.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="px-4 py-8 text-center text-sm italic text-text-lo">
+                      Aún no hay miembros invitados.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 
       <InvitarMiembroModal
         open={open}
         onClose={() => setOpen(false)}
-        onInvited={() => { flash({ kind: "ok", msg: "Invitación enviada." }); cargar(); }}
+        onInvited={() => {
+          flash({ kind: "ok", msg: "Invitación enviada." });
+          cargar();
+        }}
       />
       {confirmDialogNode}
     </div>
@@ -182,12 +196,14 @@ export function EquipoTab() {
 
 function RolPill({ rol }: { rol: string }) {
   const map: Record<string, string> = {
-    admin:  "border-fuchsia/40 bg-fuchsia/10 text-fuchsia-200",
+    admin: "border-fuchsia/40 bg-fuchsia/10 text-fuchsia-200",
     editor: "border-cyan/40 bg-cyan/10 text-cyan",
     lector: "border-indigo-400/30 bg-indigo-900/40 text-text-mid",
   };
   return (
-    <span className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${map[rol] ?? map.lector}`}>
+    <span
+      className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${map[rol] ?? map.lector}`}
+    >
       {rol}
     </span>
   );

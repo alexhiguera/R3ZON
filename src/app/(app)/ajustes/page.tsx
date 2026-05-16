@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
-import { PageHeader } from "@/components/ui/PageHeader";
 import { SettingsTabs } from "@/components/ajustes/SettingsTabs";
-import { createClient } from "@/lib/supabase/server";
 import type { PerfilNegocio } from "@/components/ajustes/types";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 

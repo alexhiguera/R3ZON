@@ -1,0 +1,104 @@
+{
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+  "files": {
+    "ignoreUnknown": true,
+    "includes": [
+      "**",
+      "!**/.next",
+      "!**/out",
+      "!**/node_modules",
+      "!**/coverage",
+      "!**/backups",
+      "!**/supabase/.branches",
+      "!**/supabase/.temp",
+      "!**/*.min.js",
+      "!**/*.map",
+      "!**/package-lock.json",
+      "!**/*.css"
+    ]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100,
+    "lineEnding": "lf"
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "suspicious": {
+        "noExplicitAny": "off",
+        "noArrayIndexKey": "off",
+        "noConsole": "off",
+        "noAssignInExpressions": "off",
+        "noImplicitAnyLet": "off",
+        "noThenProperty": "off",
+        "useIterableCallbackReturn": "off",
+        "noUnknownAtRules": "off",
+        "noShorthandPropertyOverrides": "off"
+      },
+      "style": {
+        "useImportType": "off",
+        "useExportType": "off",
+        "noNonNullAssertion": "off",
+        "useTemplate": "off",
+        "noParameterAssign": "off",
+        "useConst": "warn",
+        "useDefaultParameterLast": "off",
+        "useNumberNamespace": "off",
+        "useSelfClosingElements": "off"
+      },
+      "complexity": {
+        "noForEach": "off",
+        "useLiteralKeys": "off",
+        "noUselessFragments": "off",
+        "useOptionalChain": "off",
+        "useArrowFunction": "off",
+        "noImportantStyles": "off"
+      },
+      "correctness": {
+        "useExhaustiveDependencies": "off",
+        "noUnusedImports": "warn",
+        "noUnusedVariables": "warn",
+        "noUnusedFunctionParameters": "off",
+        "noChildrenProp": "off"
+      },
+      "a11y": {
+        "useKeyWithClickEvents": "off",
+        "useButtonType": "off",
+        "noStaticElementInteractions": "off",
+        "useSemanticElements": "off",
+        "noLabelWithoutControl": "off",
+        "useValidAnchor": "off",
+        "useMediaCaption": "off",
+        "useAltText": "warn",
+        "noSvgWithoutTitle": "off",
+        "noAutofocus": "off",
+        "noNoninteractiveElementToInteractiveRole": "off"
+      },
+      "performance": {
+        "noDelete": "off",
+        "noAccumulatingSpread": "off",
+        "noImgElement": "off"
+      },
+      "security": {
+        "noDangerouslySetInnerHtmlWithChildren": "error",
+        "noDangerouslySetInnerHtml": "off"
+      }
+    }
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "double",
+      "trailingCommas": "all",
+      "semicolons": "always"
+    }
+  }
+}

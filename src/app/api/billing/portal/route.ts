@@ -1,11 +1,13 @@
-import { NextResponse, type NextRequest } from "next/server";
-import { createClient } from "@/lib/supabase/server";
-import { getStripe } from "@/lib/stripe";
+import { type NextRequest, NextResponse } from "next/server";
 import { withApiHandler } from "@/lib/api-handler";
+import { getStripe } from "@/lib/stripe";
+import { createClient } from "@/lib/supabase/server";
 
 export const POST = withApiHandler("billing/portal", async (request: NextRequest) => {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
 
   const { data: perfil, error } = await supabase
@@ -19,14 +21,14 @@ export const POST = withApiHandler("billing/portal", async (request: NextRequest
   if (!perfil.stripe_customer_id) {
     return NextResponse.json(
       { error: "Aún no tienes una suscripción. Elige un plan primero." },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
   const origin = new URL(request.url).origin;
   const session = await getStripe().billingPortal.sessions.create({
-    customer:    perfil.stripe_customer_id,
-    return_url:  `${origin}/ajustes`,
+    customer: perfil.stripe_customer_id,
+    return_url: `${origin}/ajustes`,
   });
   return NextResponse.json({ url: session.url });
 });

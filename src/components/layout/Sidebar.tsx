@@ -1,38 +1,38 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard,
+  Boxes,
   Building2,
   Calendar,
-  Kanban,
   Clock,
   FileText,
-  Boxes,
-  ShoppingCart,
-  Wallet,
-  Truck,
+  Kanban,
+  LayoutDashboard,
+  type LucideIcon,
   PanelLeftClose,
   PanelLeftOpen,
-  type LucideIcon,
+  ShoppingCart,
+  Truck,
+  Wallet,
 } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { UserMenu } from "./UserMenu";
 
 type NavItem = { href: string; label: string; Icon: LucideIcon };
 
 const NAV: NavItem[] = [
-  { href: "/dashboard", label: "Inicio",        Icon: LayoutDashboard },
-  { href: "/clientes",  label: "Clientes",      Icon: Building2 },
+  { href: "/dashboard", label: "Inicio", Icon: LayoutDashboard },
+  { href: "/clientes", label: "Clientes", Icon: Building2 },
   { href: "/proveedores", label: "Proveedores", Icon: Truck },
-  { href: "/citas",     label: "Agenda",        Icon: Calendar },
-  { href: "/tareas",    label: "Tareas",        Icon: Kanban },
-  { href: "/fichajes",  label: "Fichajes",      Icon: Clock },
-  { href: "/listado",   label: "Listado",       Icon: Boxes },
-  { href: "/tpv",       label: "TPV",           Icon: ShoppingCart },
-  { href: "/documentos", label: "Documentos",   Icon: FileText },
-  { href: "/finanzas",  label: "Finanzas",      Icon: Wallet },
+  { href: "/citas", label: "Agenda", Icon: Calendar },
+  { href: "/tareas", label: "Tareas", Icon: Kanban },
+  { href: "/fichajes", label: "Fichajes", Icon: Clock },
+  { href: "/listado", label: "Listado", Icon: Boxes },
+  { href: "/tpv", label: "TPV", Icon: ShoppingCart },
+  { href: "/documentos", label: "Documentos", Icon: FileText },
+  { href: "/finanzas", label: "Finanzas", Icon: Wallet },
 ];
 
 export function Sidebar({
@@ -99,7 +99,12 @@ export function Sidebar({
       </div>
 
       {/* Navegación (scrolleable) */}
-      <div className={cn("min-h-0 flex-1 overflow-y-auto overscroll-contain pb-2", collapsed ? "px-2" : "px-4")}>
+      <div
+        className={cn(
+          "min-h-0 flex-1 overflow-y-auto overscroll-contain pb-2",
+          collapsed ? "px-2" : "px-4",
+        )}
+      >
         {!collapsed && <div className="section-label mb-1 px-3">Navegación</div>}
         <div className="flex flex-col gap-1.5">
           {NAV.map(({ href, label, Icon }) => {
@@ -113,16 +118,14 @@ export function Sidebar({
                 aria-label={collapsed ? label : undefined}
                 className={cn(
                   "group",
-                  collapsed
-                    ? "flex items-center justify-center rounded-xl p-1.5"
-                    : "btn-big",
+                  collapsed ? "flex items-center justify-center rounded-xl p-1.5" : "btn-big",
                   active
                     ? collapsed
                       ? ""
                       : "bg-glass border border-indigo-400/30 text-text-hi shadow-glass"
                     : collapsed
-                    ? "hover:bg-indigo-900/40"
-                    : "border border-transparent text-text-mid hover:bg-indigo-900/40 hover:text-text-hi",
+                      ? "hover:bg-indigo-900/40"
+                      : "border border-transparent text-text-mid hover:bg-indigo-900/40 hover:text-text-hi",
                 )}
               >
                 <span

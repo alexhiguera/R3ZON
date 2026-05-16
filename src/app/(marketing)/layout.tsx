@@ -1,12 +1,8 @@
-import { createClient } from "@/lib/supabase/server";
-import { MarketingNavbar } from "@/components/marketing/MarketingNavbar";
 import { MarketingFooter } from "@/components/marketing/MarketingFooter";
+import { MarketingNavbar } from "@/components/marketing/MarketingNavbar";
+import { createClient } from "@/lib/supabase/server";
 
-export default async function MarketingLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default async function MarketingLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
   const {
     data: { user },

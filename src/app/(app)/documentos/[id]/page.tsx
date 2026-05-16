@@ -1,20 +1,20 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { useParams } from "next/navigation";
+import { ArrowLeft, Download, Loader2, Printer, Send } from "lucide-react";
 import Link from "next/link";
-import { ArrowLeft, Download, Send, Loader2, Printer } from "lucide-react";
-import { useToast } from "@/components/ui/Toast";
-import { useSupabaseQuery } from "@/lib/useSupabaseQuery";
-import { PageHeader } from "@/components/ui/PageHeader";
+import { useParams } from "next/navigation";
+import { useRef, useState } from "react";
 import { PlantillaDocumento } from "@/components/documentos/PlantillaDocumento";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { useToast } from "@/components/ui/Toast";
 import {
-  ETIQUETA_TIPO,
-  FORMATO_TIPO,
-  eur,
-  referenciaDocumento,
   type Documento,
+  ETIQUETA_TIPO,
+  eur,
+  FORMATO_TIPO,
+  referenciaDocumento,
 } from "@/lib/documentos";
+import { useSupabaseQuery } from "@/lib/useSupabaseQuery";
 
 export default function DocumentoDetallePage() {
   const toast = useToast();
@@ -24,7 +24,12 @@ export default function DocumentoDetallePage() {
   const id = params?.id;
 
   const { data: doc, loading: cargando } = useSupabaseQuery<Documento>(
-    (sb) => sb.from("documentos").select("*").eq("id", id ?? "").single(),
+    (sb) =>
+      sb
+        .from("documentos")
+        .select("*")
+        .eq("id", id ?? "")
+        .single(),
     { context: "documento", deps: [id], enabled: !!id },
   );
 
@@ -44,8 +49,12 @@ export default function DocumentoDetallePage() {
       });
       const imgData = canvas.toDataURL("image/png");
       if (esTicket) {
-        const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: [80, canvas.height * 80 / canvas.width] });
-        pdf.addImage(imgData, "PNG", 0, 0, 80, canvas.height * 80 / canvas.width);
+        const pdf = new jsPDF({
+          orientation: "portrait",
+          unit: "mm",
+          format: [80, (canvas.height * 80) / canvas.width],
+        });
+        pdf.addImage(imgData, "PNG", 0, 0, 80, (canvas.height * 80) / canvas.width);
         pdf.save(`${doc.referencia ?? "ticket"}.pdf`);
       } else {
         const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
@@ -77,12 +86,17 @@ export default function DocumentoDetallePage() {
     if (!previewRef.current || !doc) return;
     const html = previewRef.current.innerHTML;
     const w = window.open("", "_blank", "width=900,height=1100");
-    if (!w) { toast.err("El navegador bloqueó la ventana de impresión."); return; }
+    if (!w) {
+      toast.err("El navegador bloqueó la ventana de impresión.");
+      return;
+    }
     const esTicket = FORMATO_TIPO[doc.tipo] === "ticket";
     const css = esTicket
       ? "body{margin:0;background:#fff;padding:0;font-family:ui-monospace,Menlo,monospace}@page{size:80mm auto;margin:0}"
       : "body{margin:0;background:#f1f5f9;padding:24px;font-family:system-ui,sans-serif}@page{size:A4;margin:18mm}@media print{body{background:#fff;padding:0}}";
-    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${doc.referencia ?? ""}</title><style>${css}</style></head><body>${html}<script>window.onload=()=>window.print()</script></body></html>`);
+    w.document.write(
+      `<!doctype html><html><head><meta charset="utf-8"><title>${doc.referencia ?? ""}</title><style>${css}</style></head><body>${html}<script>window.onload=()=>window.print()</script></body></html>`,
+    );
     w.document.close();
   }
 
@@ -114,9 +128,7 @@ export default function DocumentoDetallePage() {
         <Link href="/documentos" className="inline-flex items-center gap-1.5 text-sm text-text-mid">
           <ArrowLeft size={14} /> Volver
         </Link>
-        <div className="card-glass p-6 text-center text-text-mid">
-          Documento no encontrado.
-        </div>
+        <div className="card-glass p-6 text-center text-text-mid">Documento no encontrado.</div>
       </div>
     );
   }
@@ -164,9 +176,15 @@ export default function DocumentoDetallePage() {
             disabled={generandoPDF}
             className="flex h-12 items-center justify-center gap-2 rounded-xl border border-cyan/40 bg-cyan/10 text-sm font-bold text-cyan hover:bg-cyan/20 disabled:opacity-60"
           >
-            {generandoPDF
-              ? <><Loader2 size={15} className="animate-spin" /> Generando…</>
-              : <><Download size={15} /> Descargar PDF</>}
+            {generandoPDF ? (
+              <>
+                <Loader2 size={15} className="animate-spin" /> Generando…
+              </>
+            ) : (
+              <>
+                <Download size={15} /> Descargar PDF
+              </>
+            )}
           </button>
           <button
             onClick={imprimirDocumento}
@@ -184,9 +202,9 @@ export default function DocumentoDetallePage() {
           <div className="mt-3 border-t border-indigo-400/15 pt-3 text-xs text-text-mid">
             <div className="section-label mb-2">Resumen</div>
             <Resumen label="Cliente" valor={doc.cliente_snapshot?.nombre ?? "—"} />
-            <Resumen label="Total"   valor={eur(Number(doc.total))} />
-            <Resumen label="Base"    valor={eur(Number(doc.base_imponible))} />
-            <Resumen label="IVA"     valor={eur(Number(doc.iva_total))} />
+            <Resumen label="Total" valor={eur(Number(doc.total))} />
+            <Resumen label="Base" valor={eur(Number(doc.base_imponible))} />
+            <Resumen label="IVA" valor={eur(Number(doc.iva_total))} />
             {Number(doc.irpf_total) > 0 && (
               <Resumen label="IRPF" valor={`− ${eur(Number(doc.irpf_total))}`} />
             )}

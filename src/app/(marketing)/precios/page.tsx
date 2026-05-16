@@ -1,12 +1,11 @@
+import { ArrowRight, Check, Sparkles } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Sparkles, Check, ArrowRight } from "lucide-react";
 import { PLANS_PUBLIC } from "@/lib/plans";
 
 export const metadata: Metadata = {
   title: "Precios",
-  description:
-    "Planes simples y transparentes. Empieza gratis y escala cuando crezcas.",
+  description: "Planes simples y transparentes. Empieza gratis y escala cuando crezcas.",
 };
 
 export default function PreciosPage() {
@@ -35,9 +34,7 @@ export default function PreciosPage() {
                 <Sparkles size={10} /> Recomendado
               </div>
             )}
-            <h2 className="font-display text-2xl font-bold text-text-hi">
-              {plan.nombre}
-            </h2>
+            <h2 className="font-display text-2xl font-bold text-text-hi">{plan.nombre}</h2>
             <p className="mt-1 text-sm text-text-mid">{plan.tagline}</p>
 
             <div className="mt-5 flex items-baseline gap-1">

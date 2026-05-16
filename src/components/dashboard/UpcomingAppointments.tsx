@@ -1,7 +1,7 @@
 "use client";
 
+import { ArrowRight, Calendar, MapPin } from "lucide-react";
 import Link from "next/link";
-import { Calendar, ArrowRight, MapPin } from "lucide-react";
 import type { AgendaEventoRow } from "@/lib/agenda";
 
 function formatHora(iso: string) {
@@ -11,10 +11,13 @@ function formatHora(iso: string) {
 function formatDiaCorto(iso: string) {
   const d = new Date(iso);
   const hoy = new Date();
-  const manana = new Date(hoy); manana.setDate(hoy.getDate() + 1);
+  const manana = new Date(hoy);
+  manana.setDate(hoy.getDate() + 1);
   const sameDay = (a: Date, b: Date) =>
-    a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
-  if (sameDay(d, hoy))    return "Hoy";
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate();
+  if (sameDay(d, hoy)) return "Hoy";
   if (sameDay(d, manana)) return "Mañana";
   return d.toLocaleDateString("es-ES", { weekday: "short", day: "numeric", month: "short" });
 }

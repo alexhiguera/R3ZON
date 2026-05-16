@@ -1,23 +1,23 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import Image from "next/image";
 import {
+  AlertCircle,
+  CheckCircle2,
   Loader2,
   Save,
-  Upload,
-  Trash2,
   ShieldCheck,
-  CheckCircle2,
-  AlertCircle,
+  Trash2,
+  Upload,
 } from "lucide-react";
-import { PageHeader } from "@/components/ui/PageHeader";
+import Image from "next/image";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { MisCitas } from "@/components/perfil/MisCitas";
+import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
+import { PageHeader } from "@/components/ui/PageHeader";
 import { createClient } from "@/lib/supabase/client";
-import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { formatSupabaseError } from "@/lib/supabase-errors";
-import { MisCitas } from "@/components/perfil/MisCitas";
 
 const AVATAR_BUCKET = "avatars";
 const AVATAR_MAX_BYTES = 2 * 1024 * 1024;
@@ -38,10 +38,7 @@ const PERMISOS_POR_ROL: Record<Rol, string[]> = {
     "Acceso a TPV, stock y agenda",
     "Sin acceso a facturación ni gestión de equipo",
   ],
-  miembro: [
-    "Lectura y edición limitada según asignación",
-    "Sin acceso a ajustes del negocio",
-  ],
+  miembro: ["Lectura y edición limitada según asignación", "Sin acceso a ajustes del negocio"],
 };
 
 type Toast = { kind: "ok" | "err"; msg: string } | null;
@@ -50,15 +47,15 @@ export default function PerfilPage() {
   const supabase = useMemo(() => createClient(), []);
 
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving]   = useState(false);
+  const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
 
-  const [userId, setUserId]     = useState<string>("");
-  const [email, setEmail]       = useState<string>("");
+  const [userId, setUserId] = useState<string>("");
+  const [email, setEmail] = useState<string>("");
   const [createdAt, setCreatedAt] = useState<string>("");
   const [displayName, setDisplayName] = useState<string>("");
   const [telefono, setTelefono] = useState<string>("");
-  const [puesto, setPuesto]     = useState<string>("");
+  const [puesto, setPuesto] = useState<string>("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [rol, setRol] = useState<Rol>("owner");
   const [negocio, setNegocio] = useState<string>("");
@@ -115,7 +112,9 @@ export default function PerfilPage() {
       }
       setLoading(false);
     })();
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+    };
   }, [supabase]);
 
   async function guardar() {
@@ -175,7 +174,8 @@ export default function PerfilPage() {
   async function quitarAvatar() {
     const ok = await confirmDialog({
       title: "Eliminar avatar",
-      message: "Tu foto de perfil se quitará de la cuenta. Podrás volver a subir una en cualquier momento.",
+      message:
+        "Tu foto de perfil se quitará de la cuenta. Podrás volver a subir una en cualquier momento.",
       confirmLabel: "Eliminar",
       tone: "warning",
     });
@@ -198,7 +198,11 @@ export default function PerfilPage() {
 
   const initials = (displayName || email || "U").slice(0, 2).toUpperCase();
   const altaFmt = createdAt
-    ? new Date(createdAt).toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" })
+    ? new Date(createdAt).toLocaleDateString("es-ES", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      })
     : "";
 
   return (
@@ -228,7 +232,13 @@ export default function PerfilPage() {
         <div className="card-glass flex flex-col items-center gap-4 p-5">
           <div className="relative h-32 w-32 overflow-hidden rounded-2xl border border-cyan/30 bg-gradient-to-br from-cyan/15 to-fuchsia/15">
             {avatarUrl ? (
-              <Image src={avatarUrl} alt={displayName || email} fill sizes="128px" className="object-cover" />
+              <Image
+                src={avatarUrl}
+                alt={displayName || email}
+                fill
+                sizes="128px"
+                className="object-cover"
+              />
             ) : (
               <span className="flex h-full w-full items-center justify-center font-display text-3xl font-bold text-cyan">
                 {initials}
@@ -322,7 +332,12 @@ export default function PerfilPage() {
           </span>
         </div>
         <p className="text-xs text-text-mid">
-          {negocio ? <>Negocio: <strong className="text-text-hi">{negocio}</strong>.</> : null} Tus permisos derivan del rol asignado.
+          {negocio ? (
+            <>
+              Negocio: <strong className="text-text-hi">{negocio}</strong>.
+            </>
+          ) : null}{" "}
+          Tus permisos derivan del rol asignado.
         </p>
         <ul className="space-y-1.5 text-sm text-text-mid">
           {PERMISOS_POR_ROL[rol].map((p) => (

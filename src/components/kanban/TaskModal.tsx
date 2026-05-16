@@ -1,18 +1,16 @@
 "use client";
 
+import { Calendar, CheckCircle, Flag, Loader2, Trash2, User, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import {
-  X, Loader2, Trash2, Calendar, Flag, User, CheckCircle,
-} from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
-import { useNegocioId } from "@/lib/useNegocioId";
-import { Help, Tooltip } from "@/components/ui/Tooltip";
 import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { Help, Tooltip } from "@/components/ui/Tooltip";
+import { type Columna, PRIORIDAD_META, type Tarea } from "@/lib/kanban";
+import { createClient } from "@/lib/supabase/client";
 import { formatSupabaseError } from "@/lib/supabase-errors";
-import { PRIORIDAD_META, type Columna, type Tarea } from "@/lib/kanban";
+import { useNegocioId } from "@/lib/useNegocioId";
 
 type Props = {
-  tarea: Partial<Tarea> | null;   // null = modo creación
+  tarea: Partial<Tarea> | null; // null = modo creación
   columnaActual: string;
   columnas: Columna[];
   onClose: () => void;
@@ -38,7 +36,9 @@ export function TaskModal({ tarea, columnaActual, columnas, onClose, onSave, onD
 
   // Cerrar con Escape
   useEffect(() => {
-    const fn = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    const fn = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
     window.addEventListener("keydown", fn);
     return () => window.removeEventListener("keydown", fn);
   }, [onClose]);
@@ -102,7 +102,9 @@ export function TaskModal({ tarea, columnaActual, columnas, onClose, onSave, onD
   return (
     <div
       ref={overlayRef}
-      onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
+      onClick={(e) => {
+        if (e.target === overlayRef.current) onClose();
+      }}
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-4 backdrop-blur-sm sm:items-center"
       role="dialog"
       aria-modal="true"
@@ -200,7 +202,9 @@ export function TaskModal({ tarea, columnaActual, columnas, onClose, onSave, onD
                 className="h-11 rounded-xl border border-indigo-400/20 bg-indigo-900/30 px-3 text-sm text-text-hi focus:border-cyan/50 focus:outline-none"
               >
                 {Object.entries(PRIORIDAD_META).map(([k, v]) => (
-                  <option key={k} value={k}>{v.label}</option>
+                  <option key={k} value={k}>
+                    {v.label}
+                  </option>
                 ))}
               </select>
             </label>

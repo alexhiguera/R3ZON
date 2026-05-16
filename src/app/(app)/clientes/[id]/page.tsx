@@ -1,33 +1,60 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
-import Link from "next/link";
 import {
-  ArrowLeft, Users, Calendar, Info, FileText, Wallet, MessageSquare,
-  Phone, Mail, MessageCircle, Loader2, Trash2, Building2, Globe,
+  ArrowLeft,
+  Building2,
+  Calendar,
+  FileText,
+  Globe,
+  Info,
+  Loader2,
+  Mail,
+  MessageCircle,
+  MessageSquare,
+  Phone,
+  Trash2,
+  Users,
+  Wallet,
 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
-import { Tooltip } from "@/components/ui/Tooltip";
-import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
-import { InfoTab } from "@/components/clientes/InfoTab";
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { ContactosTab } from "@/components/clientes/ContactosTab";
-import { TabHistorial } from "@/components/crm/TabHistorial";
+import { InfoTab } from "@/components/clientes/InfoTab";
+import type { Cliente, Contacto } from "@/components/clientes/types";
 import { TabComunicaciones } from "@/components/crm/TabComunicaciones";
 import { TabDocumentos } from "@/components/crm/TabDocumentos";
+import { TabHistorial } from "@/components/crm/TabHistorial";
 import { TabMovimientos } from "@/components/crm/TabMovimientos";
-import type { Cliente, Contacto } from "@/components/clientes/types";
+import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { Tooltip } from "@/components/ui/Tooltip";
+import { createClient } from "@/lib/supabase/client";
 import { ESTADO_CLIENTE_BADGE } from "@/lib/ui-constants";
 
 type Tab = "info" | "contactos" | "citas" | "comunicaciones" | "documentos" | "movimientos";
 
 const TABS: { id: Tab; label: string; Icon: typeof Info; tooltip: string }[] = [
-  { id: "info",           label: "Información",    Icon: Info,          tooltip: "Datos fiscales y de contacto." },
-  { id: "contactos",      label: "Contactos",      Icon: Users,         tooltip: "Personas dentro de esta empresa." },
-  { id: "citas",          label: "Historial",      Icon: Calendar,      tooltip: "Citas pasadas y futuras." },
-  { id: "comunicaciones", label: "Comunicaciones", Icon: MessageSquare, tooltip: "Notas, emails y acciones con este cliente." },
-  { id: "documentos",     label: "Documentos",     Icon: FileText,      tooltip: "Facturas, presupuestos y albaranes." },
-  { id: "movimientos",    label: "Movimientos",    Icon: Wallet,        tooltip: "Ingresos y gastos asociados." },
+  { id: "info", label: "Información", Icon: Info, tooltip: "Datos fiscales y de contacto." },
+  { id: "contactos", label: "Contactos", Icon: Users, tooltip: "Personas dentro de esta empresa." },
+  { id: "citas", label: "Historial", Icon: Calendar, tooltip: "Citas pasadas y futuras." },
+  {
+    id: "comunicaciones",
+    label: "Comunicaciones",
+    Icon: MessageSquare,
+    tooltip: "Notas, emails y acciones con este cliente.",
+  },
+  {
+    id: "documentos",
+    label: "Documentos",
+    Icon: FileText,
+    tooltip: "Facturas, presupuestos y albaranes.",
+  },
+  {
+    id: "movimientos",
+    label: "Movimientos",
+    Icon: Wallet,
+    tooltip: "Ingresos y gastos asociados.",
+  },
 ];
 
 export default function FichaClientePage() {
@@ -42,11 +69,7 @@ export default function FichaClientePage() {
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase
-        .from("clientes")
-        .select("*")
-        .eq("id", id)
-        .single();
+      const { data } = await supabase.from("clientes").select("*").eq("id", id).single();
       setCliente((data as Cliente | null) ?? null);
       setCargando(false);
     })();
@@ -56,7 +79,8 @@ export default function FichaClientePage() {
     if (!cliente) return;
     const ok = await confirmDialog({
       title: `Eliminar a ${cliente.nombre}`,
-      message: "Se borrarán también sus contactos y vínculos asociados. Esta acción no se puede deshacer.",
+      message:
+        "Se borrarán también sus contactos y vínculos asociados. Esta acción no se puede deshacer.",
       confirmLabel: "Eliminar cliente",
       tone: "danger",
     });
@@ -76,7 +100,9 @@ export default function FichaClientePage() {
     return (
       <div className="text-center text-text-mid">
         <p>Cliente no encontrado.</p>
-        <Link href="/clientes" className="text-cyan hover:underline">Volver</Link>
+        <Link href="/clientes" className="text-cyan hover:underline">
+          Volver
+        </Link>
       </div>
     );
   }
@@ -101,16 +127,34 @@ export default function FichaClientePage() {
           <div className="flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="font-display text-2xl font-bold text-text-hi">{cliente.nombre}</h1>
-              <span className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${ESTADO_CLIENTE_BADGE[cliente.estado]}`}>
+              <span
+                className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${ESTADO_CLIENTE_BADGE[cliente.estado]}`}
+              >
                 {cliente.estado}
               </span>
             </div>
             <div className="accent-bar mt-1.5" style={{ width: 48 }} />
             <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-xs text-text-lo">
-              {cliente.cif && <span className="inline-flex items-center gap-1"><Building2 size={11} /> {cliente.cif}</span>}
-              {cliente.email && <span className="inline-flex items-center gap-1"><Mail size={11} /> {cliente.email}</span>}
-              {cliente.telefono && <span className="inline-flex items-center gap-1"><Phone size={11} /> {cliente.telefono}</span>}
-              {cliente.sitio_web && <span className="inline-flex items-center gap-1"><Globe size={11} /> {cliente.sitio_web}</span>}
+              {cliente.cif && (
+                <span className="inline-flex items-center gap-1">
+                  <Building2 size={11} /> {cliente.cif}
+                </span>
+              )}
+              {cliente.email && (
+                <span className="inline-flex items-center gap-1">
+                  <Mail size={11} /> {cliente.email}
+                </span>
+              )}
+              {cliente.telefono && (
+                <span className="inline-flex items-center gap-1">
+                  <Phone size={11} /> {cliente.telefono}
+                </span>
+              )}
+              {cliente.sitio_web && (
+                <span className="inline-flex items-center gap-1">
+                  <Globe size={11} /> {cliente.sitio_web}
+                </span>
+              )}
             </div>
           </div>
           {/* Acciones rápidas */}
@@ -179,9 +223,9 @@ export default function FichaClientePage() {
       </div>
 
       {/* Contenido de la pestaña */}
-      {tab === "info"      && <InfoTab cliente={cliente} onUpdate={setCliente} />}
+      {tab === "info" && <InfoTab cliente={cliente} onUpdate={setCliente} />}
       {tab === "contactos" && <ContactosTabWrapper clienteId={id} negocioId={cliente.negocio_id} />}
-      {tab === "citas"     && <TabHistorial clienteId={id} clienteNombre={cliente.nombre} />}
+      {tab === "citas" && <TabHistorial clienteId={id} clienteNombre={cliente.nombre} />}
       {tab === "comunicaciones" && (
         <TabComunicaciones
           clienteId={id}
@@ -200,7 +244,7 @@ export default function FichaClientePage() {
 function ContactosTabWrapper({ clienteId, negocioId }: { clienteId: string; negocioId: string }) {
   const supabase = createClient();
   const [contactos, setContactos] = useState<Contacto[]>([]);
-  const [cargando, setCargando]   = useState(true);
+  const [cargando, setCargando] = useState(true);
 
   useEffect(() => {
     (async () => {

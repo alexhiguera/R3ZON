@@ -1,7 +1,7 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import { Loader2 } from "lucide-react";
+import dynamic from "next/dynamic";
 
 // `@fullcalendar/*` pesa ~450 KB. Lo diferimos a cliente con un skeleton para
 // que la navegación a /citas muestre el shell inmediatamente.

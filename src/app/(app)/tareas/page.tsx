@@ -1,38 +1,38 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  closestCorners,
   DndContext,
+  type DragEndEvent,
+  type DragOverEvent,
   DragOverlay,
+  type DragStartEvent,
   PointerSensor,
   TouchSensor,
+  useDroppable,
   useSensor,
   useSensors,
-  useDroppable,
-  closestCorners,
-  type DragStartEvent,
-  type DragOverEvent,
-  type DragEndEvent,
 } from "@dnd-kit/core";
 import {
-  SortableContext,
   arrayMove,
+  horizontalListSortingStrategy,
+  SortableContext,
   useSortable,
   verticalListSortingStrategy,
-  horizontalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Plus, Settings2, Loader2, Kanban, GripHorizontal } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
-import { PageHeader } from "@/components/ui/PageHeader";
-import { Tooltip } from "@/components/ui/Tooltip";
-import { useToast } from "@/components/ui/Toast";
-import { usePlan, haAlcanzadoLimite } from "@/lib/usePlan";
+import { GripHorizontal, Kanban, Loader2, Plus, Settings2 } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ColumnManager } from "@/components/kanban/ColumnManager";
+import { InlineTaskAdder } from "@/components/kanban/InlineTaskAdder";
 import { TaskCard } from "@/components/kanban/TaskCard";
 import { TaskModal } from "@/components/kanban/TaskModal";
-import { InlineTaskAdder } from "@/components/kanban/InlineTaskAdder";
-import { ColumnManager } from "@/components/kanban/ColumnManager";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { useToast } from "@/components/ui/Toast";
+import { Tooltip } from "@/components/ui/Tooltip";
 import { type Columna, type Tarea } from "@/lib/kanban";
+import { createClient } from "@/lib/supabase/client";
+import { haAlcanzadoLimite, usePlan } from "@/lib/usePlan";
 
 // Prefijo para distinguir el id sortable de columna del slug usado en
 // la zona droppable de tareas. Así un mismo `slug` no choca consigo mismo.
@@ -88,9 +88,10 @@ function SortableColumn({
       ref={setNodeRef}
       style={style}
       className={`flex w-72 shrink-0 flex-col gap-2 rounded-2xl border p-3 transition-colors lg:w-80
-        ${isOver
-          ? "border-cyan/50 bg-cyan/5 shadow-lg shadow-cyan/10"
-          : "border-indigo-400/15 bg-indigo-900/20"
+        ${
+          isOver
+            ? "border-cyan/50 bg-cyan/5 shadow-lg shadow-cyan/10"
+            : "border-indigo-400/15 bg-indigo-900/20"
         }`}
     >
       {/* Header — activador del drag horizontal de la columna */}
@@ -109,9 +110,7 @@ function SortableColumn({
             className="h-2.5 w-2.5 shrink-0 rounded-full"
             style={{ backgroundColor: col.color }}
           />
-          <span className="truncate font-display text-sm font-bold text-text-hi">
-            {col.nombre}
-          </span>
+          <span className="truncate font-display text-sm font-bold text-text-hi">{col.nombre}</span>
           <span className="rounded-full border border-indigo-400/20 bg-indigo-900/40 px-1.5 py-0.5 text-[0.6rem] font-semibold text-text-lo">
             {tareas.length}
           </span>
@@ -128,14 +127,8 @@ function SortableColumn({
       </div>
 
       {/* Zona de drop para tareas */}
-      <div
-        ref={setDropRef}
-        className="flex min-h-[80px] flex-col gap-2"
-      >
-        <SortableContext
-          items={tareas.map((t) => t.id)}
-          strategy={verticalListSortingStrategy}
-        >
+      <div ref={setDropRef} className="flex min-h-[80px] flex-col gap-2">
+        <SortableContext items={tareas.map((t) => t.id)} strategy={verticalListSortingStrategy}>
           {tareas.map((t) => (
             <TaskCard key={t.id} tarea={t} onClick={() => onTaskClick(t)} />
           ))}
@@ -187,10 +180,7 @@ export default function TareasPage() {
   const cargar = useCallback(async () => {
     const [{ data: cols, error: eCols }, { data: tk, error: eTk }] = await Promise.all([
       supabase.from("kanban_columnas").select("*").order("posicion"),
-      supabase.from("tareas_kanban")
-        .select("*")
-        .eq("completada", false)
-        .order("posicion"),
+      supabase.from("tareas_kanban").select("*").eq("completada", false).order("posicion"),
     ]);
     if (eCols || eTk) {
       toast.err("No se pudieron cargar las tareas. Comprueba tu conexión e inténtalo de nuevo.");
@@ -200,11 +190,15 @@ export default function TareasPage() {
     setCargando(false);
   }, [toast]);
 
-  useEffect(() => { cargar(); }, [cargar]);
+  useEffect(() => {
+    cargar();
+  }, [cargar]);
 
   const tareasPorColumna = useMemo(() => {
     const map: Record<string, Tarea[]> = {};
-    columnas.forEach((c) => { map[c.slug] = []; });
+    columnas.forEach((c) => {
+      map[c.slug] = [];
+    });
     tareas.forEach((t) => {
       if (map[t.columna]) map[t.columna].push(t);
       else if (columnas.length > 0) {
@@ -216,7 +210,7 @@ export default function TareasPage() {
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } })
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } }),
   );
 
   // Encuentra el slug de columna que contiene una tarjeta o equivale a un id de columna.
@@ -247,13 +241,11 @@ export default function TareasPage() {
     const dstCol = findContainer(over.id as string);
     if (!srcCol || !dstCol || srcCol === dstCol) return;
 
-    setTareas((prev) =>
-      prev.map((t) => (t.id === active.id ? { ...t, columna: dstCol } : t))
-    );
+    setTareas((prev) => prev.map((t) => (t.id === active.id ? { ...t, columna: dstCol } : t)));
   }
 
   async function persistTareasBatch(
-    afectadas: { id: string; columna: string; posicion: number }[]
+    afectadas: { id: string; columna: string; posicion: number }[],
   ) {
     if (afectadas.length === 0) return;
     const { error } = await supabase.rpc("reordenar_tareas_batch", {
@@ -266,9 +258,13 @@ export default function TareasPage() {
         afectadas.map((u) =>
           supabase
             .from("tareas_kanban")
-            .update({ columna: u.columna, posicion: u.posicion, updated_at: new Date().toISOString() })
-            .eq("id", u.id)
-        )
+            .update({
+              columna: u.columna,
+              posicion: u.posicion,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", u.id),
+        ),
       );
     }
   }
@@ -282,8 +278,8 @@ export default function TareasPage() {
       console.warn("RPC batch columnas no disponible, fallback paralelo:", error.message);
       await Promise.all(
         updates.map((u) =>
-          supabase.from("kanban_columnas").update({ posicion: u.posicion }).eq("id", u.id)
-        )
+          supabase.from("kanban_columnas").update({ posicion: u.posicion }).eq("id", u.id),
+        ),
       );
     }
   }
@@ -309,9 +305,7 @@ export default function TareasPage() {
       }));
       setColumnas(reordered);
       try {
-        await persistColumnasBatch(
-          reordered.map((c) => ({ id: c.id, posicion: c.posicion }))
-        );
+        await persistColumnasBatch(reordered.map((c) => ({ id: c.id, posicion: c.posicion })));
       } catch (err) {
         console.error("Persistir columnas:", err);
       }
@@ -340,7 +334,7 @@ export default function TareasPage() {
       });
       try {
         await persistTareasBatch(
-          reordenadas.map((t) => ({ id: t.id, columna: t.columna, posicion: t.posicion }))
+          reordenadas.map((t) => ({ id: t.id, columna: t.columna, posicion: t.posicion })),
         );
       } catch (err) {
         console.error("Persistir orden tareas:", err);
@@ -377,7 +371,7 @@ export default function TareasPage() {
           id: t.id,
           columna: t.columna,
           posicion: t.posicion,
-        }))
+        })),
       );
     } catch (err) {
       console.error("Persistir cambio de columna:", err);
@@ -402,9 +396,7 @@ export default function TareasPage() {
   const onSaveTarea = (saved: Tarea) => {
     setTareas((prev) => {
       const existe = prev.find((t) => t.id === saved.id);
-      return existe
-        ? prev.map((t) => (t.id === saved.id ? saved : t))
-        : [saved, ...prev];
+      return existe ? prev.map((t) => (t.id === saved.id ? saved : t)) : [saved, ...prev];
     });
   };
 
@@ -423,19 +415,24 @@ export default function TareasPage() {
 
       {/* Banner de límite plan Free */}
       {plan === "free" && limites.tareas !== null && (
-        <div className={`flex items-center justify-between gap-4 rounded-2xl border px-4 py-3 text-sm ${
-          tareaLimiteAlcanzado
-            ? "border-danger/30 bg-danger/10 text-danger"
-            : contadores.tareas >= limites.tareas - 2
-            ? "border-warn/30 bg-warn/10 text-warn"
-            : "border-indigo-400/20 bg-indigo-900/20 text-text-mid"
-        }`}>
+        <div
+          className={`flex items-center justify-between gap-4 rounded-2xl border px-4 py-3 text-sm ${
+            tareaLimiteAlcanzado
+              ? "border-danger/30 bg-danger/10 text-danger"
+              : contadores.tareas >= limites.tareas - 2
+                ? "border-warn/30 bg-warn/10 text-warn"
+                : "border-indigo-400/20 bg-indigo-900/20 text-text-mid"
+          }`}
+        >
           <span>
             {tareaLimiteAlcanzado
               ? `Has alcanzado el límite de ${limites.tareas} tareas activas del plan Free.`
               : `Plan Free: ${contadores.tareas} / ${limites.tareas} tareas activas.`}
           </span>
-          <a href="/ajustes?tab=suscripcion" className="shrink-0 rounded-lg border border-current px-3 py-1 text-xs font-semibold hover:opacity-80">
+          <a
+            href="/ajustes?tab=suscripcion"
+            className="shrink-0 rounded-lg border border-current px-3 py-1 text-xs font-semibold hover:opacity-80"
+          >
             Mejorar plan
           </a>
         </div>
@@ -456,9 +453,11 @@ export default function TareasPage() {
         </Tooltip>
         {columnas[0] && (
           <Tooltip
-            text={tareaLimiteAlcanzado
-              ? `Límite del plan Free: ${limites.tareas} tareas activas. Mejora tu plan.`
-              : "Crea una nueva tarea en la primera columna."}
+            text={
+              tareaLimiteAlcanzado
+                ? `Límite del plan Free: ${limites.tareas} tareas activas. Mejora tu plan.`
+                : "Crea una nueva tarea en la primera columna."
+            }
             side="bottom"
           >
             <button
@@ -483,8 +482,8 @@ export default function TareasPage() {
           <Kanban size={32} className="text-indigo-400/30" />
           <div className="font-display text-lg font-bold">Sin columnas</div>
           <p className="max-w-xs text-sm text-text-mid">
-            Configura tu primer flujo creando las columnas que necesitas
-            (por ejemplo: Pendiente · En curso · Hecho).
+            Configura tu primer flujo creando las columnas que necesitas (por ejemplo: Pendiente ·
+            En curso · Hecho).
           </p>
           <button
             onClick={() => setShowColMgr(true)}
@@ -524,7 +523,9 @@ export default function TareasPage() {
             </div>
           </SortableContext>
 
-          <DragOverlay dropAnimation={{ duration: 220, easing: "cubic-bezier(0.18,0.67,0.6,1.22)" }}>
+          <DragOverlay
+            dropAnimation={{ duration: 220, easing: "cubic-bezier(0.18,0.67,0.6,1.22)" }}
+          >
             {activeTarea ? (
               <TaskCard tarea={activeTarea} onClick={() => {}} isDragOverlay />
             ) : activeCol ? (
