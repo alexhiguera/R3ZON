@@ -389,7 +389,10 @@ export default function NuevoDocumentoPage() {
 
   function enviarPorEmail() {
     if (!generado || !tipo) return;
-    const destinatario = cliente.email ?? "";
+    // Valida y escapa el destinatario para evitar header injection (CRLF, &cc=…).
+    const emailRaw = (cliente.email ?? "").trim();
+    const emailValido = /^[^\s<>"'`]+@[^\s<>"'`]+\.[^\s<>"'`]+$/.test(emailRaw);
+    const destinatario = emailValido ? encodeURIComponent(emailRaw) : "";
     const asunto = encodeURIComponent(
       `${ETIQUETA_TIPO[tipo]} ${generado.referencia} — ${emisor.nombre}`,
     );

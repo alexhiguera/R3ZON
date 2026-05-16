@@ -7,6 +7,18 @@ Historial cronológico de **R3ZON ANTARES** ordenado de más reciente a más ant
 ---
 
 
+### Iteración 66 — *2026-05-16* — Seguridad: filtración de PAT en wiki + mailto injection + fix sync-wiki.sh
+
+GitHub Secret Scanning detectó un Personal Access Token expuesto, además de dos alertas de CodeQL. Auditoría y reparación en tres frentes.
+
+- **🚨 PAT filtrado en el repo Wiki** — el footer que [scripts/sync-wiki.sh](scripts/sync-wiki.sh) añadía a cada página construía la URL del "blob original" a partir de `$REMOTE`, que en GitHub Actions venía autenticado como `https://x-access-token:${GH_PAT}@github.com/…`. Resultado: el PAT acabó embebido en 9 páginas del wiki, incluido el commit `480a3a1`. Fix en dos pasos:
+  - Script corregido: nuevo `REPO_SLUG` derivado de `GITHUB_REPOSITORY` (o sanitización del remote) que se usa para componer `REPO_BLOB="https://github.com/${REPO_SLUG}/blob/main"`, garantizando que ninguna URL con credenciales entre en los `.md` ni en los logs.
+  - Wiki saneado en remoto: rama `master` reescrita como orphan vía force-push tras limpiar los 9 archivos. El historial git que contenía el PAT ya no es accesible desde HEAD.
+  - **Acción pendiente del usuario**: rotar el PAT en GitHub Settings → Developer settings y actualizar el secret `GH_PAT` del repo. Asumir el token como comprometido aunque ya no aparezca en el wiki.
+- **mailto injection en documentos/nuevo** ([src/app/(app)/documentos/nuevo/page.tsx:402](src/app/(app)/documentos/nuevo/page.tsx#L402)) — el destinatario del correo (`cliente.email`) iba sin escapar en la URL `mailto:`, permitiendo header injection (`\r\n`, `&cc=…`, `&bcc=…`). Ahora se valida con regex y se aplica `encodeURIComponent` igual que a `subject` y `body`. Si el email no es válido, se deja vacío en lugar de propagar input no confiable.
+- **Clear-text logging** — pendiente del path exacto que indique CodeQL para arreglar puntualmente. Candidatos identificados (sin tocar todavía): callback OAuth de Google, webhook de Stripe y `api-handler` que loguea stacks completos.
+
+
 ### Iteración 65 — *2026-05-15* — GitHub Actions: CI, wiki sync, backup Supabase, seguridad + fix primer run
 
 Se automatizan los flujos críticos del repo mediante GitHub Actions. Cuatro workflows en [.github/workflows/](.github/workflows/), todos sobre `ubuntu-latest` y con notificaciones a Discord en los puntos relevantes. Tras pushear, las primeras runs fallaron — se diagnosticaron vía API pública de GitHub y se repararon en una segunda pasada.

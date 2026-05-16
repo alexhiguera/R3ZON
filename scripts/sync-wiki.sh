@@ -53,7 +53,25 @@ else
   [[ -z "$ORIGIN" ]] && fail "No hay remote 'origin' en este repo. Define WIKI_REMOTE=..."
   REMOTE="${ORIGIN%.git}.wiki.git"
 fi
-log "Remote de la wiki: ${C_DIM}$REMOTE${C_RST}"
+
+# Identificar el repo "owner/name" SIN credenciales para los links del footer.
+# Prioridad: GITHUB_REPOSITORY (env de Actions) > parseo del REMOTE saneado.
+if [[ -n "${GITHUB_REPOSITORY:-}" ]]; then
+  REPO_SLUG="$GITHUB_REPOSITORY"
+else
+  # Quita user:token@ y .wiki.git para dejar solo host/owner/name.
+  CLEAN_REMOTE="${REMOTE#https://}"
+  CLEAN_REMOTE="${CLEAN_REMOTE#git@}"
+  CLEAN_REMOTE="${CLEAN_REMOTE#*@}"            # elimina x-access-token:TOKEN@
+  CLEAN_REMOTE="${CLEAN_REMOTE%.wiki.git}"
+  CLEAN_REMOTE="${CLEAN_REMOTE%.git}"
+  CLEAN_REMOTE="${CLEAN_REMOTE/:/\/}"          # SSH-style host:owner → host/owner
+  REPO_SLUG="${CLEAN_REMOTE#*/}"               # owner/name
+fi
+
+# Log con la URL del remote saneada (sin credenciales) para evitar logs con secretos.
+SAFE_REMOTE="https://github.com/${REPO_SLUG}.wiki.git"
+log "Remote de la wiki: ${C_DIM}$SAFE_REMOTE${C_RST}"
 
 # --- 2. clonar la wiki en un directorio temporal -------------------------------
 TMP="$(mktemp -d -t r3zon-wiki-XXXXXX)"
@@ -97,7 +115,9 @@ for pair in "${PAIRS[@]}"; do
   # Reescribe links docs/X.md → [[X]] (formato GitHub wiki) y elimina prefijo docs/.
   # 1) `docs/FOO.md` → `FOO.md` (en links). 2) `FOO.md` (link relativo entre docs) → `FOO`.
   # 3) `../package.json` y demás paths del repo se convierten en links a blob/main.
-  REPO_BLOB="${REMOTE%.wiki.git}/blob/main"
+  # IMPORTANTE: usa REPO_SLUG (sin credenciales), nunca REMOTE — REMOTE puede
+  # contener `x-access-token:GH_PAT@…` y acabaría embebido en los .md del wiki.
+  REPO_BLOB="https://github.com/${REPO_SLUG}/blob/main"
   python3 - "$SRC" "$TMP/$DEST" "$NOW" "$COMMIT_SHA" "$REPO_BLOB" <<'PY'
 import re, sys, pathlib
 
