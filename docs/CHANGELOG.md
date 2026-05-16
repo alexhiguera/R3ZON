@@ -7,6 +7,23 @@ Historial cronológico de **R3ZON ANTARES** ordenado de más reciente a más ant
 ---
 
 
+### Iteración 80 — *2026-05-17* — OCR: preview a tamaño completo, selector gasto/ingreso, guardado en dos modos
+
+Cuatro mejoras pedidas en el flujo de revisión de facturas escaneadas.
+
+- **Selector de tipo (gasto / ingreso)** ([src/app/(app)/ocr/page.tsx](src/app/(app)/ocr/page.tsx)) — antes la página asumía que toda factura escaneada era un *gasto* y hardcodeaba `tipo: "gasto"` al insertar en `finanzas`. Añadido un segmented control "¿Esta factura es…?" con dos opciones (rojo para Gasto, verde para Ingreso) que se inicializa en `gasto` por defecto. El `concepto` por defecto también se adapta al tipo elegido (`"Ingreso escaneado"` vs `"Gasto escaneado"`).
+- **Dos modos de guardado** — antes un único botón "Guardar gasto" insertaba con `estado_pago: 'pagado'`, lo que cambiaba inmediatamente la contabilidad real. Eso era agresivo: una factura recibida en PDF no implica que esté pagada. Ahora dos botones:
+  - **"Guardar entrada"** — secundario (cyan outline). Inserta con `estado_pago: 'pendiente'`. La factura queda archivada y visible en `/finanzas` pero **no cuenta en el balance** (los dashboards filtran por estado).
+  - **"Añadir a las cuentas"** — primario (`cyan→fuchsia`). Inserta con `estado_pago: 'pagado'`. Sí impacta en la contabilidad.
+
+  El loader del botón pulsado distingue cuál de los dos está guardando (`modoGuardado` state). Por debajo se sigue usando la tabla `finanzas` — el patrón `estado_pago: 'pendiente'` ya estaba en uso en `useDocumentoEditor.ts`, así que no hizo falta migración.
+- **Microcopy explicativo** debajo del bloque de fechas: *"Por defecto guardamos esta factura como pendiente — queda registrada pero no afecta a tus cuentas todavía"*. Ayuda a que el usuario no se asuste pensando que su balance ha cambiado sin querer.
+- **Previsualización a tamaño completo** — el preview lateral era una `<img>` limitada a 400 px de alto. Ahora envuelta en `<button>` que abre un lightbox full-screen (`fixed inset-0 z-[80] bg-bg/95 backdrop-blur`) con la imagen a `max-h-92vh` y un botón X arriba a la derecha. Cierre con click fuera, click en X o tecla `Escape` (listener añadido vía `useEffect`). Un botón "Ver tamaño completo" siempre visible debajo del preview para discoverabilidad — no solo on-hover. Para PDFs, en vez de lightbox abre el PDF en pestaña nueva (`window.open(archivoUrl, "_blank")`), ya que `<img>` no renderiza PDFs.
+- **Card de preview para PDFs** — antes el `<div>` del preview desaparecía cuando el archivo era PDF. Ahora se mantiene visible con un placeholder ("PDF cargado" + icono `FileText` magenta) para que el usuario tenga el botón "Ver tamaño completo" siempre a mano.
+- **Limpieza** — `reset()` ahora hace `URL.revokeObjectURL(archivoUrl)` para no fugar blobs cuando el usuario escanea varias facturas seguidas.
+- **Verificación**: lint ✅ · typecheck ✅.
+
+
 ### Iteración 79 — *2026-05-17* — OCR ahora admite PDFs (la mayoría de facturas)
 
 El usuario reportó que la iteración 73 quitó el soporte de PDF y la mayoría de facturas españolas llegan así. Reintroducido con un flujo en dos fases para no romper el coste-cero.
