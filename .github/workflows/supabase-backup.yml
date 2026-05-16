@@ -70,8 +70,30 @@ jobs:
             exit 1
           fi
 
-          # Normaliza URL (quita trailing slash).
+          # Normaliza URL: quita trailing slash y un /rest/v1 final si por
+          # error se guardó incluido en el secret (causa 404 al concatenar).
           BASE="${SUPABASE_URL%/}"
+          BASE="${BASE%/rest/v1}"
+          BASE="${BASE%/}"
+
+          # Forma del host (sin exponer el secret completo): debe parecer
+          # `https://xxx.supabase.co`. Si el host está mal, todas las tablas
+          # darán 404 — esto al menos nos permite detectarlo antes.
+          HOST="$(echo "$BASE" | sed -E 's|^(https?://[^/]+).*|\1|')"
+          echo "ℹ️ Endpoint: ${HOST}/rest/v1/<tabla>"
+
+          # Sondeo previo: si el endpoint base ya devuelve no-200, ni siquiera
+          # tiene sentido iterar — aborta con mensaje claro.
+          ROOT_HTTP=$(curl -sS -o /dev/null -w "%{http_code}" \
+            -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
+            "$BASE/rest/v1/")
+          if [[ "$ROOT_HTTP" != "200" ]]; then
+            echo "❌ El endpoint REST no responde 200 (got $ROOT_HTTP)."
+            echo "   Comprueba que el secret SUPABASE_URL sea exactamente la URL"
+            echo "   del proyecto (sin /rest/v1, sin trailing slash) y que la"
+            echo "   service_role key corresponda a ese proyecto."
+            exit 1
+          fi
 
           FALLOS=()
           OK=0

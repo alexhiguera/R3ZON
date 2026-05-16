@@ -16,7 +16,6 @@ on:
 
 permissions:
   contents: read
-  security-events: write # CodeQL sube alertas a la pestaña Security
 
 jobs:
   npm-audit:
@@ -33,14 +32,7 @@ jobs:
       - name: Audit (falla si hay vulns high/critical)
         run: npm audit --audit-level=high
 
-  codeql:
-    name: CodeQL (JS/TS)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: github/codeql-action/init@v3
-        with:
-          languages: javascript-typescript
-      - uses: github/codeql-action/analyze@v3
-        with:
-          category: "/language:javascript-typescript"
+  # CodeQL — corre como Default Setup desde Settings → Code scanning,
+  # no como job de Actions, para no chocar con la configuración avanzada
+  # (no se pueden tener las dos). Si quieres reglas custom mueve a Advanced
+  # y borra el Default Setup primero.
