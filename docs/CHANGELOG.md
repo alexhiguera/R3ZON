@@ -7,6 +7,20 @@ Historial cronológico de **R3ZON ANTARES** ordenado de más reciente a más ant
 ---
 
 
+### Iteración 70 — *2026-05-16* — Auditoría 2.0: CI/CD verde, Vercel conectado, fix de `rls_auto_enable` expuesto
+
+Segunda pasada de auditoría completa tras los arreglos. Estado de salud confirmado en código, GitHub Actions, Vercel y Supabase.
+
+- **Hallazgo crítico nuevo y arreglado**: `public.rls_auto_enable()` era un event trigger interno (auto-habilita RLS al crear tablas) pero estaba **expuesto vía `/rest/v1/rpc/rls_auto_enable` accesible al rol `anon`** (sin login). Un atacante sin credenciales podía dispararlo. Fix aplicado con `REVOKE EXECUTE ... FROM PUBLIC, anon, authenticated` ([supabase/migrations/20260516120000_revoke_rls_auto_enable.sql](supabase/migrations/20260516120000_revoke_rls_auto_enable.sql)) — el event trigger sigue disparándose internamente (no necesita EXECUTE) pero ya no es invocable manualmente.
+- **Migración SECURITY DEFINER → INVOKER confirmada aplicada**: las 5 funciones (`save_user_theme`, `reordenar_tarea`, `reordenar_tareas_batch`, `reordenar_columnas_batch`, `registrar_fichaje`) ya no aparecen en el advisor. Advisor pasó de 22 a 17 warnings DEFINER + 1 leaked-password.
+- **GitHub Actions verde**: CI #8 ✅ · Security #7 ✅ · Wiki sync ✅ · Push on main ✅. Pendiente: nueva ejecución del backup (cron diario o manual). El último Backup #1 falló por URL/secret del `SUPABASE_URL`; ahora el workflow normaliza y reporta tabla por tabla.
+- **Vercel auditado** (proyecto `r3-zon-business-operating-system-j5n6`, dominio `antares.r3zon.com`): últimos 20 deploys todos READY, runtime Node 24.x con Turbopack, solo 2 lambdas. Único `state: ERROR` fue el deploy accidental de la rama `backups` (no-main), corregido al ignorar esa rama (`vercel.json` o settings → git → ignored branches; aún no aplicado).
+- **`leaked_password_protection` sigue OFF** según el advisor — verificar en Supabase Dashboard → Authentication → Policies que realmente esté el toggle activado.
+- **17 SECURITY DEFINER restantes** son todas legítimas (pgcrypto para tokens cifrados, lectura cross-schema, RPC atómicas para numeración AEAT…). No son vulnerabilidad activa, solo defensa-en-profundidad pendiente.
+- **Performance**: 14 índices sin usar (eran 18 — algunos ya se están utilizando con el uso real). Sigue siendo prematuro tocarlos.
+- **Repo**: `npm audit` 0 vulns, lint 0 errores, typecheck limpio, 138/138 tests verdes.
+
+
 ### Iteración 69 — *2026-05-16* — Refactor de los dos componentes gigantes + tests de mailto
 
 Los dos archivos más grandes del proyecto, ambos críticos del flujo comercial, partidos en hooks + componentes sin cambios de comportamiento.
