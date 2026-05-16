@@ -1,5 +1,5 @@
-import { Analytics } from "@vercel/analytics/next";
 import type { Metadata, Viewport } from "next";
+import { ConsentGate } from "@/components/legal/ConsentGate";
 import { A11Y_BOOT_SCRIPT } from "@/lib/a11y-prefs";
 import "./globals.css";
 
@@ -124,7 +124,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         {children}
-        <Analytics />
+        <ConsentGate />
       </body>
     </html>
   );

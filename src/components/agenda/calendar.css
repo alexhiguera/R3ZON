@@ -217,3 +217,57 @@
 .r3zon-calendar .fc-highlight {
   background: rgba(232, 121, 249, 0.18);
 }
+
+/* =========================================================================
+   Modo claro — FullCalendar
+   Los tokens internos de FC estaban hardcodeados en azul oscuro semi-
+   transparente, que en fondo blanco quedaban ilegibles. Repintamos solo lo
+   que cambia (no cambiamos eventos/destacados, que ya tienen suficiente
+   contraste por su gradiente).
+   ========================================================================= */
+html.light .r3zon-calendar {
+  --fc-border-color: rgba(15, 23, 42, 0.1);
+  --fc-neutral-bg-color: rgba(241, 245, 249, 0.85);
+  --fc-neutral-text-color: rgb(30, 41, 59);
+  --fc-today-bg-color: rgba(34, 211, 238, 0.12);
+  --fc-button-bg-color: rgba(255, 255, 255, 0.9);
+  --fc-button-border-color: rgba(15, 23, 42, 0.12);
+  --fc-button-hover-bg-color: rgba(241, 245, 249, 0.95);
+  --fc-button-hover-border-color: rgba(15, 23, 42, 0.2);
+  --fc-button-text-color: rgb(15, 23, 42);
+  --fc-list-event-hover-bg-color: rgba(99, 102, 241, 0.08);
+  color: rgb(15, 23, 42);
+}
+html.light .r3zon-calendar .fc-toolbar-title {
+  color: rgb(15, 23, 42);
+}
+html.light .r3zon-calendar .fc-scrollgrid {
+  background: rgba(255, 255, 255, 0.85);
+}
+html.light .r3zon-calendar .fc-col-header-cell {
+  background: rgba(241, 245, 249, 0.9);
+}
+html.light .r3zon-calendar .fc-col-header-cell-cushion {
+  color: rgba(15, 23, 42, 0.75);
+}
+html.light .r3zon-calendar .fc-daygrid-day-number,
+html.light .r3zon-calendar .fc-timegrid-axis-cushion,
+html.light .r3zon-calendar .fc-timegrid-slot-label-cushion {
+  color: rgba(15, 23, 42, 0.7);
+}
+html.light .r3zon-calendar .fc-day-today .fc-daygrid-day-number {
+  color: rgb(14, 116, 144);
+}
+html.light .r3zon-calendar .fc-popover {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(241, 245, 249, 0.96));
+  border-color: rgba(15, 23, 42, 0.12);
+  color: rgb(15, 23, 42);
+  box-shadow: 0 22px 60px rgba(15, 23, 42, 0.16);
+}
+html.light .r3zon-calendar .fc-popover-header {
+  background: rgba(241, 245, 249, 0.95);
+  color: rgb(15, 23, 42);
+}
+html.light .r3zon-calendar .fc-more-link {
+  color: rgb(14, 116, 144);
+}

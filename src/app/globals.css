@@ -132,6 +132,94 @@ select:focus-visible {
   box-shadow: 0 0 0 2px rgb(var(--cyan) / 0.35);
 }
 
+/* ─── Modo claro ───────────────────────────────────────────────────────────
+ * El script de boot (layout.tsx) ya reescribe las CSS vars de marca cuando
+ * `t.mode === 'light'`. Aquí cubrimos lo que el boot no puede: tokens
+ * semánticos con alfa (text-lo/ghost se volvían transparentes sobre fondo
+ * blanco), el gradient de `.card-glass` (era oscuro a oscuro), bordes,
+ * scrollbar y el fondo del body que llevaba radiales índigo/fucsia muy
+ * saturados. Objetivo: contraste AA según WCAG 2.1 (>=4.5:1 en texto). */
+html.light {
+  /* Tokens semánticos: bajamos el verde/naranja/rojo para que sobre blanco
+     mantengan ≥4.5:1 sin perder identidad de marca. */
+  --green: #047857;
+  --orange: #c2410c;
+  --red: #b91c1c;
+  /* Texto secundario y fantasma sobre fondo claro: gris azulado oscuro. */
+  --text-lo: rgba(11, 10, 31, 0.7);
+  --text-ghost: rgba(11, 10, 31, 0.55);
+}
+html.light body {
+  /* Gradientes muy suaves para no romper el look space-grade. */
+  background-image:
+    radial-gradient(ellipse 80% 50% at 15% 5%, rgb(var(--indigo-400) / 0.18) 0%, transparent 60%),
+    radial-gradient(ellipse 55% 45% at 85% 85%, rgb(var(--fuchsia) / 0.1) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 60% at 55% 55%, rgb(var(--cyan) / 0.06) 0%, transparent 65%);
+}
+html.light .card-glass {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(245, 247, 252, 0.85));
+  border-color: rgba(15, 23, 42, 0.08);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+html.light .card-glass:hover {
+  border-color: rgba(15, 23, 42, 0.16);
+  box-shadow: 0 10px 30px rgba(99, 102, 241, 0.12);
+}
+html.light .section-label {
+  color: rgba(11, 10, 31, 0.55);
+}
+html.light ::-webkit-scrollbar-thumb {
+  background: rgba(11, 10, 31, 0.18);
+}
+html.light ::-webkit-scrollbar-thumb:hover {
+  background: rgba(11, 10, 31, 0.32);
+}
+/* Tailwind utilities con alfa que son ilegibles sobre fondo blanco:
+ * los bg-*-500/10 + text-*-200 son típicos en alerts/badges. Aquí
+ * forzamos en light un par sólido con suficiente contraste. */
+html.light .bg-amber-500\/10 { background-color: rgb(254 243 199); }
+html.light .bg-amber-500\/15 { background-color: rgb(253 230 138); }
+html.light .text-amber-100,
+html.light .text-amber-200,
+html.light .text-amber-300 { color: rgb(120 53 15); }
+html.light .border-amber-400\/30 { border-color: rgb(245 158 11); }
+
+html.light .bg-emerald-500\/10 { background-color: rgb(209 250 229); }
+html.light .text-emerald-200,
+html.light .text-emerald-400 { color: rgb(6 95 70); }
+
+html.light .bg-rose-500\/10,
+html.light .bg-danger\/10 { background-color: rgb(254 226 226); }
+html.light .text-rose-200,
+html.light .text-danger,
+html.light .text-rose-300 { color: rgb(153 27 27); }
+html.light .border-danger\/30 { border-color: rgb(220 38 38); }
+
+html.light .bg-cyan\/10 { background-color: rgb(207 250 254); }
+html.light .text-cyan { color: rgb(14 116 144); }
+html.light .border-cyan\/30 { border-color: rgb(8 145 178); }
+
+html.light .bg-fuchsia\/10 { background-color: rgb(250 232 255); }
+html.light .text-fuchsia { color: rgb(134 25 143); }
+
+/* Sidebar y otros bloques con fondo `bg-indigo-900/*`: en light el token
+ * indigo-900 ya es claro, pero el alfa lo deja casi invisible. Subimos
+ * la opacidad para que se vea el bloque. */
+html.light .bg-indigo-900\/20,
+html.light .bg-indigo-900\/30,
+html.light .bg-indigo-900\/40 {
+  background-color: rgba(224, 231, 255, 0.85);
+}
+html.light .bg-bg\/60 { background-color: rgba(246, 247, 251, 0.85); }
+
+/* Bordes/separadores hardcodeados se pierden en blanco — los hacemos
+ * visibles sin saturar. */
+html.light .border-indigo-400\/10,
+html.light .border-indigo-400\/15,
+html.light .border-indigo-400\/20 {
+  border-color: rgba(99, 102, 241, 0.22);
+}
+
 /* Reducir movimiento (toggle de Ajustes → Accesibilidad o preferencia del SO). */
 @media (prefers-reduced-motion: reduce) {
   *,

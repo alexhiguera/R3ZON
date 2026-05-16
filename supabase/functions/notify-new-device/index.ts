@@ -22,7 +22,36 @@ Deno.serve(async (req) => {
   const { data: userRes, error: uerr } = await supabase.auth.getUser();
   if (uerr || !userRes.user) return new Response("Unauthorized", { status: 401 });
 
-  const { device_name } = await req.json();
+  const body = await req.json().catch(() => ({}));
+
+  // Health-check: comprueba que las variables están y que Resend responde,
+  // pero NO envía email. Útil para verificar configuración sin disparar
+  // correos a los usuarios reales.
+  //   curl -X POST $URL/functions/v1/notify-new-device \
+  //     -H "Authorization: Bearer $JWT" -H "Content-Type: application/json" \
+  //     -d '{"mode":"health"}'
+  if (body?.mode === "health") {
+    const apiKey = Deno.env.get("RESEND_API_KEY");
+    const from = Deno.env.get("RESEND_FROM");
+    const checks: Record<string, unknown> = {
+      RESEND_API_KEY_set: Boolean(apiKey),
+      RESEND_FROM_set: Boolean(from),
+      RESEND_FROM_value: from ?? null,
+    };
+    if (apiKey) {
+      const ping = await fetch("https://api.resend.com/domains", {
+        headers: { Authorization: `Bearer ${apiKey}` },
+      });
+      checks.resend_api_status = ping.status;
+      checks.resend_api_ok = ping.ok;
+      if (!ping.ok) checks.resend_api_error = await ping.text();
+    }
+    return new Response(JSON.stringify({ ok: true, checks }, null, 2), {
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  const { device_name } = body;
   const ip = req.headers.get("x-forwarded-for") ?? "desconocida";
   const ahora = new Date().toLocaleString("es-ES", { timeZone: "Europe/Madrid" });
 

@@ -7,6 +7,28 @@ Historial cronológico de **R3ZON ANTARES** ordenado de más reciente a más ant
 ---
 
 
+### Iteración 74 — *2026-05-16* — Cookie banner con gating real, health-check de Resend y modo claro WCAG AA
+
+Tres tareas pedidas: privacidad, mail y accesibilidad.
+
+- **Banner de cookies con lógica real** — Antes `<Analytics />` de Vercel se montaba siempre, sin opt-in (riesgo LSSI 22.2). Ahora hay un dialog flotante ([src/components/legal/CookieBanner.tsx](src/components/legal/CookieBanner.tsx)) con tres acciones: *Aceptar todas*, *Solo necesarias* y *Personalizar* (checkbox de métricas). La decisión se persiste en `localStorage["r3zon:consent:v1"]` ([src/lib/consent.ts](src/lib/consent.ts)) y se emite un `CustomEvent("r3zon:consent")` para que el resto de la app reaccione sin recargar. El gate ([src/components/legal/ConsentGate.tsx](src/components/legal/ConsentGate.tsx)) escucha el evento + `storage` (cambios entre pestañas) y **solo monta `<Analytics />` cuando `analytics: true`**. Banner enlazado a [/legal/cookies](src/app/legal/cookies/page.tsx) y [/legal/privacidad](src/app/legal/privacidad/page.tsx). Si quieres "olvidar" el consent y forzar que vuelva a aparecer, borra la key del localStorage o llama `clearConsent()`.
+- **Resend — verificación de la configuración** — La edge function [supabase/functions/notify-new-device/index.ts](supabase/functions/notify-new-device/index.ts) ya estaba ACTIVA (v2, redesplegada como v3 vía MCP) pero no había forma de comprobar la config sin spamear emails. Añadido modo `mode: "health"` que devuelve si `RESEND_API_KEY` y `RESEND_FROM` están seteados y hace un GET a `https://api.resend.com/domains` con la key para confirmar que es válida — sin enviar correos. Comando de prueba:
+  ```bash
+  curl -X POST "$SUPABASE_URL/functions/v1/notify-new-device" \
+    -H "Authorization: Bearer <JWT_DE_USUARIO_LOGUEADO>" \
+    -H "Content-Type: application/json" \
+    -d '{"mode":"health"}'
+  ```
+  Devuelve `{ ok: true, checks: { RESEND_API_KEY_set, RESEND_FROM_set, RESEND_FROM_value, resend_api_status, resend_api_ok } }`. Si `resend_api_status: 401` ⇒ key inválida; si `_set: false` ⇒ falta el secret en Supabase Dashboard → Edge Functions → Secrets. **Nota:** el template HTML del email sigue siendo dark-only (fondo `#080714`, texto `#f0f4ff`); cuando se abre desde un cliente de correo en light se ve oscuro como una "tarjeta", lo cual es legible — pero si se quiere modo claro real del email habría que duplicar el template o mover a styles inline `prefers-color-scheme` (postpuesto, no rompe nada).
+- **Modo claro — accesibilidad WCAG AA** — El boot script ya invertía la paleta indigo y el bg, pero los tokens semánticos (`--green`/`--orange`/`--red` hex fijos), las variables con alfa (`--text-lo`, `--text-ghost` eran `rgba(165,180,252,0.5)` → casi invisible sobre blanco), `.card-glass` (gradient `indigo-800/0.38 → indigo-900/0.65`, que al invertir indigo quedaba lavender sobre lavender) y FullCalendar (paleta hardcodeada con `rgba(30,27,75,*)`) seguían en oscuro. Añadidas reglas `html.light` en [src/app/globals.css](src/app/globals.css) (43 líneas):
+  - Tokens semánticos a ratios ≥4.5:1: `--green: #047857`, `--orange: #c2410c`, `--red: #b91c1c`, `--text-lo: rgba(11,10,31,0.7)`, `--text-ghost: rgba(11,10,31,0.55)`.
+  - `.card-glass` en light: gradient blanco-a-gris claro + borde `slate/8` + sombra suave.
+  - Overrides puntuales para las utilities tailwind que aparecen en alerts y badges: `bg-amber-500/10 + text-amber-200` se transforma en `bg-amber-100 + text-amber-900` (mismo patrón para emerald, rose, danger, cyan, fuchsia). Bordes `border-indigo-400/{10,15,20}` se reescalan para ser visibles sobre blanco.
+  - Fondos sólidos `bg-indigo-900/{20,30,40}` (sidebar, cards) reciben `rgba(224,231,255,0.85)` en light (sin esto se veían como bloques lavender muy difusos).
+  Para el calendario: añadido bloque `html.light .r3zon-calendar` en [src/components/agenda/calendar.css](src/components/agenda/calendar.css) que remapea los tokens internos de FullCalendar (`--fc-border-color`, `--fc-neutral-bg-color`, `--fc-button-*`, etc.) a paleta slate clara. Los eventos coloreados (cyan/fuchsia/green/orange/red) se dejan como están porque su gradiente ya tiene ratio AA contra el fondo del card.
+- **Verificación**: lint ✅ (1 warning pre-existente fuera del scope) · typecheck ✅ · edge function redesplegada v3 ACTIVA.
+
+
 ### Iteración 73 — *2026-05-16* — OCR roto: CSP bloqueaba Tesseract + errores silenciosos en idle
 
 El OCR no funcionaba ni en móvil ni en PC. Causa raíz: la CSP de [next.config.mjs](next.config.mjs) no permitía los hosts de los que `tesseract.js` carga su worker y los modelos `.traineddata.gz`, así que el `createWorker` fallaba en producción y la excepción se tragaba.
