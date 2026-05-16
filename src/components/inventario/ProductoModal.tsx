@@ -1,4 +1,12 @@
-import { CheckCircle2, ChevronDown, Loader2, Trash2, Upload } from "lucide-react";
+import {
+  Briefcase,
+  CheckCircle2,
+  ChevronDown,
+  Loader2,
+  Package,
+  Trash2,
+  Upload,
+} from "lucide-react";
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Field } from "@/components/ui/Field";
@@ -193,21 +201,39 @@ export function ProductoModal({
               autoFocus
             />
           </Field>
-          <Field label="Código / SKU" hint="Compatible con pistola de barras.">
-            <Input
-              value={p.codigo ?? ""}
-              onChange={(e) => setP({ ...p, codigo: e.target.value })}
-            />
-          </Field>
-          <Field label="Tipo">
-            <Select
-              value={p.tipo ?? "producto"}
-              onChange={(e) => setP({ ...p, tipo: e.target.value as TipoProducto })}
-            >
-              <option value="producto">Producto</option>
-              <option value="servicio">Servicio</option>
-            </Select>
-          </Field>
+
+          {/* Tipo como segmented control — mismo lenguaje visual que los
+              filtros de la lista; mucho más legible que un Select. */}
+          <div className="col-span-2 flex flex-col gap-1.5">
+            <span className="text-[0.68rem] font-semibold uppercase tracking-wider text-text-lo">
+              Tipo
+            </span>
+            <div className="grid grid-cols-2 gap-1 rounded-xl border border-indigo-400/20 bg-indigo-900/30 p-1">
+              {(
+                [
+                  { v: "producto", label: "Producto", Icon: Package },
+                  { v: "servicio", label: "Servicio", Icon: Briefcase },
+                ] as const
+              ).map(({ v, label, Icon }) => {
+                const sel = (p.tipo ?? "producto") === v;
+                return (
+                  <button
+                    key={v}
+                    type="button"
+                    onClick={() => setP({ ...p, tipo: v as TipoProducto })}
+                    className={`flex h-11 items-center justify-center gap-2 rounded-lg text-sm font-semibold transition ${
+                      sel
+                        ? "border border-cyan/40 bg-cyan/15 text-cyan"
+                        : "border border-transparent text-text-mid hover:text-text-hi"
+                    }`}
+                  >
+                    <Icon size={14} /> {label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           <Field label="Categoría" full>
             <Input
               value={p.categoria ?? ""}
@@ -247,86 +273,117 @@ export function ProductoModal({
         </button>
 
         {verAdicional && (
-          <div className="mt-3 grid grid-cols-2 gap-3 rounded-xl border border-indigo-400/15 bg-indigo-900/20 p-3">
-            <Field label="Unidad">
-              <Select
-                value={p.unidad ?? "ud"}
-                onChange={(e) => setP({ ...p, unidad: e.target.value })}
-              >
-                {UNIDADES.map((u) => (
-                  <option key={u} value={u}>
-                    {u}
-                  </option>
-                ))}
-              </Select>
-            </Field>
-            <Field label="Precio coste (€)">
-              <Input
-                type="number"
-                step="0.01"
-                value={p.precio_coste ?? 0}
-                onChange={(e) => setP({ ...p, precio_coste: parseFloat(e.target.value) || 0 })}
-              />
-            </Field>
-            <Field label="Color (TPV)">
-              <Input
-                type="color"
-                value={p.color ?? "#4f46e5"}
-                onChange={(e) => setP({ ...p, color: e.target.value })}
-              />
-            </Field>
-
-            {stockMode && p.tipo !== "servicio" && (
-              <>
-                <Field
-                  label="Stock inicial"
-                  hint={!esNuevo ? "Se ajusta con un movimiento." : undefined}
-                >
+          <div className="mt-3 flex flex-col gap-4 rounded-xl border border-indigo-400/15 bg-indigo-900/20 p-3 sm:p-4">
+            {/* ── Detalles ── */}
+            <section className="flex flex-col gap-2">
+              <h3 className="text-[0.68rem] font-bold uppercase tracking-wider text-text-lo">
+                Detalles
+              </h3>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Código / SKU" hint="Compatible con pistola de barras." full>
                   <Input
-                    type="number"
-                    step="0.001"
-                    value={p.stock_actual ?? 0}
-                    onChange={(e) => setP({ ...p, stock_actual: parseFloat(e.target.value) || 0 })}
-                    disabled={!esNuevo}
+                    value={p.codigo ?? ""}
+                    onChange={(e) => setP({ ...p, codigo: e.target.value })}
                   />
                 </Field>
-                <Field label="Stock mínimo (alerta)">
+                <Field label="Unidad">
+                  <Select
+                    value={p.unidad ?? "ud"}
+                    onChange={(e) => setP({ ...p, unidad: e.target.value })}
+                  >
+                    {UNIDADES.map((u) => (
+                      <option key={u} value={u}>
+                        {u}
+                      </option>
+                    ))}
+                  </Select>
+                </Field>
+                <Field label="Precio coste (€)">
                   <Input
                     type="number"
-                    step="0.001"
-                    value={p.stock_minimo ?? 0}
-                    onChange={(e) => setP({ ...p, stock_minimo: parseFloat(e.target.value) || 0 })}
+                    step="0.01"
+                    value={p.precio_coste ?? 0}
+                    onChange={(e) => setP({ ...p, precio_coste: parseFloat(e.target.value) || 0 })}
+                  />
+                </Field>
+                <Field label="Descripción" full>
+                  <Textarea
+                    value={p.descripcion ?? ""}
+                    rows={2}
+                    onChange={(e) => setP({ ...p, descripcion: e.target.value })}
                   />
                 </Field>
                 <label className="col-span-2 flex items-center gap-2 text-xs text-text-mid">
                   <input
                     type="checkbox"
-                    checked={p.stock_tracking ?? true}
-                    onChange={(e) => setP({ ...p, stock_tracking: e.target.checked })}
+                    checked={p.activo ?? true}
+                    onChange={(e) => setP({ ...p, activo: e.target.checked })}
                     className="h-4 w-4 rounded border-indigo-400/30 bg-indigo-900/30"
                   />
-                  Rastrear stock
+                  Activo (visible en TPV y catálogo)
                 </label>
-              </>
+              </div>
+            </section>
+
+            {/* ── Stock ── */}
+            {stockMode && p.tipo !== "servicio" && (
+              <section className="flex flex-col gap-2 border-t border-indigo-400/10 pt-4">
+                <h3 className="text-[0.68rem] font-bold uppercase tracking-wider text-text-lo">
+                  Stock
+                </h3>
+                <div className="grid grid-cols-2 gap-3">
+                  <Field
+                    label="Stock inicial"
+                    hint={!esNuevo ? "Se ajusta con un movimiento." : undefined}
+                  >
+                    <Input
+                      type="number"
+                      step="0.001"
+                      value={p.stock_actual ?? 0}
+                      onChange={(e) =>
+                        setP({ ...p, stock_actual: parseFloat(e.target.value) || 0 })
+                      }
+                      disabled={!esNuevo}
+                    />
+                  </Field>
+                  <Field label="Stock mínimo (alerta)">
+                    <Input
+                      type="number"
+                      step="0.001"
+                      value={p.stock_minimo ?? 0}
+                      onChange={(e) =>
+                        setP({ ...p, stock_minimo: parseFloat(e.target.value) || 0 })
+                      }
+                    />
+                  </Field>
+                  <label className="col-span-2 flex items-center gap-2 text-xs text-text-mid">
+                    <input
+                      type="checkbox"
+                      checked={p.stock_tracking ?? true}
+                      onChange={(e) => setP({ ...p, stock_tracking: e.target.checked })}
+                      className="h-4 w-4 rounded border-indigo-400/30 bg-indigo-900/30"
+                    />
+                    Rastrear stock
+                  </label>
+                </div>
+              </section>
             )}
 
-            <Field label="Descripción" full>
-              <Textarea
-                value={p.descripcion ?? ""}
-                rows={2}
-                onChange={(e) => setP({ ...p, descripcion: e.target.value })}
-              />
-            </Field>
-
-            <label className="col-span-2 flex items-center gap-2 text-xs text-text-mid">
-              <input
-                type="checkbox"
-                checked={p.activo ?? true}
-                onChange={(e) => setP({ ...p, activo: e.target.checked })}
-                className="h-4 w-4 rounded border-indigo-400/30 bg-indigo-900/30"
-              />
-              Activo (visible en TPV y catálogo)
-            </label>
+            {/* ── TPV ── */}
+            <section className="flex flex-col gap-2 border-t border-indigo-400/10 pt-4">
+              <h3 className="text-[0.68rem] font-bold uppercase tracking-wider text-text-lo">
+                TPV
+              </h3>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Color del botón">
+                  <Input
+                    type="color"
+                    value={p.color ?? "#4f46e5"}
+                    onChange={(e) => setP({ ...p, color: e.target.value })}
+                  />
+                </Field>
+              </div>
+            </section>
           </div>
         )}
 
@@ -341,7 +398,7 @@ export function ProductoModal({
           <button
             type="submit"
             disabled={guardando || !negocioId || !p.nombre}
-            className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-emerald-500 to-emerald-600 py-2.5 text-sm font-bold text-white disabled:opacity-50"
+            className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan to-fuchsia py-2.5 text-sm font-bold text-bg disabled:opacity-50"
           >
             {guardando ? (
               <Loader2 size={14} className="animate-spin" />

@@ -7,6 +7,26 @@ Historial cronológico de **R3ZON ANTARES** ordenado de más reciente a más ant
 ---
 
 
+### Iteración 77 — *2026-05-17* — Listado: botón unificado, etiquetas inline, mobile profesional, modal segmentado
+
+Limpieza profunda de la página de listado pedida por usuario.
+
+- **Botón "Nuevo" unificado** ([src/app/(app)/listado/page.tsx](src/app/(app)/listado/page.tsx)) — emerald `h-10 rounded-lg` → marca `cyan→fuchsia h-12 rounded-xl`, igual que en Clientes/Proveedores. Mismo ajuste en el botón Guardar del modal.
+- **Cards ocupan todo el ancho** ([src/components/inventario/FilaProducto.tsx](src/components/inventario/FilaProducto.tsx)) — fila tenía una columna externa `w-32 shrink-0` reservada para el badge flotante de estado de stock ("Sin inventario", "Stock bajo", "Agotado") que dejaba un hueco vacío para los items que no llevaban badge y rompía la alineación. Eliminada esa columna; el badge ahora vive dentro del card como una pill pequeña inline al lado del nombre. Resultado: cards a 100% del ancho, alineación consistente.
+- **Quitada la pill "Servicio" y el "+IVA"** — el bullet `Servicio` en magenta encima de cada fila era ruido (la categoría ya dice "Servicio" en el subtítulo). El `+21% IVA` debajo del precio confundía al cliente final y duplicaba info que ya vive en el modal — el precio que se muestra en lista es el de venta, sin más adornos.
+- **Mobile profesional** — la barra de búsqueda usaba `flex-wrap` con 6 controles de alturas mixtas (h-9, h-10) que se rompían en columnas dispares en móvil. Reestructurado en dos filas semánticas:
+  1. Buscador full-width + dos botones primarios (Escanear, Nuevo) en `grid-cols-2` con `h-12 rounded-xl` (igual altura que en clientes/proveedores).
+  2. Segmented control Todos/Productos/Servicios en `grid-cols-3` + dos `<Select>` en `grid-cols-2` con `h-10`.
+
+  En ≥sm vuelve a flex en línea, sin desperdicio horizontal.
+- **Modal de producto rediseñado** ([src/components/inventario/ProductoModal.tsx](src/components/inventario/ProductoModal.tsx)):
+  - **Tipo** pasa de `<Select>` plano a segmented pill (`Producto` / `Servicio`) con iconos `Package`/`Briefcase` — mismo patrón que el filtro de la lista.
+  - **SKU movido a "Información adicional"** — ya no es esencial en la primera vista; el formulario base ahora es: Nombre, Tipo, Categoría, Precio, IVA.
+  - **"Información adicional" segmentada** — tres secciones con cabecera tipográfica (`Detalles`, `Stock`, `TPV`) separadas por `border-t border-indigo-400/10`. SKU/Unidad/Coste/Descripción/Activo van a Detalles; Stock inicial/mínimo/tracking a Stock; Color a TPV. La sección Stock solo se renderiza si `stockMode` está activo Y el tipo no es servicio.
+- **Eliminado "Últimos movimientos"** — el aside derecho (`lg:grid-cols-[1fr,360px]`) se mostraba cuando stock estaba activo. Borrado completo: hook `useMovimientosStock`, panel `<aside>`, mapa `ICONO_MOV`, imports de iconos de movimientos (`ArrowDownLeft`, `ArrowUpRight`, `RotateCcw`, `ShoppingCart`, `Sliders`), `ETIQUETA_MOVIMIENTO`, `COLOR_MOV_STOCK`, `TipoMovimientoStock` y la llamada `refreshMov` en `MovimientoModal.onGuardado`. Si en el futuro se quiere reincorporar, el hook sigue en `src/components/inventario/useMovimientosStock.ts`.
+- **Verificación**: lint ✅ · typecheck ✅.
+
+
 ### Iteración 76 — *2026-05-16* — Limpieza de Clientes/Proveedores: comunicaciones fuera, controls del árbol legibles, formulario de proveedor simplificado
 
 Cinco peticiones de UX cosméticas pero importantes.

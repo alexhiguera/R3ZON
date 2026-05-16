@@ -1,55 +1,26 @@
 "use client";
 
-import {
-  ArrowDownLeft,
-  ArrowUpRight,
-  Boxes,
-  Briefcase,
-  Loader2,
-  Package,
-  Plus,
-  RotateCcw,
-  ScanLine,
-  Search,
-  ShoppingCart,
-  Sliders,
-} from "lucide-react";
+import { Boxes, Briefcase, Loader2, Package, Plus, ScanLine, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { EmptyState } from "@/components/inventario/EmptyState";
 import { FilaProducto } from "@/components/inventario/FilaProducto";
 import { KpiCard } from "@/components/inventario/KpiCard";
 import { MovimientoModal } from "@/components/inventario/MovimientoModal";
 import { ProductoModal } from "@/components/inventario/ProductoModal";
-import { useMovimientosStock } from "@/components/inventario/useMovimientosStock";
 import { BarcodeScanModal } from "@/components/productos/BarcodeScanModal";
 import { useConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Input, Select } from "@/components/ui/Input";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { useToast } from "@/components/ui/Toast";
-import {
-  type EstadoStock,
-  ETIQUETA_MOVIMIENTO,
-  estadoStock,
-  type Producto,
-  type TipoMovimientoStock,
-} from "@/lib/inventario";
+import { type EstadoStock, estadoStock, type Producto } from "@/lib/inventario";
 import { createClient } from "@/lib/supabase/client";
 import { formatSupabaseError } from "@/lib/supabase-errors";
-import { COLOR_MOV_STOCK } from "@/lib/ui-constants";
 import { useNegocioId } from "@/lib/useNegocioId";
 import { useSupabaseQuery } from "@/lib/useSupabaseQuery";
 
 const COLUMNAS_LISTA =
   "id,nombre,codigo,categoria,tipo,unidad,precio_venta,iva_pct," +
   "stock_tracking,stock_actual,stock_minimo,color,imagen_url,activo,created_at,updated_at";
-
-const ICONO_MOV: Record<TipoMovimientoStock, typeof ArrowDownLeft> = {
-  entrada: ArrowDownLeft,
-  salida: ArrowUpRight,
-  ajuste: Sliders,
-  venta_tpv: ShoppingCart,
-  devolucion: RotateCcw,
-};
 
 type FiltroTipo = "todos" | "producto" | "servicio";
 type FiltroEstado = "todos" | EstadoStock;
@@ -85,15 +56,6 @@ export default function ListadoPage() {
   const [editando, setEditando] = useState<Partial<Producto> | null>(null);
   const [movimientoDe, setMovimientoDe] = useState<Producto | null>(null);
   const [scanOpen, setScanOpen] = useState(false);
-
-  const {
-    movimientos,
-    hayMas: hayMasMov,
-    cargandoMas: cargandoMasMov,
-    refresh: refreshMov,
-    cargarMas: cargarMasMov,
-    pageSize,
-  } = useMovimientosStock(stockMode, supabase);
 
   const categorias = useMemo(() => {
     const s = new Set<string>();
@@ -181,89 +143,99 @@ export default function ListadoPage() {
         </div>
       )}
 
-      <div className={stockMode ? "grid gap-5 lg:grid-cols-[1fr,360px]" : "grid gap-5"}>
+      <div className="grid gap-5">
         <section className="flex flex-col gap-3">
-          <div className="card-glass flex flex-wrap items-center gap-3 p-4">
-            <div className="relative flex-1 min-w-[220px]">
-              <Search
-                className="pointer-events-none absolute left-3 top-3 text-text-lo"
-                size={14}
-              />
-              <Input
-                value={busqueda}
-                onChange={(e) => setBusqueda(e.target.value)}
-                placeholder="Buscar por nombre o código…"
-                className="pl-9"
-              />
+          {/* Buscador + acciones primarias. En móvil la búsqueda ocupa el ancho
+              y los dos botones (Escanear + Nuevo) van debajo a 50/50; en
+              ≥sm todo en línea. Filtros en otra fila para no apretar. */}
+          <div className="card-glass flex flex-col gap-3 p-3 sm:p-4">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <div className="relative flex-1">
+                <Search
+                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-lo"
+                  size={14}
+                />
+                <Input
+                  value={busqueda}
+                  onChange={(e) => setBusqueda(e.target.value)}
+                  placeholder="Buscar por nombre o código…"
+                  className="h-12 pl-9"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setScanOpen(true)}
+                  className="flex h-12 items-center justify-center gap-2 rounded-xl border border-cyan/40 bg-cyan/10 px-4 text-sm font-bold text-cyan hover:bg-cyan/20"
+                >
+                  <ScanLine size={16} /> Escanear
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditando(productoVacio())}
+                  className="flex h-12 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan to-fuchsia px-4 text-sm font-bold text-bg"
+                >
+                  <Plus size={16} /> Nuevo
+                </button>
+              </div>
             </div>
 
-            <div className="inline-flex rounded-lg border border-indigo-400/20 bg-indigo-900/30 p-0.5">
-              {(
-                [
-                  { v: "todos", label: "Todos", Icon: Boxes },
-                  { v: "producto", label: "Productos", Icon: Package },
-                  { v: "servicio", label: "Servicios", Icon: Briefcase },
-                ] as const
-              ).map(({ v, label, Icon }) => {
-                const sel = filtroTipo === v;
-                return (
-                  <button
-                    key={v}
-                    type="button"
-                    onClick={() => setFiltroTipo(v)}
-                    className={`inline-flex h-9 items-center gap-1.5 rounded-md px-3 text-xs font-semibold transition ${
-                      sel
-                        ? "bg-cyan/15 text-cyan border border-cyan/40"
-                        : "border border-transparent text-text-mid hover:text-text-hi"
-                    }`}
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+              <div className="grid grid-cols-3 gap-1 rounded-xl border border-indigo-400/20 bg-indigo-900/30 p-1 sm:inline-flex">
+                {(
+                  [
+                    { v: "todos", label: "Todos", Icon: Boxes },
+                    { v: "producto", label: "Productos", Icon: Package },
+                    { v: "servicio", label: "Servicios", Icon: Briefcase },
+                  ] as const
+                ).map(({ v, label, Icon }) => {
+                  const sel = filtroTipo === v;
+                  return (
+                    <button
+                      key={v}
+                      type="button"
+                      onClick={() => setFiltroTipo(v)}
+                      className={`flex h-10 items-center justify-center gap-1.5 rounded-lg px-3 text-xs font-semibold transition ${
+                        sel
+                          ? "bg-cyan/15 text-cyan border border-cyan/40"
+                          : "border border-transparent text-text-mid hover:text-text-hi"
+                      }`}
+                    >
+                      <Icon size={13} /> {label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-1 sm:gap-3">
+                <Select
+                  value={filtroCategoria}
+                  onChange={(e) => setFiltroCategoria(e.target.value)}
+                  className="h-10"
+                >
+                  <option value="todas">Todas las categorías</option>
+                  {categorias.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </Select>
+
+                {stockMode && (
+                  <Select
+                    value={filtroEstado}
+                    onChange={(e) => setFiltroEstado(e.target.value as FiltroEstado)}
+                    className="h-10"
                   >
-                    <Icon size={13} /> {label}
-                  </button>
-                );
-              })}
+                    <option value="todos">Cualquier stock</option>
+                    <option value="ok">Con stock</option>
+                    <option value="bajo">Stock bajo</option>
+                    <option value="agotado">Agotados</option>
+                    <option value="sin_stock">Sin inventario</option>
+                  </Select>
+                )}
+              </div>
             </div>
-
-            <Select
-              value={filtroCategoria}
-              onChange={(e) => setFiltroCategoria(e.target.value)}
-              className="w-auto"
-            >
-              <option value="todas">Todas las categorías</option>
-              {categorias.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </Select>
-
-            {stockMode && (
-              <Select
-                value={filtroEstado}
-                onChange={(e) => setFiltroEstado(e.target.value as FiltroEstado)}
-                className="w-auto"
-              >
-                <option value="todos">Cualquier stock</option>
-                <option value="ok">Con stock</option>
-                <option value="bajo">Stock bajo</option>
-                <option value="agotado">Agotados</option>
-                <option value="sin_stock">Sin inventario</option>
-              </Select>
-            )}
-
-            <button
-              type="button"
-              onClick={() => setScanOpen(true)}
-              className="inline-flex h-10 items-center gap-2 rounded-lg border border-cyan/40 bg-cyan/10 px-4 text-sm font-bold text-cyan hover:bg-cyan/20"
-            >
-              <ScanLine size={14} /> Escanear
-            </button>
-            <button
-              type="button"
-              onClick={() => setEditando(productoVacio())}
-              className="inline-flex h-10 items-center gap-2 rounded-lg bg-gradient-to-r from-emerald-500 to-emerald-600 px-4 text-sm font-bold text-white shadow-glow"
-            >
-              <Plus size={14} /> Nuevo
-            </button>
           </div>
 
           <BarcodeScanModal
@@ -297,55 +269,6 @@ export default function ListadoPage() {
             </ul>
           )}
         </section>
-
-        {stockMode && (
-          <aside className="flex flex-col gap-3">
-            <div className="card-glass p-4">
-              <div className="section-label mb-3">Últimos movimientos</div>
-              {movimientos.length === 0 ? (
-                <div className="py-6 text-center text-xs text-text-mid">
-                  Aún no hay movimientos.
-                </div>
-              ) : (
-                <ul className="flex flex-col gap-1.5">
-                  {movimientos.map((m) => {
-                    const Icono = ICONO_MOV[m.tipo];
-                    const positivo = m.cantidad > 0;
-                    return (
-                      <li
-                        key={m.id}
-                        className="flex items-center gap-2 rounded-lg border border-indigo-400/10 bg-indigo-900/20 p-2 text-xs"
-                      >
-                        <Icono size={12} className={`shrink-0 ${COLOR_MOV_STOCK[m.tipo]}`} />
-                        <div className="min-w-0 flex-1">
-                          <div className="truncate font-medium text-text-hi">{m.nombre}</div>
-                          <div className="text-[0.65rem] text-text-lo">
-                            {ETIQUETA_MOVIMIENTO[m.tipo]} · {new Date(m.ts).toLocaleString("es-ES")}
-                          </div>
-                        </div>
-                        <span className={`font-bold ${positivo ? "text-ok" : "text-danger"}`}>
-                          {positivo ? "+" : ""}
-                          {m.cantidad}
-                        </span>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-              {hayMasMov && (
-                <button
-                  type="button"
-                  onClick={cargarMasMov}
-                  disabled={cargandoMasMov}
-                  className="mt-3 inline-flex h-9 w-full items-center justify-center gap-2 rounded-lg border border-indigo-400/20 bg-indigo-900/30 text-xs font-semibold text-indigo-200 hover:border-cyan/40 hover:text-cyan disabled:opacity-50"
-                >
-                  {cargandoMasMov ? <Loader2 size={12} className="animate-spin" /> : null}
-                  Cargar {pageSize} más
-                </button>
-              )}
-            </div>
-          </aside>
-        )}
       </div>
 
       <ProductoModal
@@ -366,7 +289,6 @@ export default function ListadoPage() {
         onGuardado={() => {
           setMovimientoDe(null);
           refresh();
-          refreshMov();
         }}
       />
       {confirmDialogNode}
