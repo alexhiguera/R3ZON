@@ -7,6 +7,18 @@ Historial cronológico de **R3ZON ANTARES** ordenado de más reciente a más ant
 ---
 
 
+### Iteración 71 — *2026-05-16* — Cierre de alertas: clear-text password log + verificación rls_auto_enable
+
+Cierre de tres alertas tras la auditoría 2.0.
+
+- **CodeQL — Clear-text logging of sensitive information** ([scripts/seed-admin.mjs:64](scripts/seed-admin.mjs#L64)) — el seeder imprimía `console.log("  Contraseña:", password)` con el valor de `ADMIN_PASSWORD` de `.env.local` en texto plano. Aunque solo se usa contra el stack local de Supabase CLI (con guard anti-prod), el patrón es exactamente el que detecta CodeQL como `js/clear-text-logging`. Eliminado el log; mensaje sustituido por un puntero al `.env.local`. De paso, eliminada también la variable `data` no usada del destructuring (cierra warning de Biome).
+- **`rls_auto_enable` verificado limpio en remoto** — query directa a `pg_proc` + `routine_privileges` confirma `roles_can_execute = null` (ningún rol cliente puede ejecutarla). El event trigger sigue disparándose internamente. Sin cambios adicionales necesarios; la migración [supabase/migrations/20260516120000_revoke_rls_auto_enable.sql](supabase/migrations/20260516120000_revoke_rls_auto_enable.sql) ya documenta el estado para futuros `db:reset`.
+- **Leaked Password Protection** — el toggle en *Supabase Dashboard → Authentication* devuelve `Configuring leaked password protection via HaveIBeenPwned.org is available on Pro Plans and up`. **Es una limitación del plan**, no del producto. Mientras el proyecto esté en Free Plan, esta alerta no se puede cerrar; el advisor seguirá marcándola. Opciones:
+  - Subir el proyecto Supabase a Pro Plan (~25 €/mes/proyecto) cuando haya usuarios reales — la regla se activa con un click.
+  - Mientras tanto, suplirlo en cliente: validar contraseñas contra una lista mínima (longitud + sin tipos comunes) en el formulario de registro/cambio de contraseña.
+- **Verificación**: lint ✅ 2 warnings benignos (era 3) · 138/138 tests ✅ · `npm audit` 0 vulns · advisor Supabase sin `rls_auto_enable` ni el `clear-text logging` previo de CodeQL.
+
+
 ### Iteración 70 — *2026-05-16* — Auditoría 2.0: CI/CD verde, Vercel conectado, fix de `rls_auto_enable` expuesto
 
 Segunda pasada de auditoría completa tras los arreglos. Estado de salud confirmado en código, GitHub Actions, Vercel y Supabase.

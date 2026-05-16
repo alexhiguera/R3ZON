@@ -48,7 +48,7 @@ if (!isLocal && process.env.ALLOW_PROD_SEED !== "1") {
 const { createClient } = await import("@supabase/supabase-js");
 const sb = createClient(URL, KEY, { auth: { persistSession: false } });
 
-const { data, error } = await sb.auth.admin.createUser({
+const { error } = await sb.auth.admin.createUser({
   email,
   password,
   email_confirm: true,
@@ -60,5 +60,7 @@ if (error && !/already.*registered/i.test(error.message)) {
   process.exit(1);
 }
 
+// Nunca logueamos la contraseña en texto plano (CodeQL: clear-text logging).
+// El usuario ya la tiene en `.env.local` como ADMIN_PASSWORD.
 console.log("✓ Admin listo:", email);
-console.log("  Contraseña:", password);
+console.log("  Contraseña configurada en .env.local (ADMIN_PASSWORD).");
