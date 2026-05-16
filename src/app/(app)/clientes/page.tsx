@@ -3,7 +3,6 @@
 import {
   Building2,
   ChevronRight,
-  Download,
   Globe,
   LayoutGrid,
   List as ListIcon,
@@ -20,7 +19,6 @@ import { useCallback, useEffect, useState } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { useToast } from "@/components/ui/Toast";
 import { Tooltip } from "@/components/ui/Tooltip";
-import { descargarCSV } from "@/lib/csv";
 import { createClient } from "@/lib/supabase/client";
 import { ESTADO_CLIENTE_BADGE } from "@/lib/ui-constants";
 import { haAlcanzadoLimite, usePlan } from "@/lib/usePlan";
@@ -119,31 +117,6 @@ export default function ClientesPage() {
     await cargar(busqueda, ultimo.created_at, true);
   }
 
-  async function exportarCSV() {
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from("clientes")
-      .select("nombre,cif,sector,email,telefono,sitio_web,estado,created_at")
-      .order("created_at", { ascending: false });
-    if (error) {
-      toast.err("No se pudo exportar. Inténtalo de nuevo.");
-      return;
-    }
-    descargarCSV(
-      (data ?? []).map((c) => ({
-        Nombre: c.nombre,
-        CIF: c.cif ?? "",
-        Sector: c.sector ?? "",
-        Email: c.email ?? "",
-        Teléfono: c.telefono ?? "",
-        Web: c.sitio_web ?? "",
-        Estado: c.estado,
-        Alta: c.created_at.slice(0, 10),
-      })),
-      `clientes-${new Date().toISOString().slice(0, 10)}.csv`,
-    );
-  }
-
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
@@ -218,14 +191,6 @@ export default function ClientesPage() {
         <Tooltip text="Filtros avanzados próximamente" side="bottom">
           <button className="flex h-12 w-12 items-center justify-center rounded-xl border border-indigo-400/20 bg-indigo-900/30 text-indigo-300 hover:border-indigo-400/40">
             <SlidersHorizontal size={16} />
-          </button>
-        </Tooltip>
-        <Tooltip text="Exportar clientes a CSV" side="bottom">
-          <button
-            onClick={exportarCSV}
-            className="flex h-12 w-12 items-center justify-center rounded-xl border border-indigo-400/20 bg-indigo-900/30 text-indigo-300 hover:border-cyan/40 hover:text-cyan"
-          >
-            <Download size={16} />
           </button>
         </Tooltip>
         {limiteAlcanzado ? (

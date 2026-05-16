@@ -7,6 +7,18 @@ Historial cronológico de **R3ZON ANTARES** ordenado de más reciente a más ant
 ---
 
 
+### Iteración 76 — *2026-05-16* — Limpieza de Clientes/Proveedores: comunicaciones fuera, controls del árbol legibles, formulario de proveedor simplificado
+
+Cinco peticiones de UX cosméticas pero importantes.
+
+- **Quitada la pestaña "Comunicaciones" en ficha de cliente** ([src/app/(app)/clientes/[id]/page.tsx](src/app/(app)/clientes/[id]/page.tsx)) — eliminada del union `Tab`, del array `TABS`, del switch de render y los imports correspondientes (`MessageSquare`, `TabComunicaciones`). El componente `TabComunicaciones` sigue en `src/components/crm/` por si se reutiliza más adelante.
+- **Botones zoom/fit del árbol de jerarquía legibles** ([src/app/globals.css](src/app/globals.css)) — `@xyflow/react` (`<Controls />` en [src/components/clientes/HierarchyChart.tsx](src/components/clientes/HierarchyChart.tsx)) renderiza tres botones (zoom-in, zoom-out, fit-view) cuyos estilos por defecto son blanco-sobre-blanco. La clase wrapper estaba estilada pero los `.react-flow__controls-button` internos no. Añadido bloque global con fondo `indigo-900/0.6`, icono `text-hi`, hover `indigo-800/0.85` y un override `html.light` con fondo blanco + texto slate-900. Aplica también a cualquier futuro uso de React Flow.
+- **Botón "Exportar clientes" eliminado** ([src/app/(app)/clientes/page.tsx](src/app/(app)/clientes/page.tsx)) — quitado el Tooltip+button, la función `exportarCSV` y los imports muertos (`Download`, `descargarCSV`). La exportación a CSV completa de la cuenta sigue disponible en *Ajustes → Datos* (RGPD), que es donde tiene sentido por privacidad.
+- **Botón "Nuevo proveedor" unificado** ([src/app/(app)/proveedores/page.tsx](src/app/(app)/proveedores/page.tsx)) — pasaba de gradient verde-esmeralda `h-10` a la marca cyan→fuchsia `h-12` para que coincida con el botón de "Nuevo" de Clientes. Mismo cambio en el botón "Guardar" del modal de proveedor para que el flujo entero use la paleta de marca.
+- **Formulario de proveedor simplificado** — Sólo 4 campos a la vista: Nombre, Categoría, Email, Teléfono. Todo lo demás (CIF, Web, Persona de contacto, Dirección, Notas y el checkbox "Activo") va dentro de un bloque colapsable "Información adicional" — mismo patrón visual que [src/app/(app)/clientes/nuevo/page.tsx](src/app/(app)/clientes/nuevo/page.tsx). Al editar un proveedor con datos avanzados ya rellenos, el bloque arranca expandido para no esconder información existente.
+- **Verificación**: lint ✅ · typecheck ✅.
+
+
 ### Iteración 75 — *2026-05-16* — Sección de Reportes en Ajustes (canal a info@r3zon.com)
 
 Añadida una pestaña nueva al final de Ajustes para que el usuario pueda reportar problemas sin salir de la app.

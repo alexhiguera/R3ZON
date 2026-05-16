@@ -10,7 +10,6 @@ import {
   Loader2,
   Mail,
   MessageCircle,
-  MessageSquare,
   Phone,
   Trash2,
   Users,
@@ -22,7 +21,6 @@ import { useEffect, useState } from "react";
 import { ContactosTab } from "@/components/clientes/ContactosTab";
 import { InfoTab } from "@/components/clientes/InfoTab";
 import type { Cliente, Contacto } from "@/components/clientes/types";
-import { TabComunicaciones } from "@/components/crm/TabComunicaciones";
 import { TabDocumentos } from "@/components/crm/TabDocumentos";
 import { TabHistorial } from "@/components/crm/TabHistorial";
 import { TabMovimientos } from "@/components/crm/TabMovimientos";
@@ -31,18 +29,12 @@ import { Tooltip } from "@/components/ui/Tooltip";
 import { createClient } from "@/lib/supabase/client";
 import { ESTADO_CLIENTE_BADGE } from "@/lib/ui-constants";
 
-type Tab = "info" | "contactos" | "citas" | "comunicaciones" | "documentos" | "movimientos";
+type Tab = "info" | "contactos" | "citas" | "documentos" | "movimientos";
 
 const TABS: { id: Tab; label: string; Icon: typeof Info; tooltip: string }[] = [
   { id: "info", label: "Información", Icon: Info, tooltip: "Datos fiscales y de contacto." },
   { id: "contactos", label: "Contactos", Icon: Users, tooltip: "Personas dentro de esta empresa." },
   { id: "citas", label: "Historial", Icon: Calendar, tooltip: "Citas pasadas y futuras." },
-  {
-    id: "comunicaciones",
-    label: "Comunicaciones",
-    Icon: MessageSquare,
-    tooltip: "Notas, emails y acciones con este cliente.",
-  },
   {
     id: "documentos",
     label: "Documentos",
@@ -226,14 +218,6 @@ export default function FichaClientePage() {
       {tab === "info" && <InfoTab cliente={cliente} onUpdate={setCliente} />}
       {tab === "contactos" && <ContactosTabWrapper clienteId={id} negocioId={cliente.negocio_id} />}
       {tab === "citas" && <TabHistorial clienteId={id} clienteNombre={cliente.nombre} />}
-      {tab === "comunicaciones" && (
-        <TabComunicaciones
-          clienteId={id}
-          clienteNombre={cliente.nombre}
-          email={cliente.email ?? undefined}
-          telefono={cliente.telefono ?? undefined}
-        />
-      )}
       {tab === "documentos" && <TabDocumentos clienteId={id} clienteNombre={cliente.nombre} />}
       {tab === "movimientos" && <TabMovimientos clienteId={id} clienteNombre={cliente.nombre} />}
       {confirmDialogNode}

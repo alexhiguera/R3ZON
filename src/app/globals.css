@@ -220,6 +220,36 @@ html.light .border-indigo-400\/20 {
   border-color: rgba(99, 102, 241, 0.22);
 }
 
+/* React Flow Controls (jerarquía de contactos): los botones por defecto
+ * son blanco-sobre-blanco contra nuestro card glass oscuro. Repintamos
+ * fondo, borde, color del icono y hover en ambos modos. */
+.react-flow__controls {
+  box-shadow: none !important;
+}
+.react-flow__controls-button {
+  background: rgb(var(--indigo-900) / 0.6) !important;
+  border-bottom: 1px solid rgb(var(--indigo-400) / 0.18) !important;
+  color: rgb(var(--text-hi)) !important;
+  width: 28px;
+  height: 28px;
+}
+.react-flow__controls-button:hover {
+  background: rgb(var(--indigo-800) / 0.85) !important;
+}
+.react-flow__controls-button svg {
+  fill: currentColor;
+  max-width: 14px;
+  max-height: 14px;
+}
+html.light .react-flow__controls-button {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border-bottom-color: rgba(15, 23, 42, 0.1) !important;
+  color: rgb(15, 23, 42) !important;
+}
+html.light .react-flow__controls-button:hover {
+  background: rgba(241, 245, 249, 0.95) !important;
+}
+
 /* Reducir movimiento (toggle de Ajustes → Accesibilidad o preferencia del SO). */
 @media (prefers-reduced-motion: reduce) {
   *,

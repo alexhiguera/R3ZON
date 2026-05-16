@@ -2,6 +2,8 @@
 
 import {
   CheckCircle2,
+  ChevronDown,
+  ChevronUp,
   Loader2,
   Pencil,
   Plus,
@@ -146,9 +148,9 @@ function TabProveedores() {
         <button
           type="button"
           onClick={() => setEditando({ activo: true })}
-          className="inline-flex h-10 items-center gap-2 rounded-lg bg-gradient-to-r from-emerald-500 to-emerald-600 px-4 text-sm font-bold text-white shadow-glow"
+          className="flex h-12 items-center gap-2 rounded-xl bg-gradient-to-r from-cyan to-fuchsia px-4 text-sm font-bold text-bg"
         >
-          <Plus size={14} /> Nuevo proveedor
+          <Plus size={16} /> Nuevo proveedor
         </button>
       </div>
 
@@ -235,9 +237,22 @@ function ProveedorModal({
   const toast = useToast();
   const [p, setP] = useState<Partial<Proveedor>>(inicial ?? {});
   const [guardando, setGuardando] = useState(false);
+  const [showAvanzado, setShowAvanzado] = useState(false);
 
   useEffect(() => {
-    if (inicial) setP(inicial);
+    if (inicial) {
+      setP(inicial);
+      // Si estamos editando un proveedor con datos avanzados rellenos, los
+      // dejamos a la vista para no esconder información existente.
+      const tieneAvanzado = Boolean(
+        inicial.cif ||
+          inicial.web ||
+          inicial.persona_contacto ||
+          inicial.direccion ||
+          inicial.notas,
+      );
+      setShowAvanzado(tieneAvanzado);
+    }
   }, [inicial]);
 
   if (!inicial) return null;
@@ -281,75 +296,107 @@ function ProveedorModal({
       title={esNuevo ? "Nuevo proveedor" : `Editar · ${inicial.nombre ?? ""}`}
       size="md"
     >
-      <form onSubmit={guardar} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <Field label="Nombre" full>
-          <Input
-            value={p.nombre ?? ""}
-            onChange={(e) => setP({ ...p, nombre: e.target.value })}
-            required
-            autoFocus
-          />
-        </Field>
-        <Field label="CIF / NIF">
-          <Input value={p.cif ?? ""} onChange={(e) => setP({ ...p, cif: e.target.value })} />
-        </Field>
-        <Field label="Categoría">
-          <Input
-            value={p.categoria ?? ""}
-            onChange={(e) => setP({ ...p, categoria: e.target.value })}
-            placeholder="Software, Material, Servicios…"
-          />
-        </Field>
-        <Field label="Email">
-          <Input
-            type="email"
-            value={p.email ?? ""}
-            onChange={(e) => setP({ ...p, email: e.target.value })}
-          />
-        </Field>
-        <Field label="Teléfono">
-          <Input
-            type="tel"
-            value={p.telefono ?? ""}
-            onChange={(e) => setP({ ...p, telefono: e.target.value })}
-          />
-        </Field>
-        <Field label="Web">
-          <Input
-            value={p.web ?? ""}
-            onChange={(e) => setP({ ...p, web: e.target.value })}
-            placeholder="https://…"
-          />
-        </Field>
-        <Field label="Persona de contacto">
-          <Input
-            value={p.persona_contacto ?? ""}
-            onChange={(e) => setP({ ...p, persona_contacto: e.target.value })}
-          />
-        </Field>
-        <Field label="Dirección" full>
-          <Input
-            value={p.direccion ?? ""}
-            onChange={(e) => setP({ ...p, direccion: e.target.value })}
-          />
-        </Field>
-        <Field label="Notas" full>
-          <Textarea
-            rows={2}
-            value={p.notas ?? ""}
-            onChange={(e) => setP({ ...p, notas: e.target.value })}
-          />
-        </Field>
-        <label className="flex items-center gap-2 text-xs text-text-mid sm:col-span-2">
-          <input
-            type="checkbox"
-            checked={p.activo ?? true}
-            onChange={(e) => setP({ ...p, activo: e.target.checked })}
-            className="h-4 w-4 rounded border-indigo-400/30 bg-indigo-900/30"
-          />
-          Proveedor activo
-        </label>
-        <div className="mt-2 flex gap-2 sm:col-span-2">
+      <form onSubmit={guardar} className="flex flex-col gap-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <Field label="Nombre" full>
+            <Input
+              value={p.nombre ?? ""}
+              onChange={(e) => setP({ ...p, nombre: e.target.value })}
+              required
+              autoFocus
+            />
+          </Field>
+          <Field label="Categoría">
+            <Input
+              value={p.categoria ?? ""}
+              onChange={(e) => setP({ ...p, categoria: e.target.value })}
+              placeholder="Software, Material, Servicios…"
+            />
+          </Field>
+          <Field label="Email">
+            <Input
+              type="email"
+              value={p.email ?? ""}
+              onChange={(e) => setP({ ...p, email: e.target.value })}
+            />
+          </Field>
+          <Field label="Teléfono" full>
+            <Input
+              type="tel"
+              value={p.telefono ?? ""}
+              onChange={(e) => setP({ ...p, telefono: e.target.value })}
+            />
+          </Field>
+        </div>
+
+        {/* Información adicional (colapsable) — mismo patrón que /clientes/nuevo */}
+        <div className="rounded-2xl border border-indigo-400/15 bg-indigo-900/15">
+          <button
+            type="button"
+            onClick={() => setShowAvanzado((v) => !v)}
+            aria-expanded={showAvanzado}
+            className="flex w-full items-center justify-between gap-2 p-4 text-left"
+          >
+            <div>
+              <div className="font-display text-sm font-bold text-text-hi">
+                Información adicional
+              </div>
+              <p className="mt-0.5 text-xs text-text-mid">
+                CIF, web, persona de contacto, dirección y notas. Todo opcional.
+              </p>
+            </div>
+            {showAvanzado ? (
+              <ChevronUp size={18} className="shrink-0 text-text-mid" />
+            ) : (
+              <ChevronDown size={18} className="shrink-0 text-text-mid" />
+            )}
+          </button>
+
+          {showAvanzado && (
+            <div className="grid grid-cols-1 gap-3 border-t border-indigo-400/15 p-4 sm:grid-cols-2 sm:p-5">
+              <Field label="CIF / NIF">
+                <Input value={p.cif ?? ""} onChange={(e) => setP({ ...p, cif: e.target.value })} />
+              </Field>
+              <Field label="Web">
+                <Input
+                  value={p.web ?? ""}
+                  onChange={(e) => setP({ ...p, web: e.target.value })}
+                  placeholder="https://…"
+                />
+              </Field>
+              <Field label="Persona de contacto" full>
+                <Input
+                  value={p.persona_contacto ?? ""}
+                  onChange={(e) => setP({ ...p, persona_contacto: e.target.value })}
+                />
+              </Field>
+              <Field label="Dirección" full>
+                <Input
+                  value={p.direccion ?? ""}
+                  onChange={(e) => setP({ ...p, direccion: e.target.value })}
+                />
+              </Field>
+              <Field label="Notas" full>
+                <Textarea
+                  rows={2}
+                  value={p.notas ?? ""}
+                  onChange={(e) => setP({ ...p, notas: e.target.value })}
+                />
+              </Field>
+              <label className="flex items-center gap-2 text-xs text-text-mid sm:col-span-2">
+                <input
+                  type="checkbox"
+                  checked={p.activo ?? true}
+                  onChange={(e) => setP({ ...p, activo: e.target.checked })}
+                  className="h-4 w-4 rounded border-indigo-400/30 bg-indigo-900/30"
+                />
+                Proveedor activo
+              </label>
+            </div>
+          )}
+        </div>
+
+        <div className="mt-2 flex gap-2">
           <button
             type="button"
             onClick={onCerrar}
@@ -360,7 +407,7 @@ function ProveedorModal({
           <button
             type="submit"
             disabled={guardando || !negocioId || !p.nombre?.trim()}
-            className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-emerald-500 to-emerald-600 py-2.5 text-sm font-bold text-white disabled:opacity-50"
+            className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan to-fuchsia py-2.5 text-sm font-bold text-bg disabled:opacity-50"
           >
             {guardando ? (
               <Loader2 size={14} className="animate-spin" />
