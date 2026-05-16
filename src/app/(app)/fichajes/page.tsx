@@ -89,6 +89,8 @@ export default function FichajesPage() {
   const [enviando, setEnviando] = useState<TipoFichaje | null>(null);
   const [fichajes, setFichajes] = useState<Fichaje[]>([]);
   const [tick, setTick] = useState(0);
+  const COOLDOWN_S = 60;
+  const [cooldownRestante, setCooldownRestante] = useState(0);
   const [ownerNegocio, setOwnerNegocio] = useState<{ id: string; horas_default: number } | null>(
     null,
   );
@@ -98,6 +100,22 @@ export default function FichajesPage() {
     const id = setInterval(() => setTick((n) => n + 1), 60_000);
     return () => clearInterval(id);
   }, []);
+
+  // Cooldown: recalcula segundos restantes desde el último fichaje cada segundo.
+  useEffect(() => {
+    const ultimoTs = fichajes[0]?.ts;
+    if (!ultimoTs) {
+      setCooldownRestante(0);
+      return;
+    }
+    const recalc = () => {
+      const diff = Math.floor((Date.now() - new Date(ultimoTs).getTime()) / 1000);
+      setCooldownRestante(Math.max(0, COOLDOWN_S - diff));
+    };
+    recalc();
+    const id = setInterval(recalc, 1000);
+    return () => clearInterval(id);
+  }, [fichajes]);
 
   const cargar = useCallback(async () => {
     const desde = new Date();
@@ -160,6 +178,10 @@ export default function FichajesPage() {
 
   async function fichar(tipo: TipoFichaje) {
     if (enviando) return;
+    if (cooldownRestante > 0) {
+      toast.err(`Espera ${cooldownRestante} s antes del siguiente fichaje.`);
+      return;
+    }
     setEnviando(tipo);
 
     const gps = await obtenerGPS();
@@ -184,7 +206,9 @@ export default function FichajesPage() {
         ? "El servidor rechazó el fichaje: GPS obligatorio."
         : error.message.includes("TRANSICION_INVALIDA")
           ? "Ese fichaje no está permitido en tu estado actual."
-          : error.message;
+          : error.message.includes("COOLDOWN_ACTIVO")
+            ? "Espera un poco antes del siguiente fichaje (cooldown de 60 s)."
+            : error.message;
       toast.err(msg);
       return;
     }
@@ -223,7 +247,7 @@ export default function FichajesPage() {
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {(["entrada", "inicio_descanso", "fin_descanso", "salida"] as TipoFichaje[]).map(
                 (t) => {
-                  const habilitado = permitidos.includes(t);
+                  const habilitado = permitidos.includes(t) && cooldownRestante === 0;
                   const Icono = ICONO_TIPO[t];
                   const enviandoEste = enviando === t;
                   return (
@@ -255,6 +279,11 @@ export default function FichajesPage() {
               Solo están activos los fichajes válidos según tu estado actual. Los registros son
               inmutables una vez guardados (RD-ley 8/2019).
             </p>
+            {cooldownRestante > 0 && (
+              <p className="mt-2 text-xs text-amber-300">
+                Cooldown anti-spam: {cooldownRestante} s para el siguiente fichaje.
+              </p>
+            )}
           </div>
 
           <ListaFichajes fichajes={fichajes} />

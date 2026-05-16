@@ -1,12 +1,18 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%">
+  <rect width="100" height="100" fill="#1A1A1A" />
+
   <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#4f46e5"/>
-      <stop offset="100%" stop-color="#3730a3"/>
-    </linearGradient>
+    <mask id="constellation-cut">
+      <rect width="100" height="100" fill="white" />
+      <path d="M 0 100 L 100 0" fill="none" stroke="black" stroke-width="26" />
+    </mask>
   </defs>
-  <rect width="64" height="64" rx="14" fill="url(#g)"/>
-  <text x="50%" y="54%" text-anchor="middle" dominant-baseline="middle"
-        font-family="Inter, system-ui, sans-serif" font-weight="800" font-size="22" fill="#ffffff">R3</text>
-  <circle cx="49" cy="49" r="5" fill="#22d3ee"/>
+
+  <rect x="10" y="10" width="80" height="80" rx="22" fill="none" stroke="#FFFFFF" stroke-width="18" mask="url(#constellation-cut)" />
+
+  <circle cx="50" cy="50" r="14" fill="#FFFFFF" />
+
+  <path d="M 50 50 L 86 14" fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" />
+
+  <circle cx="86" cy="14" r="3.5" fill="#FFFFFF" />
 </svg>

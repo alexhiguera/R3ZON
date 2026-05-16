@@ -7,6 +7,16 @@ Historial cronológico de **R3ZON ANTARES** ordenado de más reciente a más ant
 ---
 
 
+### Iteración 72 — *2026-05-16* — Favicon, anti-spam de fichajes y OCR móvil
+
+Tres fixes pedidos por usuario en pestañas/RR.HH./captura.
+
+- **Favicon** — [src/app/icon.svg](src/app/icon.svg) y [src/app/apple-icon.svg](src/app/apple-icon.svg) llevaban el placeholder "R3" en degradado índigo. Sustituidos por el logo R3ZON-ANTARES negativo (la constelación blanca sobre fondo `#1A1A1A` que ya vive en [public/R3ZON-ANTARES-negativo.svg](public/R3ZON-ANTARES-negativo.svg)). Next.js detecta `icon.svg`/`apple-icon.svg` automáticamente para `<link rel="icon">` y `<link rel="apple-touch-icon">`, así que no toca tocar `layout.tsx`. Tras desplegar conviene `Cmd-Shift-R` para invalidar la caché del navegador.
+- **Cooldown anti-spam en fichajes** — el RPC `registrar_fichaje` solo validaba la máquina de estados; un trabajador podía pulsar entrada→salida→entrada… sin límite. Migración [supabase/migrations/20260516130000_fichajes_cooldown.sql](supabase/migrations/20260516130000_fichajes_cooldown.sql) reescribe la función con un cooldown server-side de 60 s entre fichajes consecutivos del mismo usuario; si se intenta antes, lanza `COOLDOWN_ACTIVO: espera N s …`. Aplicada ya al remoto vía MCP. Cliente ([src/app/(app)/fichajes/page.tsx](src/app/(app)/fichajes/page.tsx)) recalcula el restante cada segundo, deshabilita los 4 botones mientras `cooldownRestante > 0`, muestra el contador bajo la botonera y mapea el error del RPC a un toast en castellano.
+- **OCR no funciona en móvil** — los `<input type="file">` vivían dentro de `{estado === "idle" && ...}`. Al seleccionar el archivo, `procesar` hace `setEstado("ocr")` antes de que Safari iOS termine de procesar el `change` event ⇒ React desmontaba el input mientras el SO seguía atado a él, y el navegador cancelaba la selección con un parpadeo. Movidos fuera del condicional en [src/app/(app)/ocr/page.tsx](src/app/(app)/ocr/page.tsx) para que persistan durante todo el ciclo de vida. De paso, se hace `e.target.value = ""` tras leer el `File` para que volver a elegir el mismo archivo dispare el `change` (Chrome móvil no lo hace si el valor no cambia).
+- **Verificación**: lint ✅ · typecheck ✅ · migración aplicada al remoto.
+
+
 ### Iteración 71 — *2026-05-16* — Cierre de alertas: clear-text password log + verificación rls_auto_enable
 
 Cierre de tres alertas tras la auditoría 2.0.

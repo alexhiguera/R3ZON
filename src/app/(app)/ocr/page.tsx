@@ -87,24 +87,35 @@ export default function OCRPage() {
         description="Hazle una foto a tu ticket. Lo leemos en tu teléfono — nada sale del dispositivo hasta que lo guardes."
       />
 
+      {/* Los inputs viven fuera del condicional: en móvil, si se desmontan
+          mientras el usuario está en el selector nativo, Safari/Chrome
+          cancelan la selección (parpadeo + acción descartada). */}
+      <input
+        ref={camRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          if (f) procesar(f);
+        }}
+      />
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*,application/pdf"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          if (f) procesar(f);
+        }}
+      />
+
       {estado === "idle" && (
         <div className="grid gap-4 sm:grid-cols-2">
-          <input
-            ref={camRef}
-            type="file"
-            accept="image/*"
-            capture="environment"
-            className="hidden"
-            onChange={(e) => e.target.files?.[0] && procesar(e.target.files[0])}
-          />
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*,application/pdf"
-            className="hidden"
-            onChange={(e) => e.target.files?.[0] && procesar(e.target.files[0])}
-          />
-
           <ActionCard
             Icon={Camera}
             label="Hacer foto"
