@@ -1,4 +1,4 @@
-import { eur, round2 } from "./formato";
+import { eur } from "./formato";
 import type { Database } from "./database.types";
 
 export { eur };
@@ -17,49 +17,54 @@ export type MovimientoFila = Pick<FinanzaRow, "fecha" | "base_imponible"> & {
 
 const MESES = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
 
+// Acumulamos en céntimos enteros para evitar el error de IEEE-754 sobre N
+// líneas. `Math.round` antes de sumar fija un solo redondeo por importe.
+const toCts = (v: number | null) => Math.round(Number(v ?? 0) * 100);
+const fromCts = (cts: number) => cts / 100;
+
 export function agregarPorMes(filas: MovimientoFila[], anio = new Date().getFullYear()) {
-  const buckets = MESES.map((mes) => ({ mes, ganado: 0, gastado: 0, iva: 0, irpf: 0 }));
+  const buckets = MESES.map((mes) => ({ mes, ganadoCts: 0, gastadoCts: 0, ivaCts: 0, irpfCts: 0 }));
 
   for (const f of filas) {
     const d = new Date(f.fecha);
     if (d.getFullYear() !== anio) continue;
     const b = buckets[d.getMonth()];
     if (f.tipo === "ingreso") {
-      b.ganado += Number(f.base_imponible);
-      b.iva += Number(f.iva_importe);   // IVA repercutido (cobras al cliente)
-      b.irpf += Number(f.irpf_importe); // IRPF retenido por el cliente
+      b.ganadoCts += toCts(f.base_imponible);
+      b.ivaCts    += toCts(f.iva_importe);   // IVA repercutido (cobras al cliente)
+      b.irpfCts   += toCts(f.irpf_importe);  // IRPF retenido por el cliente
     } else {
-      b.gastado += Number(f.base_imponible);
-      b.iva -= Number(f.iva_importe);   // IVA soportado (resta de lo que debes)
+      b.gastadoCts += toCts(f.base_imponible);
+      b.ivaCts     -= toCts(f.iva_importe);  // IVA soportado (resta de lo que debes)
     }
   }
 
   return buckets.map((b) => ({
-    ...b,
-    ganado: round2(b.ganado),
-    gastado: round2(b.gastado),
-    iva: round2(b.iva),
-    irpf: round2(b.irpf),
+    mes: b.mes,
+    ganado:  fromCts(b.ganadoCts),
+    gastado: fromCts(b.gastadoCts),
+    iva:     fromCts(b.ivaCts),
+    irpf:    fromCts(b.irpfCts),
   }));
 }
 
 export function totales(filas: MovimientoFila[]) {
-  let ganado = 0, gastado = 0, ivaRep = 0, ivaSop = 0, irpf = 0;
+  let ganadoCts = 0, gastadoCts = 0, ivaRepCts = 0, ivaSopCts = 0, irpfCts = 0;
   for (const f of filas) {
     if (f.tipo === "ingreso") {
-      ganado += Number(f.base_imponible);
-      ivaRep += Number(f.iva_importe);
-      irpf  += Number(f.irpf_importe);
+      ganadoCts += toCts(f.base_imponible);
+      ivaRepCts += toCts(f.iva_importe);
+      irpfCts   += toCts(f.irpf_importe);
     } else {
-      gastado += Number(f.base_imponible);
-      ivaSop  += Number(f.iva_importe);
+      gastadoCts += toCts(f.base_imponible);
+      ivaSopCts  += toCts(f.iva_importe);
     }
   }
   return {
-    ganado: round2(ganado),
-    gastado: round2(gastado),
-    beneficio: round2(ganado - gastado),
-    ivaAPagar: round2(ivaRep - ivaSop), // si negativo → Hacienda te devuelve
-    irpfRetenido: round2(irpf),
+    ganado:       fromCts(ganadoCts),
+    gastado:      fromCts(gastadoCts),
+    beneficio:    fromCts(ganadoCts - gastadoCts),
+    ivaAPagar:    fromCts(ivaRepCts - ivaSopCts), // si negativo → Hacienda te devuelve
+    irpfRetenido: fromCts(irpfCts),
   };
 }

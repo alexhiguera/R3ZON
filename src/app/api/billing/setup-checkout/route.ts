@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getStripe } from "@/lib/stripe";
 import { withApiHandler } from "@/lib/api-handler";
 
@@ -27,18 +28,25 @@ export const POST = withApiHandler("billing/setup-checkout", async (request: Nex
 
   const stripe = getStripe();
 
-  // Crea customer si no existe.
+  // Crea customer si no existe. `idempotencyKey` derivado del negocio evita
+  // duplicados en Stripe si dos requests entran en paralelo: la 2ª recibe
+  // el mismo customer en lugar de crear uno nuevo. Admin client para
+  // persistir saltando RLS (columna Stripe no es escribible por el dueño).
   let customerId = perfil.stripe_customer_id as string | null;
   if (!customerId) {
-    const customer = await stripe.customers.create({
-      email: perfil.email_contacto ?? user.email ?? undefined,
-      metadata: { negocio_id: perfil.id, user_id: user.id },
-    });
+    const customer = await stripe.customers.create(
+      {
+        email: perfil.email_contacto ?? user.email ?? undefined,
+        metadata: { negocio_id: perfil.id, user_id: user.id },
+      },
+      { idempotencyKey: `negocio-${perfil.id}-customer` },
+    );
     customerId = customer.id;
-    await supabase
+    await createAdminClient()
       .from("perfiles_negocio")
       .update({ stripe_customer_id: customerId })
-      .eq("id", perfil.id);
+      .eq("id", perfil.id)
+      .is("stripe_customer_id", null); // no pisa si otro request ya lo asignó
   }
 
   const origin = new URL(request.url).origin;

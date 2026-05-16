@@ -39,19 +39,26 @@ export const POST = withApiHandler("billing/checkout", async (request: NextReque
   const origin = new URL(request.url).origin;
 
   // 1. Garantizar Stripe Customer (creado on-demand y persistido).
+  // `idempotencyKey` derivado del negocio evita duplicados si dos requests
+  // entran en paralelo: la 2ª recibe el mismo customer.
   let customerId = perfil.stripe_customer_id as string | null;
   if (!customerId) {
-    const customer = await stripe.customers.create({
-      email: perfil.email_contacto ?? user.email ?? undefined,
-      name:  perfil.nombre_negocio ?? undefined,
-      metadata: { negocio_id: perfil.id, user_id: user.id },
-    });
+    const customer = await stripe.customers.create(
+      {
+        email: perfil.email_contacto ?? user.email ?? undefined,
+        name:  perfil.nombre_negocio ?? undefined,
+        metadata: { negocio_id: perfil.id, user_id: user.id },
+      },
+      { idempotencyKey: `negocio-${perfil.id}-customer` },
+    );
     customerId = customer.id;
     // Service role para evitar problemas con RLS al actualizar columnas Stripe.
+    // El `.is(null)` evita pisar un valor escrito por otra request paralela.
     await createAdminClient()
       .from("perfiles_negocio")
       .update({ stripe_customer_id: customerId })
-      .eq("id", perfil.id);
+      .eq("id", perfil.id)
+      .is("stripe_customer_id", null);
   }
 
   // 2. Crear Checkout Session.

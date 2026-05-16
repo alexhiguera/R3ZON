@@ -15,8 +15,14 @@ export function withApiHandler(
     try {
       return await handler(req);
     } catch (err) {
+      // En producción solo loguear el mensaje — el stack puede contener
+      // fragmentos de tokens/secretos en errores de OAuth/Stripe.
       const msg = err instanceof Error ? err.message : String(err);
-      console.error(`[api:${name}]`, msg, err instanceof Error ? err.stack : undefined);
+      if (process.env.NODE_ENV === "production") {
+        console.error(`[api:${name}]`, msg);
+      } else {
+        console.error(`[api:${name}]`, msg, err instanceof Error ? err.stack : undefined);
+      }
       return NextResponse.json({ error: "Error interno" }, { status: 500 });
     }
   };

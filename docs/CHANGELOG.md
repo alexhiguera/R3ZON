@@ -7,6 +7,19 @@ Historial cronológico de **R3ZON ANTARES** ordenado de más reciente a más ant
 ---
 
 
+### Iteración 67 — *2026-05-16* — Auditoría: hardening tras advisors de Supabase + CodeQL
+
+Auditoría completa (código, Supabase, Vercel). Vercel quedó fuera por falta de link CLI. Hallazgos críticos accionados:
+
+- **Logs sin stack en producción** ([src/lib/api-handler.ts:19](src/lib/api-handler.ts#L19)) — el stack solo se imprime en `NODE_ENV !== "production"`. Cierra la alerta de CodeQL "Clear-text logging of sensitive information": los errores de OAuth/Stripe podían arrastrar tokens parciales al log.
+- **Finanzas en céntimos enteros** ([src/lib/finanzas.ts](src/lib/finanzas.ts)) — `agregarPorMes` y `totales` ahora acumulan en `int` (céntimos) y solo dividen por 100 al devolver. Elimina el drift de IEEE-754 sobre N líneas de factura (>1 cént a partir de ~1000 movimientos). Quitada la dependencia de `round2`.
+- **Race condition de Stripe customer** ([src/app/api/billing/setup-checkout/route.ts](src/app/api/billing/setup-checkout/route.ts) y [checkout/route.ts](src/app/api/billing/checkout/route.ts)) — `idempotencyKey: negocio-{id}-customer` para deduplicar en Stripe + `createAdminClient()` + `.is("stripe_customer_id", null)` para no pisar un valor escrito por una request paralela.
+- **SECURITY DEFINER → INVOKER en 5 RPCs** ([supabase/migrations/20260516000000_security_definer_to_invoker.sql](supabase/migrations/20260516000000_security_definer_to_invoker.sql)) — `save_user_theme`, `reordenar_tarea`, `reordenar_tareas_batch`, `reordenar_columnas_batch` y `registrar_fichaje`. Las 4 primeras solo hacen UPDATE/UPSERT sobre tablas con RLS clara. La de fichajes lee `perfiles_negocio` + `miembros_negocio` y escribe en `fichajes`; depende de que las RLS de esas tablas permitan SELECT al propio user (estándar multi-tenant del proyecto). Tras aplicar, el advisor pasará de 22 warnings DEFINER a 17.
+- **Cookies OAuth borradas con flags consistentes** ([src/app/api/integrations/google/callback/route.ts:106-113](src/app/api/integrations/google/callback/route.ts#L106-L113)) — añadido `httpOnly`, `sameSite: lax`, `secure` (en prod) al expirar, para garantizar que el browser case la cookie original y la borre.
+- **Pendiente de aplicar la migración SQL**: no se ejecutó contra el remote. El usuario la aplica con `npm run db:reset` (local) o `npx supabase db push` (remote). Tras aplicar, el advisor de Supabase pasará de 22 warnings de DEFINER a 18.
+- **Decisiones de no actuar**: componentes gigantes (`documentos/nuevo`, `listado`) requieren refactor con tests, fuera de scope. ID token de Google se sigue decodificando sin verificar firma (uso solo como label, aceptable por diseño). Índices no usados se conservan (BD aún vacía, esperarán a tener datos reales).
+
+
 ### Iteración 66 — *2026-05-16* — Seguridad: filtración de PAT en wiki + mailto injection + fix sync-wiki.sh
 
 GitHub Secret Scanning detectó un Personal Access Token expuesto, además de dos alertas de CodeQL. Auditoría y reparación en tres frentes.

@@ -103,7 +103,15 @@ export async function GET(request: NextRequest) {
   const dest = new URL(next, origin);
   dest.searchParams.set("google", "connected");
   const res = NextResponse.redirect(dest.toString());
-  const expire = { path: "/api/integrations/google", maxAge: 0 };
+  // Mantener los mismos flags que al crear las cookies para que el navegador
+  // las case y las borre (sin httpOnly/sameSite no se borrarían en algunos clientes).
+  const expire = {
+    path: "/api/integrations/google",
+    maxAge: 0,
+    httpOnly: true,
+    sameSite: "lax" as const,
+    secure: process.env.NODE_ENV === "production",
+  };
   res.cookies.set("g_oauth_state", "", expire);
   res.cookies.set("g_oauth_next",  "", expire);
   return res;
