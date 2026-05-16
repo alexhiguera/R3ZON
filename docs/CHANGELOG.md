@@ -7,6 +7,37 @@ Historial cronológico de **R3ZON ANTARES** ordenado de más reciente a más ant
 ---
 
 
+### Iteración 79 — *2026-05-17* — OCR ahora admite PDFs (la mayoría de facturas)
+
+El usuario reportó que la iteración 73 quitó el soporte de PDF y la mayoría de facturas españolas llegan así. Reintroducido con un flujo en dos fases para no romper el coste-cero.
+
+- **Dependencia nueva**: `pdfjs-dist@^5.7.284` (~400 KB, importada de forma perezosa para no ensuciar el bundle principal de la app — solo se carga cuando alguien sube un PDF).
+- **Engine reescrito** ([src/lib/ocr/engine.ts](src/lib/ocr/engine.ts)) con dos rutas según el tipo del fichero:
+  1. **Imágenes (JPG/PNG/WEBP)** — directo a Tesseract.js, como antes.
+  2. **PDFs** — primero abrimos con `pdfjs.getDocument()` e intentamos `page.getTextContent()` en cada página. La mayoría de facturas españolas (Holded, Quipu, Factusol, exportes de Movistar/Endesa/etc.) son PDFs *con texto seleccionable*: en ese caso saltamos a Tesseract — más rápido (~200 ms vs ~10 s) y sin errores de OCR. Si el texto extraído tiene <50 caracteres asumimos PDF escaneado y caemos a la ruta 2b: renderizamos cada página a un `<canvas>` a `scale: 2` y se lo damos a Tesseract.
+- **Worker de pdfjs** — configurado con `new URL("pdfjs-dist/build/pdf.worker.min.mjs", import.meta.url)`. Webpack/Turbopack de Next.js entiende ese patrón y emite el worker como asset estático servido desde el mismo origen. La CSP existente (`worker-src 'self' blob:`) ya lo permite, no toca tocarla.
+- **UI** ([src/app/(app)/ocr/page.tsx](src/app/(app)/ocr/page.tsx)):
+  - `accept="image/*,application/pdf"` reincorporado al input.
+  - Sub-label del action card: `JPG, PNG o PDF`.
+  - El preview lateral `<img>` no renderiza PDFs nativamente, así que en ese caso pasamos `setImagen(null)` y el panel de revisión se ve sin imagen (el formulario sigue funcionando).
+  - Mensaje de error cuando no hay texto reconocible adaptado para mencionar también el caso "PDF escaneado a baja resolución".
+- **Verificación**: lint ✅ · typecheck ✅ · 18/18 tests del parser verdes. **Nota**: `npm run build` falla con un error de `d3-zoom` (`Can't resolve './constant.js'` desde `@xyflow/system`) — **pre-existente, no causado por este cambio** (verificado haciendo stash y reintentando el build sin los cambios de esta iteración). Es la incompatibilidad conocida de d3-zoom v3 con la resolución ESM estricta de Next 16; bloquea el deploy pero no `next dev`. Lo dejo señalado para una iteración aparte.
+
+
+### Iteración 78 — *2026-05-17* — OCR: bug de decimales con punto (`1.00` → 100)
+
+Bug crítico en el parser de tickets reportado por el usuario.
+
+- **Causa raíz** ([src/lib/ocr/parser.ts](src/lib/ocr/parser.ts):22) — el helper `num()` era `s.replace(/\./g, "").replace(",", ".")` que asumía formato español (`1.234,56`). Cualquier factura con decimales en formato US (`1.00`, muy común en tickets internacionales y POS extranjeros) se interpretaba como un millar: `1.00` → strip dots → `100` → 100€ en vez de 1€. Misma pifia con `12.34` → 1234.
+- **Fix** — `num()` reescrito para decidir cuál es el separador decimal a partir del contenido, no de un locale asumido. Regla: el separador (`.` o `,`) que aparece *al final* es decimal si y solo si hay exactamente 2 dígitos detrás. Si hay 3+ dígitos detrás (o ninguno), todos los separadores son de miles y se descartan. Cubre los cuatro formatos comunes:
+  - `1,00` y `1.00` ⇒ 1
+  - `12.345,67` (ES) y `12,345.67` (US) ⇒ 12345.67
+  - Tickets con espacio en miles (`1 234,56`) ⇒ 1234.56 (la limpieza inicial elimina espacios).
+- **Regex `NUM` ampliado** para aceptar coma como separador de miles (antes solo `.` y `\s`), necesario para reconocer `12,345.67` como número completo y no fragmentarlo.
+- **Tests añadidos** ([tests/parser.test.ts](tests/parser.test.ts)) — 3 nuevos casos: el bug específico (`1.00` ⇒ 1), equivalencia (`1,00` ≡ `1.00`), formato US completo (`12,345.67`). Resultado: 18/18 tests verdes.
+- **Verificación**: lint ✅ · typecheck ✅ · vitest ✅.
+
+
 ### Iteración 77 — *2026-05-17* — Listado: botón unificado, etiquetas inline, mobile profesional, modal segmentado
 
 Limpieza profunda de la página de listado pedida por usuario.

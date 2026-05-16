@@ -28,7 +28,9 @@ export default function OCRPage() {
     setError(null);
     setEstado("ocr");
     setProgress(0);
-    setImagen(URL.createObjectURL(file));
+    // El preview <img> no renderiza PDFs; en ese caso dejamos el preview vacío
+    // y mostramos un placeholder con el nombre del archivo.
+    setImagen(file.type === "application/pdf" ? null : URL.createObjectURL(file));
     try {
       const texto = await ocrImagen(file, setProgress);
       const parsed = parseSpanishReceipt(texto);
@@ -39,7 +41,7 @@ export default function OCRPage() {
         parsed.cif !== null;
       if (!algoUtil && texto.trim().length < 10) {
         setError(
-          "No hemos podido leer texto en la imagen. Asegúrate de que está enfocada, con buena luz y que el ticket cabe entero.",
+          "No hemos podido leer texto en el archivo. Si es una foto, asegúrate de que está enfocada y con buena luz. Si es un PDF escaneado, prueba con una resolución mayor.",
         );
         setEstado("idle");
         return;
@@ -117,7 +119,7 @@ export default function OCRPage() {
       <input
         ref={fileRef}
         type="file"
-        accept="image/*"
+        accept="image/*,application/pdf"
         className="hidden"
         onChange={(e) => {
           const f = e.target.files?.[0];
@@ -143,8 +145,8 @@ export default function OCRPage() {
           />
           <ActionCard
             Icon={Upload}
-            label="Subir imagen"
-            sub="JPG o PNG"
+            label="Subir archivo"
+            sub="JPG, PNG o PDF"
             onClick={() => fileRef.current?.click()}
             accent="fuchsia"
           />

@@ -93,6 +93,35 @@ describe("parseSpanishReceipt — importes", () => {
     expect(r.total).toBe(1493.82);
   });
 
+  it("interpreta '1.00' como 1, no como 100 (decimales con punto)", () => {
+    const texto = `
+      BASE IMPONIBLE 1.00
+      IVA 21% 0.21
+      TOTAL 1.21
+    `;
+    const r = parseSpanishReceipt(texto);
+    expect(r.base).toBe(1);
+    expect(r.total).toBe(1.21);
+  });
+
+  it("'1,00' y '1.00' producen el mismo valor numérico", () => {
+    const a = parseSpanishReceipt("TOTAL 1,00");
+    const b = parseSpanishReceipt("TOTAL 1.00");
+    expect(a.total).toBe(1);
+    expect(b.total).toBe(1);
+  });
+
+  it("acepta formato US: miles con coma, decimales con punto", () => {
+    const texto = `
+      BASE IMPONIBLE 12,345.67
+      TOTAL 14,938.20
+    `;
+    const r = parseSpanishReceipt(texto);
+    expect(r.base).toBe(12345.67);
+    expect(r.total).toBe(14938.2);
+  });
+
+
   it("confianza > 0 cuando se detectaron los campos", () => {
     const r = parseSpanishReceipt("BASE IMPONIBLE 50,00\nIVA 21% 10,50\nTOTAL 60,50");
     expect(r.confianza.base).toBeGreaterThan(0);

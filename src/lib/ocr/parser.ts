@@ -19,7 +19,40 @@ export type ReceiptData = {
   };
 };
 
-const num = (s: string) => parseFloat(s.replace(/\s/g, "").replace(/\./g, "").replace(",", "."));
+/**
+ * Convierte un número escrito en una factura a `number` sin asumir locale.
+ *
+ * Antes hacíamos `replace(/\./g, "").replace(",", ".")` — eso asumía formato
+ * español (`1.234,56`) y rompía con tickets US (`1.00` → 100). Ahora miramos
+ * cuál es el separador que aparece *al final* de la cadena:
+ *
+ * - Si tras el último `,` o `.` hay exactamente 2 dígitos ⇒ es el separador
+ *   decimal. El resto de `.`/`,` son separadores de miles ⇒ se descartan.
+ * - Si tras el último separador hay 3 o más dígitos (o ninguno) ⇒ no hay
+ *   parte decimal; todos los puntos/comas son separadores de miles.
+ *
+ * Casos cubiertos:
+ *   "1,00"      → 1
+ *   "1.00"      → 1            (antes: 100 — el bug)
+ *   "12.345,67" → 12345.67     (ES con miles)
+ *   "12,345.67" → 12345.67     (US con miles)
+ *   "1.000"     → 1000         (ES sin decimales)
+ *   "1,000"     → 1000         (US sin decimales)
+ */
+const num = (s: string): number => {
+  const cleaned = s.replace(/\s/g, "");
+  const lastComma = cleaned.lastIndexOf(",");
+  const lastDot = cleaned.lastIndexOf(".");
+  const lastSep = Math.max(lastComma, lastDot);
+  if (lastSep === -1) return parseFloat(cleaned);
+  const afterSep = cleaned.length - lastSep - 1;
+  if (afterSep === 2) {
+    const intPart = cleaned.slice(0, lastSep).replace(/[.,]/g, "");
+    const decPart = cleaned.slice(lastSep + 1);
+    return parseFloat(`${intPart}.${decPart}`);
+  }
+  return parseFloat(cleaned.replace(/[.,]/g, ""));
+};
 
 export function parseSpanishReceipt(textoCrudo: string): ReceiptData {
   const texto = textoCrudo.replace(/ /g, " ");
@@ -69,8 +102,10 @@ type Importes = Pick<
 function extraerImportes(texto: string, lineas: string[]): Importes {
   const conf = { fecha: 0, cif: 0, base: 0, iva: 0 };
 
-  // Patrón de número con € opcional: 12.345,67 / 12,67 / 12.67
-  const NUM = /([0-9]{1,3}(?:[.\s][0-9]{3})*[,.][0-9]{2}|\d+[,.]\d{2})/;
+  // Patrón de número con € opcional. Acepta cualquier combinación de separadores
+  // de miles (`.`, `,`, espacio) seguidos de coma o punto decimal y 2 dígitos:
+  //   12.345,67  (ES)   12,345.67  (US)   1.234   1.00   1,00   12,67
+  const NUM = /([0-9]{1,3}(?:[.,\s][0-9]{3})*[.,][0-9]{2}|\d+[.,]\d{2})/;
 
   // TOTAL
   const totalMatch =
