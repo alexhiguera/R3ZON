@@ -1,39 +1,12 @@
 "use client";
 
-import {
-  Boxes,
-  Building2,
-  Calendar,
-  Clock,
-  FileText,
-  Kanban,
-  LayoutDashboard,
-  type LucideIcon,
-  PanelLeftClose,
-  PanelLeftOpen,
-  ShoppingCart,
-  Truck,
-  Wallet,
-} from "lucide-react";
+import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { MODULOS, planPermite, useModulosOcultos } from "@/lib/sidebarModulos";
+import { usePlan } from "@/lib/usePlan";
 import { cn } from "@/lib/utils";
 import { UserMenu } from "./UserMenu";
-
-type NavItem = { href: string; label: string; Icon: LucideIcon };
-
-const NAV: NavItem[] = [
-  { href: "/dashboard", label: "Inicio", Icon: LayoutDashboard },
-  { href: "/clientes", label: "Clientes", Icon: Building2 },
-  { href: "/proveedores", label: "Proveedores", Icon: Truck },
-  { href: "/citas", label: "Agenda", Icon: Calendar },
-  { href: "/tareas", label: "Tareas", Icon: Kanban },
-  { href: "/fichajes", label: "Fichajes", Icon: Clock },
-  { href: "/listado", label: "Listado", Icon: Boxes },
-  { href: "/tpv", label: "TPV", Icon: ShoppingCart },
-  { href: "/documentos", label: "Documentos", Icon: FileText },
-  { href: "/finanzas", label: "Finanzas", Icon: Wallet },
-];
 
 export function Sidebar({
   onNavigate,
@@ -45,6 +18,15 @@ export function Sidebar({
   onToggleCollapsed?: () => void;
 }) {
   const pathname = usePathname();
+  const { plan, cargando } = usePlan();
+  const { ocultos, montado } = useModulosOcultos();
+
+  const navVisible = MODULOS.filter((m) => {
+    if (m.obligatorio) return true;
+    if (!cargando && !planPermite(plan, m.minPlan)) return false;
+    if (montado && ocultos.has(m.id)) return false;
+    return true;
+  });
 
   return (
     <nav className="flex h-full flex-col">
@@ -107,7 +89,7 @@ export function Sidebar({
       >
         {!collapsed && <div className="section-label mb-1 px-3">Navegación</div>}
         <div className="flex flex-col gap-1.5">
-          {NAV.map(({ href, label, Icon }) => {
+          {navVisible.map(({ href, label, Icon }) => {
             const active = pathname === href || pathname?.startsWith(href + "/");
             return (
               <Link

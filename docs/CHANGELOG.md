@@ -7,6 +7,23 @@ Historial cronológico de **R3ZON ANTARES** ordenado de más reciente a más ant
 ---
 
 
+### Iteración 81 — *2026-05-17* — Ajustes · Módulos del sidebar gated por plan + limpieza Reportes
+
+Dos cambios pedidos por el usuario.
+
+- **Reportes simplificado** ([src/components/ajustes/ReportesTab.tsx](src/components/ajustes/ReportesTab.tsx)) — eliminado el botón "Copiar" (icono `Copy`), la función `copiar()` y el párrafo final que explicaba "si el botón no abre tu cliente de correo, usa Copiar…". Queda solo el flujo `mailto:` con "Enviar por email". Menos ruido visual; el mail copy-paste manual seguía siendo poco usado.
+- **Nueva pestaña "Módulos" en Ajustes** ([src/components/ajustes/ModulosTab.tsx](src/components/ajustes/ModulosTab.tsx), [src/lib/sidebarModulos.ts](src/lib/sidebarModulos.ts)) — permite al usuario activar/desactivar qué módulos aparecen en su sidebar lateral. Cada módulo declara un `minPlan` (`free` / `pro` / `business`):
+  - Si el plan del usuario es **inferior** al requerido → toggle bloqueado con icono candado y leyenda "Requiere plan Pro. Tu plan actual es Free".
+  - Si el plan **alcanza o supera** el mínimo → el toggle se puede alternar libremente para ocultar o mostrar el módulo en el sidebar.
+  - El módulo **Inicio** (`dashboard`) está marcado como `obligatorio: true` y no es ocultable nunca.
+  - Mapeo inicial: `clientes/proveedores/citas/tareas/listado` son free, `fichajes/tpv/documentos` son pro, `finanzas` es business. Ajustable editando el array `MODULOS`.
+- **Catálogo compartido** — extraje la definición del NAV de `Sidebar.tsx` al nuevo `src/lib/sidebarModulos.ts` para que tanto el sidebar como la pestaña de ajustes lean del mismo sitio. Antes `Sidebar.tsx` tenía su propio array `NAV` inline; ahora importa `MODULOS` y filtra por `planPermite(plan, m.minPlan)` + el set de ocultos.
+- **Persistencia** — preferencia de ocultos en `localStorage` con clave `r3zon:sidebar-hidden-modules:v1` (array de IDs). Hook `useModulosOcultos()` con suscripción a un `CustomEvent("r3zon:modulos-changed")` para que toggle desde Ajustes refresque el sidebar al instante sin recargar página. Sin migración de schema — la preferencia es local al dispositivo, lo cual encaja porque "ocultarlo para mí" es por usuario, no por negocio.
+- **Hidratación** — el sidebar respeta el estado oculto solo tras `montado=true` para evitar mismatch SSR/cliente; en el primer render se muestra todo lo permitido por plan, después se aplica el filtro local.
+- **UI** — toggle custom con tres iconos según estado (`Eye` activo, `EyeOff` oculto, `Lock` bloqueado), badge de plan con color por tier (`emerald/cyan/fuchsia`), badge "Esencial" para `dashboard`. Pestaña registrada en [SettingsTabs.tsx](src/components/ajustes/SettingsTabs.tsx) con icono `LayoutGrid` justo después de "Listado".
+- **Verificación**: biome check ✅. Errores TS preexistentes (`json-schema`/`json5`/`ws`) sin relación con esta iteración.
+
+
 ### Iteración 80 — *2026-05-17* — OCR: preview a tamaño completo, selector gasto/ingreso, guardado en dos modos
 
 Cuatro mejoras pedidas en el flujo de revisión de facturas escaneadas.

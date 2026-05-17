@@ -1,6 +1,6 @@
 "use client";
 
-import { Bug, Copy, LifeBuoy, MessageSquare, Send } from "lucide-react";
+import { Bug, LifeBuoy, MessageSquare, Send } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/components/ui/Toast";
 
@@ -58,20 +58,6 @@ export function ReportesTab() {
     const cuerpo = encodeURIComponent(construirCuerpo());
     const url = `mailto:${DESTINATARIO}?subject=${asunto}&body=${cuerpo}`;
     window.location.href = url;
-  };
-
-  const copiar = async () => {
-    if (!titulo.trim() || !detalle.trim()) {
-      toast.err("Rellena título y detalle antes de copiar.");
-      return;
-    }
-    const texto = `Para: ${DESTINATARIO}\nAsunto: ${construirAsunto()}\n\n${construirCuerpo()}`;
-    try {
-      await navigator.clipboard.writeText(texto);
-      toast.ok("Reporte copiado al portapapeles.");
-    } catch {
-      toast.err("No se pudo copiar al portapapeles.");
-    }
   };
 
   return (
@@ -169,24 +155,12 @@ export function ReportesTab() {
         <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
           <button
             type="button"
-            onClick={copiar}
-            className="flex h-11 items-center justify-center gap-2 rounded-xl border border-indigo-400/25 bg-indigo-900/40 px-4 text-sm font-semibold text-text-mid hover:border-indigo-400/40 hover:text-text-hi"
-          >
-            <Copy size={14} /> Copiar
-          </button>
-          <button
-            type="button"
             onClick={enviar}
             className="flex h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan to-fuchsia px-5 text-sm font-bold text-bg shadow-glow"
           >
             <Send size={14} /> Enviar por email
           </button>
         </div>
-
-        <p className="text-[11px] text-text-lo">
-          Si el botón no abre tu cliente de correo, usa "Copiar" y pégalo manualmente en un mail a{" "}
-          {DESTINATARIO}.
-        </p>
       </div>
     </div>
   );

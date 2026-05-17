@@ -26,6 +26,7 @@ export type TabId =
   | "apariencia"
   | "accesibilidad"
   | "listado"
+  | "modulos"
   | "datos"
   | "cumplimiento"
   | "reportes";
