@@ -7,6 +7,23 @@ Historial cronológico de **R3ZON ANTARES** ordenado de más reciente a más ant
 ---
 
 
+### Iteración 82 — *2026-05-17* — Onboarding · Wizard multi-paso + mini-tours por módulo
+
+Reemplazado el onboarding de una sola pantalla (solo consentimientos RGPD) por un wizard de bienvenida en 8 pasos pensado como carta de presentación y embudo de venta, más mini-tours skippables la primera vez que el usuario entra en cada módulo.
+
+- **Wizard** ([src/app/(app)/onboarding/OnboardingWizard.tsx](src/app/(app)/onboarding/OnboardingWizard.tsx) + [steps/](src/app/(app)/onboarding/steps/)) — Pasos: Bienvenida → Datos de usuario → Empresa esencial → Dirección y logo → Preferencias (moneda/TZ) → Selección de módulos → Consentimientos RGPD → Plan y límites. En cada paso (excepto los obligatorios) hay opción "Rellenar más tarde" que persiste lo escrito y avanza. No existe skip global, solo página a página. Validación con Zod inline en [schemas.ts](src/app/(app)/onboarding/schemas.ts) (reusa los validadores de CIF/teléfono/email de NegocioTab).
+- **Shell visual** ([src/components/onboarding/WizardShell.tsx](src/components/onboarding/WizardShell.tsx) + [WizardProgress.tsx](src/components/onboarding/WizardProgress.tsx)) — Layout full-screen mobile-first: header sticky con barra de progreso + paso X/N (puntos numerados ≥sm), tarjeta `.card-glass` centrada, footer sticky con `safe-area-inset` para iOS. Botones Atrás / Rellenar más tarde / Continuar.
+- **Paso final · Plan** ([Step7Plan.tsx](src/app/(app)/onboarding/steps/Step7Plan.tsx)) — Comparativa Free vs Pro vs Business reutilizando la lógica de `irACheckout` de SuscripcionTab. Free entra al dashboard; Pro/Business dispara `/api/billing/checkout` (Stripe). En ambos casos marca `onboarding_completado = true` antes de redirigir para que un retorno de Stripe no vuelva al wizard.
+- **Persistencia para retomar** — Nueva migración [supabase/migrations/20260517000000_onboarding_wizard.sql](supabase/migrations/20260517000000_onboarding_wizard.sql) añade columnas a `perfiles_negocio`: `onboarding_paso int`, `onboarding_datos jsonb` (borrador), `onboarding_modulos_vistos text[]`. RPC `guardar_paso_onboarding(p_paso, p_datos, p_parciales, p_finalizar)` hace UPSERT parcial en columnas reales + merge del borrador + avance del paso. Multi-dispositivo (sobrevive cambio de navegador).
+- **RPC `registrar_onboarding` extendida** — Nuevo parámetro `p_finalizar boolean default true` para que el paso legal pueda registrar consentimientos sin marcar el onboarding completado (lo hace el paso final tras elegir plan).
+- **Chrome del wizard** ([src/app/(app)/layout.tsx](src/app/(app)/layout.tsx) + [onboarding/layout.tsx](src/app/(app)/onboarding/layout.tsx)) — Para `/onboarding` se salta el `AppShell` (sin sidebar/topbar) y se renderiza el wizard a pantalla completa.
+- **Mini-tours por módulo** ([src/components/onboarding/ModuloOnboardingModal.tsx](src/components/onboarding/ModuloOnboardingModal.tsx), [modulosTours.ts](src/components/onboarding/modulosTours.ts), [ModuleTourGate.tsx](src/components/onboarding/ModuleTourGate.tsx)) — Tras completar el onboarding inicial, la primera vez que el usuario entra en `/clientes`, `/citas`, etc. ve un modal con 2-3 slides explicando el módulo, con botón Saltar. Idempotente: se registra en `onboarding_modulos_vistos` vía RPC `marcar_modulo_visto`.
+- **Detección automática por ruta** — Un único `<ModuleTourGate />` en `(app)/layout.tsx` detecta el módulo por `usePathname` y monta el tour del módulo correspondiente. Evita tocar cada page.tsx. Solo dispara en la ruta raíz del módulo, no en subrutas tipo `/clientes/[id]`.
+- **Provider compartido** ([src/contexts/OnboardingContext.tsx](src/contexts/OnboardingContext.tsx)) — Carga `onboarding_modulos_vistos` del perfil en el layout y lo expone vía context con un setter optimista que llama a la RPC en segundo plano.
+- **Responsive** — Wizard probado mentalmente para 375px (footer pegado, scroll interno solo en contenido) y desktop (puntos de progreso visibles). Modal usa `size="md"` que reusa el `Modal` global con focus trap, ESC y backdrop blur ya existentes.
+- **Verificación pendiente**: `npm run build` y probar flujo end-to-end con un usuario nuevo (registro → wizard → cerrar pestaña → resume) y entrada por primera vez a cada módulo.
+
+
 ### Iteración 81 — *2026-05-17* — Ajustes · Módulos del sidebar gated por plan + limpieza Reportes
 
 Dos cambios pedidos por el usuario.
