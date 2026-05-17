@@ -246,11 +246,7 @@ function ContenidoSection({ editor }: { editor: Editor }) {
     <Card title="Contenido">
       <div className="flex flex-col gap-3">
         {editor.lineas.map((l, i) => (
-          <div
-            // biome-ignore lint/suspicious/noArrayIndexKey: posición es estable durante el editor
-            key={i}
-            className="rounded-xl border border-indigo-400/15 bg-indigo-900/20 p-3"
-          >
+          <div key={i} className="rounded-xl border border-indigo-400/15 bg-indigo-900/20 p-3">
             <div className="grid grid-cols-12 gap-2">
               <label className="col-span-12 flex flex-col gap-1">
                 <span className="text-[0.6rem] font-medium uppercase tracking-wider text-text-lo">

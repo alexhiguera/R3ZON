@@ -45,6 +45,13 @@ export default function OCRPage() {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Solo aceptamos URLs `blob:` (creadas por nosotros con URL.createObjectURL).
+  // Bloquea inyecciones tipo `javascript:` aunque algo externo llegara a
+  // contaminar el estado, y CodeQL lo reconoce como sanitización.
+  const urlSegura = (u: string | null): string | null => (u && u.startsWith("blob:") ? u : null);
+  const imagenSegura = urlSegura(imagen);
+  const archivoUrlSegura = urlSegura(archivoUrl);
+
   // Cierra el lightbox con la tecla Escape.
   useEffect(() => {
     if (!lightboxOpen) return;
@@ -222,7 +229,7 @@ export default function OCRPage() {
       {(estado === "revisar" || estado === "guardando") && datos && (
         <div className="grid gap-4 lg:grid-cols-[300px_1fr]">
           <div className="card-glass overflow-hidden p-3">
-            {imagen ? (
+            {imagenSegura ? (
               <button
                 type="button"
                 onClick={() => setLightboxOpen(true)}
@@ -230,7 +237,7 @@ export default function OCRPage() {
                 className="group relative block w-full overflow-hidden rounded-xl"
               >
                 <img
-                  src={imagen}
+                  src={imagenSegura}
                   alt="Foto del ticket escaneado"
                   className="max-h-[400px] w-full rounded-xl object-contain"
                 />
@@ -249,10 +256,12 @@ export default function OCRPage() {
                 </p>
               </div>
             ) : null}
-            {archivoUrl && (
+            {archivoUrlSegura && (
               <button
                 type="button"
-                onClick={() => (esPdf ? window.open(archivoUrl, "_blank") : setLightboxOpen(true))}
+                onClick={() =>
+                  esPdf ? window.open(archivoUrlSegura, "_blank") : setLightboxOpen(true)
+                }
                 className="mt-3 flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-cyan/40 bg-cyan/10 text-xs font-bold text-cyan hover:bg-cyan/20"
               >
                 <Maximize2 size={13} /> Ver tamaño completo
@@ -402,7 +411,7 @@ export default function OCRPage() {
       )}
 
       {/* Lightbox para previsualización a tamaño completo */}
-      {lightboxOpen && imagen && (
+      {lightboxOpen && imagenSegura && (
         <div
           role="dialog"
           aria-modal="true"
@@ -422,7 +431,7 @@ export default function OCRPage() {
             <X size={16} />
           </button>
           <img
-            src={imagen}
+            src={imagenSegura}
             alt="Previsualización completa"
             className="max-h-[92vh] max-w-[92vw] rounded-xl object-contain shadow-glow"
             onClick={(e) => e.stopPropagation()}

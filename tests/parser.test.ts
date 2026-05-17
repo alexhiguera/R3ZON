@@ -121,7 +121,6 @@ describe("parseSpanishReceipt — importes", () => {
     expect(r.total).toBe(14938.2);
   });
 
-
   it("confianza > 0 cuando se detectaron los campos", () => {
     const r = parseSpanishReceipt("BASE IMPONIBLE 50,00\nIVA 21% 10,50\nTOTAL 60,50");
     expect(r.confianza.base).toBeGreaterThan(0);
